@@ -1,0 +1,27 @@
+{
+    "name": "nandan108/symfony-dto-toolkit",
+    "description": "DTO system for Symfony",
+    "type": "library",
+    "require": {
+        "php": "^8.1"
+        "symfony/validator": "^6.0 || ^7.0",
+        "symfony/http-foundation": "^6.0 || ^7.0",
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.0",
+        "symfony/var-dumper": "^6.0"
+    },
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Nandan108\\SymfonyDtoToolkit\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Samuel de Rougemont",
+            "email": "nandan108@gmail.com"
+        }
+    ],
+    "minimum-stability": "stable"
+}
