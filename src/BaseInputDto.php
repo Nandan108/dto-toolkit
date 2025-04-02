@@ -12,23 +12,36 @@ abstract class BaseInputDto
 {
     private static ?ValidatorInterface $validator = null;
 
+    protected array $inputSources = ['POST'];
+
     /** @var array[string] */
-    protected array $fillable = [];
+    protected ?array $fillable = null;
 
     /** @var array[string] */
     public array $filled = [];
 
-    protected function getFillable() {
-        if (!$this->fillable) {
-            $fillableProperties = (new \ReflectionClass($this))
-                ->getProperties(ReflectionProperty::IS_PUBLIC);
+    /**
+     * Get the names of the public properties of an object
+     *
+     * @param object|null $object defaults to the current instance
+     * @return array
+     */
+    protected function getPropNames(object $object = null): array
+    {
+        $reflectionClass = new \ReflectionClass($objectOrClass ?? $this);
 
-            $this->fillable = array_map(
-                fn(ReflectionProperty $property) => $property->getName(),
-                $fillableProperties
-            );
+        $props = [];
+        foreach ($reflectionClass->getProperties(ReflectionProperty::IS_PUBLIC) as $prop) {
+            if ($prop->isPublic()) {
+                $props[] = $prop->getName();
+            }
         }
-        return $this->fillable;
+        return $props;
+    }
+
+    protected function getFillable(): array
+    {
+        return $this->fillable ??= $this->getPropNames($this);
     }
 
     public function validated(array $groups = null): static
@@ -53,27 +66,57 @@ abstract class BaseInputDto
         return self::$validator;
     }
 
-    public static function getRequestInput($request): array {
-        return array_merge(
-            $request->attributes->all(),
-            $request->query->all(),
-            $request->request->all()
+    /**
+     * Get the request's input according to the input sources
+     *
+     * @param Request $request
+     * @return array
+     */
+    public function getRequestInput(Request $request): array
+    {
+        return array_reduce(
+            $this->inputSources,
+            fn ($carry, $source) =>
+                array_merge($carry, match ($source) {
+                    'COOKIE' => $request->cookies->all(),
+                    'POST' => $request->request->all(),
+                    'PARAMS' => $request->attributes->all(),
+                    'GET' => $request->query->all(),
+                    default => [],
+                })
+            ,
+            []
         );
     }
 
-    public function getFillableDataFromRequest($request): array {
+    /**
+     * Get the fillable data from the request
+     *
+     * Can be overriden when special treatment is needed.
+     *
+     * @param Request $request
+     * @return array
+     */
+    public function getFillableInput(Request $request): array
+    {
         return array_intersect_key(
             self::getRequestInput(request: $request),
-            array_flip($this->getFillable())
+            array_flip($this->getFillable()),
         );
     }
 
+    /**
+     * Create a new instance of the DTO from a request
+     *
+     * @param Request $request
+     * @return static
+     */
     public static function fromRequest(Request $request): static
     {
         $dto = new static();
 
-        foreach ($dto->getFillableDataFromRequest($request) as $property => $value) {
-            $dto->{$property} = $value;
+        foreach ($dto->getFillableInput($request) as $property => $value) {
+            $dto->{$property}       = $value;
             $dto->filled[$property] = true;
         }
 
