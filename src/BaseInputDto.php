@@ -20,6 +20,9 @@ abstract class BaseInputDto
     /** @var array[string] */
     public array $filled = [];
 
+    /** @var class-string */
+    abstract protected static function getEntityClass(): string;
+
     /**
      * Get the names of the public properties of an object
      *
@@ -121,5 +124,36 @@ abstract class BaseInputDto
         }
 
         return $dto->validated();
+    }
+
+    /**
+     * Convert the DTO to an entity
+     *
+     * Will auto-fill the entity's public properties with the DTO's public properties
+     *
+     * @throws \LogicException
+     * @return object
+     */
+    public function toEntity(): object
+    {
+        if (!isset(static::$entityClass)) {
+            throw new \LogicException(static::class . ' must define a static $entityClass');
+        }
+
+        // Create a new instance of the entity class
+        $entity = new (static::getEntityClass())();
+        // Get the public properties of the DTO subclass
+        $fillable = $this->getFillable();
+        // Get the public properties of the entity class
+        $targetProps = $this->getPropNames($entity);
+        // Get the intersection of the two arrays
+        $settableProps = array_intersect($fillable, $targetProps);
+
+        // Set the properties on the entity
+        foreach ($settableProps as $propName) {
+            $entity->$propName = $this->$propName;
+        }
+
+        return $entity;
     }
 }
