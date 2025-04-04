@@ -2,10 +2,14 @@
 
 namespace App\Dto;
 
+use App\Attribute\CastTo;
+use Doctrine\Common\Collections\ArrayCollection;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Validator\Validation;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use App\Exception\ValidationException;
+use Closure;
+use LogicException;
 use ReflectionProperty;
 
 abstract class BaseInputDto
@@ -37,10 +41,10 @@ abstract class BaseInputDto
     /**
      * Get the names of the public properties of an object
      *
-     * @param object|null $object defaults to the current instance
+     * @param object|string|null $objectOrClass defaults to the current instance
      * @return array
      */
-    protected function getPropNames(object $object = null): array
+    protected function getPublicPropNames(object|string $objectOrClass = null): array
     {
         $reflectionClass = new \ReflectionClass($objectOrClass ?? $this);
 
@@ -60,7 +64,7 @@ abstract class BaseInputDto
      */
     protected function getFillable(): array
     {
-        return $this->fillable ??= $this->getPropNames($this);
+        return $this->fillable ??= $this->getPublicPropNames($this);
     }
 
     /**
@@ -106,16 +110,16 @@ abstract class BaseInputDto
     public function getRequestInput(Request $request): array
     {
         return array_reduce(
-            $this->inputSources,
-            fn ($carry, $source) =>
-                array_merge($carry, match ($source) {
-                    'COOKIE' => $request->cookies->all(),
-                    'POST' => $request->request->all(),
-                    'PARAMS' => $request->attributes->all(),
-                    'GET' => $request->query->all(),
-                    default => [],
-                }),
-            [],
+            array: $this->inputSources,
+            callback: fn($carry, $source) =>
+            array_merge($carry, match ($source) {
+                'COOKIE' => $request->cookies->all(),
+                'POST'   => $request->request->all(),
+                'PARAMS' => $request->attributes->all(),
+                'GET'    => $request->query->all(),
+                default  => [],
+            }),
+            initial: [],
         );
     }
 
@@ -152,29 +156,80 @@ abstract class BaseInputDto
 
         // Allow subclasses to preprocess values
 
-        return $dto->validated($groups)->normalize();
+        return $dto
+            // validate raw input values and throw appropriately in case of violations
+            ->validated($groups)
+            // cast the values to their respective types and return the DTO
+            ->normalizeToDto();
+    }
+
+    /**
+     * Get the attribute casts for the properties
+     *
+     * @return array
+     */
+    protected function getAttributeCasts(string $phase = CastTo::DTO): array
+    {
+        // Cache the casts to avoid reflection overhead
+        static $cache = [];
+
+        $class = static::class . "::" . $phase;
+        if (isset($casts[$class])) {
+            return $cache[$class];
+        }
+
+        $reflection = new \ReflectionClass($this);
+
+        foreach ($reflection->getProperties() as $property) {
+            foreach ($property->getAttributes(CastTo::class) as $attr) {
+                $instance = $attr->newInstance();
+                if ($instance->phase === $phase) {
+                    $casts[$property->getName()] = $instance->method;
+                }
+            }
+        }
+
+        return $cache[$class] = $casts ?? [];
     }
 
     /**
      * Cast properties to their respective types
      * For instance, to convert 'string' to 'int' or 'DateTimeImmutable'
      */
-    protected function normalize(array $fieldCasts = []): static
+    protected function normalizeToDto(?array $castsOverride = null): static
     {
-        $fieldCasts = array_merge($this->casts ?? [], $fieldCasts);
+        // Get the casts for the properties
+        $casts = $castsOverride ?? $this->getAttributeCasts(CastTo::DTO);
 
-        foreach ($fieldCasts as $property => $method) {
-            if ($this->filled[$property]) {
-                $this->$property = $this->$method($this->$property);
+        // Cast the properties to their respective types
+        foreach ($casts as $prop => $method) {
+            if ($this->filled[$prop]) {
+                $this->$prop = $this->$method($this->$prop);
             }
         }
 
         return $this;
     }
 
-    protected function modifyEntity(object $entity): void
+    // Apply entity-level casts
+    /**
+     * Apply casts (and possibly other transformations in subclasses) to
+     * properties in preparation to creating an entity instance.
+     * @param array $props
+     * @return array
+     */
+    protected function normalizeToEntity(?array $props = null): array
     {
-        // No-op in base class
+        // Props (key/vals) default to include all filled DTO fields
+        $props ??= $this->toArray(array_keys($this->filled));
+
+        foreach ($this->getAttributeCasts(CastTo::ENTITY) as $prop => $method) {
+            if (isset($props[$prop])) {
+                $props[$prop] = $this->$method($props[$prop]);
+            }
+        }
+
+        return $props;
     }
 
     /**
@@ -182,54 +237,90 @@ abstract class BaseInputDto
      *
      * Will auto-fill the entity's public properties with the DTO's public properties
      *
-     * @throws \LogicException
+     * @throws LogicException
      * @return object
      */
-    public function toEntity(): object
+    public function toEntity(array $context = []): object
     {
-        if (!isset(static::$entityClass)) {
-            throw new \LogicException(static::class . ' must define a static $entityClass');
-        }
-
-        // Create a new instance of the entity class
         $entity = new static::$entityClass();
-        // Get the public properties of the DTO subclass
-        $fillable = $this->getFillable();
-        // Get the public properties of the entity class
-        $targetProps = $this->getPropNames($entity);
-        // Get the intersection of the two arrays
-        $settableProps = array_intersect($fillable, $targetProps);
 
-        // Set the properties on the entity
-        foreach ($settableProps as $prop) {
-            if (property_exists($this, $prop)) {
-                $entity->{'set' . ucfirst($prop)}($this->$prop);
-            }
+        // Get properties already type-cast, ready to to be set on entity
+        $props = [...$this->normalizeToEntity(), ...$context];
+
+        $setters = $this->getEntitySetterMap($props, $entity);
+
+        // Merge in context props (relations, injected domain values)
+        foreach ($props as $prop => $value) {
+            $setters[$prop]($value);
         }
-
-        // Allow subclasses to preprocess values
-        $this->modifyEntity($entity);
 
         return $entity;
     }
 
-    public function toArray(): array
+
+    /**
+     *
+     * @param null|array $props
+     * @param object $entity
+     * @return Closure[]
+     * @throws LogicException
+     */
+    protected function getEntitySetterMap(?array $props = null, object $entity): array
     {
-        return array_intersect_key(
-            get_object_vars($this),
-            array_flip($this->getFillable()),
-        );
+        static $setterMap = [];
+        $classSetters = $setterMap[static::$entityClass] ??= [];
+
+        $entityReflection = new \ReflectionClass(static::$entityClass);
+
+        $map = [];
+        foreach ($props as $prop) {
+            if (isset($classSetters[$prop])) {
+                $map[$prop] = $classSetters[$prop];
+                continue;
+            }
+            try {
+                // Here we assume that DTO and entity have the same property names
+                // and that the entity has a setter for each property
+                if ($entityReflection->getMethod($setter = 'set' . ucfirst($prop))->isPublic()) {
+                    $setterMap[static::$entityClass][$prop] = $map[$prop] =
+                        static function (mixed $value) use ($entity, $setter) {
+                            $entity->$setter($value);
+                        };
+                    continue;
+                }
+            } catch (\ReflectionException $e) {
+                // No-op, fallback check below
+            }
+
+            try {
+                if ($entityReflection->getProperty($prop)->isPublic()) {
+                    $setterMap[static::$entityClass][$prop] = $map[$prop] =
+                        static function (mixed $value) use ($entity, $prop) {
+                            $entity->$prop = $value;
+                        };
+                    continue;
+                }
+            } catch (\ReflectionException $e) {
+                throw new LogicException("No public setter or property found for '{$prop}' in " . static::$entityClass);
+            }
+        }
+
+        return $map;
     }
 
     /**
-     * Convert a value to an integer or null
+     * Return an array of DTO properties corresponding to the given property names.
+     * If no property names are given, all public properties will be returned.
      *
-     * @param mixed $value
-     * @return int|null
+     * @param string[] $propNames
+     * @return array
      */
-    protected function intOrNull(mixed $value): ?int
+    public function toArray(?array $propNames = null): array
     {
-        return is_numeric($value) ? (int) $value : null;
+        $vars = get_object_vars($this);
+        $keys = $propNames ?? $this->getFillable();
+
+        return array_intersect_key($vars, array_flip($keys));
     }
 
     /**
@@ -244,7 +335,7 @@ abstract class BaseInputDto
             try {
                 return new \DateTimeImmutable($value);
             } catch (\Exception) {
-                throw new \LogicException('Invalid date format');
+                throw new LogicException('Invalid date format');
             }
         } elseif ($value instanceof \DateTimeImmutable) {
             return $value;
@@ -262,5 +353,16 @@ abstract class BaseInputDto
     protected function stringOrNull(mixed $value): ?string
     {
         return is_string($value) && $value !== '' ? $value : null;
+    }
+
+    /**
+     * Convert a value to an integer or null
+     *
+     * @param mixed $value
+     * @return int|null
+     */
+    protected function intOrNull(mixed $value): ?int
+    {
+        return is_numeric($value) ? (int)$value : null;
     }
 }
