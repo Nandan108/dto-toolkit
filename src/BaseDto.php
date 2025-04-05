@@ -4,6 +4,9 @@ namespace App\Dto;
 
 use App\Attribute\CastTo;
 use Doctrine\Common\Collections\ArrayCollection;
+use Nandan108\SymfonyDtoToolkit\Contracts\NormalizesInbound;
+use Nandan108\SymfonyDtoToolkit\Contracts\NormalizesOutbound;
+use Nandan108\SymfonyDtoToolkit\Traits\NormalizesFromAttributes;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Validator\Validation;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
@@ -12,7 +15,8 @@ use Closure;
 use LogicException;
 use ReflectionProperty;
 
-abstract class BaseInputDto
+
+abstract class BaseDto
 {
     private static ?ValidatorInterface $validator = null;
 
@@ -74,7 +78,7 @@ abstract class BaseInputDto
      * @throws ValidationException
      * @return static
      */
-    public function validated(array $groups = null): static
+    public function validate(array $groups = null): static
     {
         $violations = self::getValidator()->validate($this, null, $groups);
 
@@ -156,80 +160,15 @@ abstract class BaseInputDto
 
         // Allow subclasses to preprocess values
 
-        return $dto
-            // validate raw input values and throw appropriately in case of violations
-            ->validated($groups)
-            // cast the values to their respective types and return the DTO
-            ->normalizeToDto();
-    }
+        // validate raw input values and throw appropriately in case of violations
+        $dto->validate($groups);
 
-    /**
-     * Get the attribute casts for the properties
-     *
-     * @return array
-     */
-    protected function getAttributeCasts(string $phase = CastTo::DTO): array
-    {
-        // Cache the casts to avoid reflection overhead
-        static $cache = [];
-
-        $class = static::class . "::" . $phase;
-        if (isset($casts[$class])) {
-            return $cache[$class];
+        // cast the values to their respective types and return the DTO
+        if ($dto instanceof NormalizesInbound) {
+            $dto->normalizeInbound();
         }
 
-        $reflection = new \ReflectionClass($this);
-
-        foreach ($reflection->getProperties() as $property) {
-            foreach ($property->getAttributes(CastTo::class) as $attr) {
-                $instance = $attr->newInstance();
-                if ($instance->phase === $phase) {
-                    $casts[$property->getName()] = $instance->method;
-                }
-            }
-        }
-
-        return $cache[$class] = $casts ?? [];
-    }
-
-    /**
-     * Cast properties to their respective types
-     * For instance, to convert 'string' to 'int' or 'DateTimeImmutable'
-     */
-    protected function normalizeToDto(?array $castsOverride = null): static
-    {
-        // Get the casts for the properties
-        $casts = $castsOverride ?? $this->getAttributeCasts(CastTo::DTO);
-
-        // Cast the properties to their respective types
-        foreach ($casts as $prop => $method) {
-            if ($this->filled[$prop]) {
-                $this->$prop = $this->$method($this->$prop);
-            }
-        }
-
-        return $this;
-    }
-
-    // Apply entity-level casts
-    /**
-     * Apply casts (and possibly other transformations in subclasses) to
-     * properties in preparation to creating an entity instance.
-     * @param array $props
-     * @return array
-     */
-    protected function normalizeToEntity(?array $props = null): array
-    {
-        // Props (key/vals) default to include all filled DTO fields
-        $props ??= $this->toArray(array_keys($this->filled));
-
-        foreach ($this->getAttributeCasts(CastTo::ENTITY) as $prop => $method) {
-            if (isset($props[$prop])) {
-                $props[$prop] = $this->$method($props[$prop]);
-            }
-        }
-
-        return $props;
+        return $dto;
     }
 
     /**
@@ -244,8 +183,13 @@ abstract class BaseInputDto
     {
         $entity = new static::$entityClass();
 
+        if ($this instanceof NormalizesOutbound) {
+            $props = $this->normalizeOutbound($this->toArray(array_flip($this->filled)));
+        } else {
+            $props = $this->toArray();
+        }
         // Get properties already type-cast, ready to to be set on entity
-        $props = [...$this->normalizeToEntity(), ...$context];
+        $props = [...$props, ...$context];
 
         $setters = $this->getEntitySetterMap($props, $entity);
 
@@ -256,7 +200,6 @@ abstract class BaseInputDto
 
         return $entity;
     }
-
 
     /**
      *
@@ -323,46 +266,4 @@ abstract class BaseInputDto
         return array_intersect_key($vars, array_flip($keys));
     }
 
-    /**
-     * Convert a value to a DateTimeImmutable or null
-     *
-     * @param mixed $value
-     * @return \DateTimeImmutable|null
-     */
-    protected function dateTimeOrNull(?string $value): ?\DateTimeImmutable
-    {
-        if (is_string($value) && $value !== '') {
-            try {
-                return new \DateTimeImmutable($value);
-            } catch (\Exception) {
-                throw new LogicException('Invalid date format');
-            }
-        } elseif ($value instanceof \DateTimeImmutable) {
-            return $value;
-        }
-
-        return null;
-    }
-
-    /**
-     * Convert a value to a string or null
-     *
-     * @param mixed $value
-     * @return string|null
-     */
-    protected function stringOrNull(mixed $value): ?string
-    {
-        return is_string($value) && $value !== '' ? $value : null;
-    }
-
-    /**
-     * Convert a value to an integer or null
-     *
-     * @param mixed $value
-     * @return int|null
-     */
-    protected function intOrNull(mixed $value): ?int
-    {
-        return is_numeric($value) ? (int)$value : null;
-    }
 }

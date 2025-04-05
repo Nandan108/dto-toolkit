@@ -1,17 +1,28 @@
 <?php
 
-namespace App\Attribute;
+namespace  Nandan108\SymfonyDtoToolkit\Attribute;
 
 use Attribute;
 
-#[Attribute(Attribute::TARGET_PROPERTY | Attribute::IS_REPEATABLE)]
+/**
+ * Defines a casting method for a DTO property during normalization.
+ *
+ * Usage:
+ *   #[CastTo('SomeType')]
+ *   public string|SomeType|null $property;
+ *
+ * This will call the method castToSomeType($value) on the DTO.
+ *
+ * - The provided value must match the suffix of a method named castTo{$value}()
+ * - The optional `$outbound` flag specifies if the cast is applied during output
+ * normalization, meaning before returning an entity or array.
+ */
+ #[Attribute(Attribute::TARGET_PROPERTY | Attribute::IS_REPEATABLE)]
 class CastTo
 {
-    public const DTO = 'dto';
-    public const ENTITY = 'entity';
-
     public function __construct(
         public string $method,
-        public string $phase = self::DTO
+        public bool $outbound = false,
+        public array $args = [],
     ) {}
 }
