@@ -262,4 +262,42 @@ abstract class BaseDto
         return array_intersect_key($vars, array_flip($keys));
     }
 
+    /**
+     * Fill the DTO with the given values.
+     *
+     * This method will set the value of given properties and mark them as filled.
+     * This means that they will be included in further processing such as
+     * normalization, export, or entity mapping.
+     *
+     * @param array $values
+     * @return static
+     */
+    public function fill(array $values): static
+    {
+        foreach ($values as $key => $value) {
+            $this->$key         = $value;
+            $this->filled[$key] = true;
+        }
+
+        return $this;
+    }
+
+    /**
+     * Unmarks the given properties as filled.
+     *
+     * This does not modify the current values of the properties,
+     * but they will be excluded from further processing such as
+     * normalization, export, or entity mapping.
+     *
+     * @param array $props
+     * @return static
+     */
+    public function unfill(array $props): static
+    {
+        foreach ($props as $key) {
+            unset($this->filled[$key]);
+        }
+
+        return $this;
+    }
 }
