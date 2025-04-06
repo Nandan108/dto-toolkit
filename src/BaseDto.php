@@ -184,7 +184,7 @@ abstract class BaseDto
         $entity = new static::$entityClass();
 
         if ($this instanceof NormalizesOutbound) {
-            $props = $this->normalizeOutbound($this->toArray(array_flip($this->filled)));
+            $props = $this->normalizeOutbound($this->toArray());
         } else {
             $props = $this->toArray();
         }
@@ -253,7 +253,7 @@ abstract class BaseDto
 
     /**
      * Return an array of DTO properties corresponding to the given property names.
-     * If no property names are given, all public properties will be returned.
+     * If no property names are given, all public, filled properties will be returned.
      *
      * @param string[] $propNames
      * @return array
@@ -261,7 +261,7 @@ abstract class BaseDto
     public function toArray(?array $propNames = null): array
     {
         $vars = get_object_vars($this);
-        $keys = $propNames ?? $this->getFillable();
+        $keys = $propNames ?? array_flip($this->filled);
 
         return array_intersect_key($vars, array_flip($keys));
     }
