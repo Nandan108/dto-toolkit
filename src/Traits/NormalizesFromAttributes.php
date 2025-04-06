@@ -11,7 +11,7 @@ trait NormalizesFromAttributes
     {
         foreach ($this->getAttributeCasts(outbound: false) as $prop => $method) {
             if (!empty($this->filled[$prop])) {
-                $this->$prop = $this->$method($this->$prop);
+                $this->$prop = $method($this->$prop);
             }
         }
 

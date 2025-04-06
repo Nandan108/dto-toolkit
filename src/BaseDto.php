@@ -1,17 +1,13 @@
 <?php
 
-namespace App\Dto;
+namespace Nandan108\SymfonyDtoToolkit;
 
-use App\Attribute\CastTo;
-use Doctrine\Common\Collections\ArrayCollection;
 use Nandan108\SymfonyDtoToolkit\Contracts\NormalizesInbound;
 use Nandan108\SymfonyDtoToolkit\Contracts\NormalizesOutbound;
-use Nandan108\SymfonyDtoToolkit\Traits\NormalizesFromAttributes;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Validator\Validation;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use App\Exception\ValidationException;
-use Closure;
 use LogicException;
 use ReflectionProperty;
 
@@ -208,7 +204,7 @@ abstract class BaseDto
      * @return Closure[]
      * @throws LogicException
      */
-    protected function getEntitySetterMap(?array $props = null, object $entity): array
+    protected function getEntitySetterMap(?array $props, object $entity): array
     {
         static $setterMap = [];
         $classSetters = $setterMap[static::$entityClass] ??= [];

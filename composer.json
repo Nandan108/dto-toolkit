@@ -17,11 +17,19 @@
             "Nandan108\\SymfonyDtoToolkit\\": "src/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
     "authors": [
         {
             "name": "Samuel de Rougemont",
             "email": "nandan108@gmail.com"
         }
     ],
+    "scripts": {
+        "test": "./vendor/bin/phpunit"
+    },
     "minimum-stability": "stable"
 }
