@@ -30,8 +30,9 @@ class CastTo
     /**
      * Create a caster closure for the given method
      *
-     * @param mixed $value The value to cast
-     * @return mixed The casted value
+     * @param mixed $dto The DTO instance
+     * @throws \LogicException If the method does not exist
+     * @return \Closure A closure that takes a value to cast calls the casting method and returns the result.
      */
     public function getCaster(BaseDto $dto): mixed
     {
@@ -42,5 +43,29 @@ class CastTo
         }
 
         return fn($value) => $dto->$method($value, ...$this->args);
+    }
+
+    public static function getCastingClosureMap(
+        BaseDto $dto,
+        bool $outbound = false,
+    ): array {
+        static $cache = [];
+
+        $reflection = new \ReflectionClass($dto);
+        $dtoClass = $reflection->getName();
+        $casts = &$cache[$dtoClass];
+
+        if (!isset($casts)) {
+            $casts = [false => [], true => []];
+            foreach ($reflection->getProperties() as $property) {
+                foreach ($property->getAttributes(static::class) as $attr) {
+                    /** @var CastTo $instance */
+                    $instance = $attr->newInstance();
+                    $casts[$instance->outbound][$property->getName()] = $instance->getCaster($dto);
+                }
+            }
+        }
+
+        return $casts[$outbound];
     }
 }

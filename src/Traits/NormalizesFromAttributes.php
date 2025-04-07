@@ -9,7 +9,9 @@ trait NormalizesFromAttributes
 {
     public function normalizeInbound(): static
     {
-        foreach ($this->getAttributeCasts(outbound: false) as $prop => $method) {
+        $casters = CastTo::getCastingClosureMap($this, outbound: false);
+
+        foreach ($casters as $prop => $method) {
             if (!empty($this->filled[$prop])) {
                 $this->$prop = $method($this->$prop);
             }
@@ -20,12 +22,12 @@ trait NormalizesFromAttributes
 
     public function normalizeOutbound(array $props): array
     {
-        $casts      = $this->getAttributeCasts(outbound: true);
+        $casters    = CastTo::getCastingClosureMap($this, outbound: true);
         $normalized = [];
 
         foreach ($props as $prop => $value) {
-            if (isset($casts[$prop])) {
-                $normalized[$prop] = $casts[$prop]($value);
+            if (isset($casters[$prop])) {
+                $normalized[$prop] = $casters[$prop]($value);
             } else {
                 $normalized[$prop] = $value;
             }
@@ -33,31 +35,6 @@ trait NormalizesFromAttributes
 
         return $normalized;
     }
-
-    /**
-     * Inspects property attributes and collects applicable casting methods.
-     */
-    protected function getAttributeCasts(bool $outbound = false): array
-    {
-        static $cache = [];
-
-        if (isset($cache[$outbound])) {
-            return $cache[$outbound];
-        }
-
-        $casts = [];
-
-        $reflection = new \ReflectionClass($this);
-
-        foreach ($reflection->getProperties() as $property) {
-            foreach ($property->getAttributes(CastTo::class) as $attr) {
-                $casts[$property->getName()] = $attr->newInstance()->getCaster($this);
-            }
-        }
-
-        return $cache[$outbound] = $casts;
-    }
-
 
     /**
      * Convert a value to a DateTimeImmutable or null
