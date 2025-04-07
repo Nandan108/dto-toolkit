@@ -10,11 +10,7 @@ use Nandan108\SymfonyDtoToolkit\BaseDto;
 use Nandan108\SymfonyDtoToolkit\Traits\NormalizesFromAttributes;
 use Symfony\Component\HttpFoundation\Request;
 
-class EntityClassToInstanciateFromName {
-    public ?string $someProp = null;
-    // no setter for email
-};
-
+/** @psalm-suppress UnusedClass */
 class BaseDtoTest extends TestCase
 {
     public function test_returns_normalized_properties(): void
@@ -126,24 +122,33 @@ class BaseDtoTest extends TestCase
             public string $name;
             #[CastTo('intOrNull')]
             public int|string $age;
+            #[CastTo('trimmedString')]
+            public ?string $email;
         };
 
         $dto->fill([
             'name' => $trimmedName,
             'age'  => $intAge,
+            'email' => 'some@email',
         ]);
+
+        // un-mark email as 'filled'
+        $dto->unfill(['email']);
 
         $entity = $dto->toEntity(entity: $entity, context: ['id' => $id = 4]);
 
         $this->assertSame($trimmedName, $entity->name);
         $this->assertSame($intAge, $entity->age);
         $this->assertSame($id, $entity->id);
+        // email should not be set
+        $this->assertNull($entity->email);
     }
 
     public function test_dto_instanciates_new_entity_from_entityClass_property(): void
     {
         $dto = new class extends BaseDto {
             static protected ?string $entityClass = EntityClassToInstanciateFromName::class;
+            /** @psalm-suppress PossiblyUnusedProperty */
             public string $someProp;
         };
 
@@ -153,3 +158,10 @@ class BaseDtoTest extends TestCase
     }
 
 }
+
+/** @psalm-suppress UnusedClass */
+class EntityClassToInstanciateFromName {
+    /** @psalm-suppress PossiblyUnusedProperty */
+    public ?string $someProp = null;
+    // no setter for email
+};

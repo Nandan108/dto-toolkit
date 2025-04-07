@@ -23,6 +23,7 @@ class CastTo
 {
     public function __construct(
         public string $method,
+        /** @psalm-suppress PossiblyUnusedProperty */
         public bool $outbound = false,
         public array $args = [],
     ) {}

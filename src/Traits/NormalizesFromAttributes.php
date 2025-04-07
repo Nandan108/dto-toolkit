@@ -7,7 +7,7 @@ use Nandan108\SymfonyDtoToolkit\Attribute\CastTo;
 
 trait NormalizesFromAttributes
 {
-    public function normalizeInbound(): static
+    public function normalizeInbound(): void
     {
         $casters = CastTo::getCastingClosureMap($this, outbound: false);
 
@@ -16,8 +16,6 @@ trait NormalizesFromAttributes
                 $this->$prop = $method($this->$prop);
             }
         }
-
-        return $this;
     }
 
     public function normalizeOutbound(array $props): array

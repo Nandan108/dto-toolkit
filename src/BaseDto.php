@@ -32,9 +32,6 @@ abstract class BaseDto
     /** @var array[string] */
     public array $filled = [];
 
-    /** @var array[string] */
-    protected array $casts = [];
-
     /** @var class-string */
     protected static ?string $entityClass;
 
@@ -187,7 +184,7 @@ abstract class BaseDto
         // Get properties already type-cast, ready to to be set on entity
         $props = [...$props, ...$context];
 
-        $setters = $this->getEntitySetterMap($props, $entity);
+        $setters = $this->getEntitySetterMap(array_keys($props), $entity);
 
         // Merge in context props (relations, injected domain values)
         foreach ($props as $prop => $value) {
@@ -200,17 +197,24 @@ abstract class BaseDto
 
     protected function newEntityInstance(): object
     {
+        if (empty(static::$entityClass)) {
+            throw new LogicException('No entity class defined for DTO ' . get_class($this));
+        }
+        if (!class_exists(static::$entityClass)) {
+            throw new LogicException('Entity class ' . static::$entityClass . ' does not exist');
+        }
         return new static::$entityClass();
     }
 
     /**
+     * Get a map of closure setters for the given properties
      *
-     * @param null|array $props
+     * @param null|array $propNames
      * @param object $entity
-     * @return Closure[]
+     * @return \Closure[]
      * @throws LogicException
      */
-    protected function getEntitySetterMap(?array $props, object $entity): array
+    protected function getEntitySetterMap(?array $propNames, object $entity): array
     {
         $entityReflection = new \ReflectionClass($entity);
         $entityClass     = $entityReflection->getName();
@@ -219,7 +223,7 @@ abstract class BaseDto
         $classSetters = $setterMap[$entityClass] ??= [];
 
         $map = [];
-        foreach (array_keys($props) as $prop) {
+        foreach ($propNames as $prop) {
             if (isset($classSetters[$prop])) {
                 $map[$prop] = $classSetters[$prop];
                 continue;
@@ -298,6 +302,7 @@ abstract class BaseDto
      *
      * @param array $props
      * @return static
+     * @psalm-suppress PossiblyUnusedMethod
      */
     public function unfill(array $props): static
     {
