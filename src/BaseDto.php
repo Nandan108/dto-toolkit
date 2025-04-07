@@ -36,7 +36,7 @@ abstract class BaseDto
     protected array $casts = [];
 
     /** @var class-string */
-    protected static $entityClass;
+    protected static ?string $entityClass;
 
     /**
      * Get the names of the public properties of an object
@@ -175,9 +175,9 @@ abstract class BaseDto
      * @throws LogicException
      * @return object
      */
-    public function toEntity(array $context = []): object
+    public function toEntity($entity = null, array $context = []): object
     {
-        $entity = new static::$entityClass();
+        $entity ??= $this->newEntityInstance();
 
         if ($this instanceof NormalizesOutbound) {
             $props = $this->normalizeOutbound($this->toArray());
@@ -191,10 +191,16 @@ abstract class BaseDto
 
         // Merge in context props (relations, injected domain values)
         foreach ($props as $prop => $value) {
-            $setters[$prop]($value);
+            $method = $setters[$prop];
+            $method($value);
         }
 
         return $entity;
+    }
+
+    protected function newEntityInstance(): object
+    {
+        return new static::$entityClass();
     }
 
     /**
@@ -206,13 +212,14 @@ abstract class BaseDto
      */
     protected function getEntitySetterMap(?array $props, object $entity): array
     {
-        static $setterMap = [];
-        $classSetters = $setterMap[static::$entityClass] ??= [];
+        $entityReflection = new \ReflectionClass($entity);
+        $entityClass     = $entityReflection->getName();
 
-        $entityReflection = new \ReflectionClass(static::$entityClass);
+        static $setterMap = [];
+        $classSetters = $setterMap[$entityClass] ??= [];
 
         $map = [];
-        foreach ($props as $prop) {
+        foreach (array_keys($props) as $prop) {
             if (isset($classSetters[$prop])) {
                 $map[$prop] = $classSetters[$prop];
                 continue;
@@ -221,7 +228,7 @@ abstract class BaseDto
                 // Here we assume that DTO and entity have the same property names
                 // and that the entity has a setter for each property
                 if ($entityReflection->getMethod($setter = 'set' . ucfirst($prop))->isPublic()) {
-                    $setterMap[static::$entityClass][$prop] = $map[$prop] =
+                    $setterMap[$entityClass][$prop] = $map[$prop] =
                         static function (mixed $value) use ($entity, $setter) {
                             $entity->$setter($value);
                         };
@@ -233,14 +240,14 @@ abstract class BaseDto
 
             try {
                 if ($entityReflection->getProperty($prop)->isPublic()) {
-                    $setterMap[static::$entityClass][$prop] = $map[$prop] =
+                    $setterMap[$entityClass][$prop] = $map[$prop] =
                         static function (mixed $value) use ($entity, $prop) {
                             $entity->$prop = $value;
                         };
                     continue;
                 }
             } catch (\ReflectionException $e) {
-                throw new LogicException("No public setter or property found for '{$prop}' in " . static::$entityClass);
+                throw new LogicException("No public setter or property found for '{$prop}' in " . $entityClass);
             }
         }
 
@@ -257,7 +264,7 @@ abstract class BaseDto
     public function toArray(?array $propNames = null): array
     {
         $vars = get_object_vars($this);
-        $keys = $propNames ?? array_flip($this->filled);
+        $keys = $propNames ?? array_keys($this->filled);
 
         return array_intersect_key($vars, array_flip($keys));
     }

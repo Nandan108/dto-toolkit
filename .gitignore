@@ -3,4 +3,7 @@ composer.lock
 
 .vscode/
 .env
+
+/coverage
+.phpunit.cache
 .phpunit.result.cache

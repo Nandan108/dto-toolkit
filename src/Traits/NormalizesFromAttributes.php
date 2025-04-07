@@ -25,7 +25,7 @@ trait NormalizesFromAttributes
 
         foreach ($props as $prop => $value) {
             if (isset($casts[$prop])) {
-                $normalized[$prop] = $this->{$casts[$prop]}($value);
+                $normalized[$prop] = $casts[$prop]($value);
             } else {
                 $normalized[$prop] = $value;
             }
@@ -51,18 +51,7 @@ trait NormalizesFromAttributes
 
         foreach ($reflection->getProperties() as $property) {
             foreach ($property->getAttributes(CastTo::class) as $attr) {
-                $attrInstance = $attr->newInstance();
-                if ($attrInstance->outbound === $outbound) {
-                    $method = 'castTo' . ucfirst($attrInstance->method);
-                    if (!method_exists($this, $method)) {
-                        throw new LogicException(
-                            "Missing method '{$method}' for #[CastTo('{$attrInstance->method}')]" .
-                            " on property \${$property->getName()} in " . static::class
-                        );
-                    }
-
-                    $casts[$property->getName()] = fn($value) => $this->$method($value, ...$attrInstance->args);
-                }
+                $casts[$property->getName()] = $attr->newInstance()->getCaster($this);
             }
         }
 
@@ -76,15 +65,20 @@ trait NormalizesFromAttributes
      * @param mixed $value
      * @return \DateTimeImmutable|null
      */
-    protected function castToDateTimeOrNull(?string $value): ?\DateTimeImmutable
+    public function castToDateTimeOrNull(mixed $value): ?\DateTimeImmutable
     {
+        if (empty($value)) {
+            return null;
+        }
         if (is_string($value) && $value !== '') {
             try {
                 return new \DateTimeImmutable($value);
             } catch (\Exception) {
-                throw new LogicException('Invalid date format');
+                return null;
+                // throw new LogicException('Invalid date format');
             }
-        } elseif ($value instanceof \DateTimeImmutable) {
+        }
+        if ($value instanceof \DateTimeImmutable) {
             return $value;
         }
 
@@ -97,9 +91,13 @@ trait NormalizesFromAttributes
      * @param mixed $value
      * @return string|null
      */
-    protected function castToStringOrNull(mixed $value): ?string
+    public function castToStringOrNull(mixed $value): ?string
     {
-        return is_string($value) && $value !== '' ? $value : null;
+        return is_string($value) && $value !== '' ||
+            is_numeric($value) ||
+            is_object($value && method_exists($value, '__toString'))
+            ? (string)$value
+            : null;
     }
 
     /**
@@ -108,17 +106,17 @@ trait NormalizesFromAttributes
      * @param mixed $value
      * @return int|null
      */
-    protected function castToIntOrNull(mixed $value): ?int
+    public function castToIntOrNull(mixed $value): ?int
     {
         return is_numeric($value) ? (int)$value : null;
     }
 
-    protected function castToFloatOrNull(mixed $value): ?float
+    public function castToFloatOrNull(mixed $value): ?float
     {
         return is_numeric($value) ? (float)$value : null;
     }
 
-    protected function castToBoolOrNull(mixed $value): ?bool
+    public function castToBoolOrNull(mixed $value): ?bool
     {
         if (is_bool($value)) {
             return $value;
@@ -137,7 +135,7 @@ trait NormalizesFromAttributes
      * @param mixed $value
      * @return array
      */
-    protected function castToTrimmedString(mixed $value): string
+    public function castToTrimmedString(mixed $value): string
     {
         return is_string($value) ? trim($value) : '';
     }
@@ -151,7 +149,7 @@ trait NormalizesFromAttributes
      * @param string $delimiter
      * @return array
      */
-    protected function castToArrayFromCSV(string $value, string $delimiter = ','): array
+    public function castToArrayFromCSV(string $value, string $delimiter = ','): array
     {
         return array_map('trim', explode($delimiter, $value));
     }
@@ -162,13 +160,13 @@ trait NormalizesFromAttributes
      * @param mixed $value
      * @return array
      */
-    protected function castToArrayOrEmpty(mixed $value): array
+    public function castToArrayOrEmpty(mixed $value): array
     {
         if (is_array($value)) {
             return $value;
         }
 
-        if (method_exists($value, 'toArray')) {
+        if (is_object($value) && method_exists($value, 'toArray')) {
             return $value->toArray();
         }
 
