@@ -33,8 +33,9 @@
         }
     ],
     "scripts": {
+        "psalm": "./vendor/bin/psalm",
         "test": "./vendor/bin/phpunit",
-        "testAndCover": "./vendor/bin/phpunit --coverage-html coverage"
+        "testAndCover": "./vendor/bin/phpunit --coverage-text --coverage-html coverage"
     },
     "minimum-stability": "stable"
 }

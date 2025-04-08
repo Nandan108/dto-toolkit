@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Exception;
+namespace Nandan108\SymfonyDtoToolkit\Exception;
 
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
@@ -8,35 +8,29 @@ use Symfony\Component\Validator\ConstraintViolationListInterface;
 
 class ValidationException extends \RuntimeException implements HttpExceptionInterface
 {
-    public ConstraintViolationListInterface $violations;
-
     /**
      * Returns the status code.
+     *
+     * @return int
      */
-    public function getStatusCode() : int
+    #[\Override]
+    public function getStatusCode(): int
     {
         return Response::HTTP_UNPROCESSABLE_ENTITY;
     }
 
     /**
-     * Returns response headers.
+     * Returns headers to be added to http response.
      */
+    #[\Override]
     public function getHeaders(): array
     {
         return [];
     }
 
-    protected $message = 'Validation failed';
-
-    public function __construct(ConstraintViolationListInterface $violations)
-    {
-        $this->violations = $violations;
-
-        $messages = [];
-        foreach ($violations as $v) {
-            $messages[] = sprintf('%s: %s', $v->getPropertyPath(), $v->getMessage());
-        }
-
-        parent::__construct('Validation failed: ' . implode('; ', $messages));
+    public function __construct(
+        public ConstraintViolationListInterface $violations,
+    ) {
+        parent::__construct('Validation failed');
     }
 }

@@ -2,7 +2,7 @@
 
 namespace Nandan108\SymfonyDtoToolkit\Contracts;
 
-interface NormalizesInbound
+interface NormalizesInboundInterface
 {
     /**
      * Apply transformations (casting/coerctions) to input values to DTO properties.

@@ -2,7 +2,7 @@
 
 namespace Nandan108\SymfonyDtoToolkit\Contracts;
 
-interface NormalizesOutbound
+interface NormalizesOutboundInterface
 {
     /**
      * Apply outbound transformations to DTO values before mapping to array/entity.

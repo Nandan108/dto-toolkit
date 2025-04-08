@@ -2,10 +2,9 @@
 
 ## To Do
 
-26. Extract trait + interface for CreatesFromArray
-27. Extract trait CreatesFromRequest (uses CreatesFromArray)
-30. Add support for CasterInterface (refactor CastTo to take care of returning a casting Closure)
+30. Add support for CasterInterface
 19. Add support for chaining multiple #[CastTo] attributes (Attribute::IS_REPEATABLE)
+19. Add support for #[CastArrayItemsTo] (extends #[CastTo]) attributes
 31. Add strict support to #[CastTo] attribute
     > Add optional strict: bool flag to CastTo, enabling exceptions to be thrown on casting failure instead of silently returning null.
     - Requires updating CastTo to accept a strict param
@@ -34,7 +33,6 @@
 22. Add #[CustomSetter('setSomethingSpecial')] to override default name
 23. Add toOutputArray() for array output with application of outbound casting
 24. Refactor toEntity() to base it on toOutputArray() + getEntitySetterMap() + using setters
-25. Extract trait + interface for ValidatesInput
 28. Add nested DTO support with recursive normalization + validation
 29. CastTo for array items (CastArrayItemsTo Attribute or $applyToArrayItems argument?)
 
@@ -58,4 +56,7 @@
 16. Add support for #[CastTo(..., outbound: true)] on output DTOs
 17. Allow parameterized casts (e.g. separator for CSV)
 18. Implement unit tests for existing features (and add testing to DoD)
+25. Extract trait + interface for ValidatesInput
+26. Extract trait + interface for CreatesFromArray
+27. Extract trait CreatesFromRequest (uses CreatesFromArray)
 

@@ -2,20 +2,10 @@
 
 namespace Nandan108\SymfonyDtoToolkit;
 
-use Nandan108\SymfonyDtoToolkit\Contracts\NormalizesInbound;
-use Nandan108\SymfonyDtoToolkit\Contracts\NormalizesOutbound;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Validator\Validation;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
-use App\Exception\ValidationException;
-use LogicException;
-use ReflectionProperty;
-
+use Nandan108\SymfonyDtoToolkit\Contracts\NormalizesOutboundInterface;
 
 abstract class BaseDto
 {
-    private static ?ValidatorInterface $validator = null;
-
     /**
      * List of sources to get the input from.
      * Values possible: COOKIE, POST, PARAMS, GET
@@ -24,15 +14,28 @@ abstract class BaseDto
      *
      * @var array
      */
-    protected array $inputSources = ['POST'];
+    protected array $_inputSources = ['POST'];
 
-    /** @var array[string] */
+    /**
+     * List of properties that can be filled.
+     *
+     * @var array[string]
+     **/
     protected ?array $fillable = null;
 
-    /** @var array[string] */
+    /**
+     * List of properties that have been filled.
+     * The key is the property name, and the value is always true.
+     * @var array[true]
+     * */
     public array $filled = [];
 
-    /** @var class-string */
+    /**
+     * The class name of the entity that this DTO maps to.
+     * Optional since not all DTOs are mapped to entities.
+     *
+     * @var class-string
+     **/
     protected static ?string $entityClass;
 
     /**
@@ -46,12 +49,25 @@ abstract class BaseDto
         $reflectionClass = new \ReflectionClass($objectOrClass ?? $this);
 
         $props = [];
-        foreach ($reflectionClass->getProperties(ReflectionProperty::IS_PUBLIC) as $prop) {
+        foreach ($reflectionClass->getProperties(\ReflectionProperty::IS_PUBLIC) as $prop) {
             if ($prop->isPublic()) {
                 $props[] = $prop->getName();
             }
         }
         return $props;
+    }
+
+
+
+    public function toOutboundArray(): array
+    {
+        $outbound = $this->toArray();
+
+        if ($this instanceof NormalizesOutboundInterface) {
+            return $this->normalizeOutbound($outbound);
+        }
+
+        return $outbound;
     }
 
     /**
@@ -62,200 +78,6 @@ abstract class BaseDto
     protected function getFillable(): array
     {
         return $this->fillable ??= $this->getPublicPropNames($this);
-    }
-
-    /**
-     * Validate the DTO
-     *
-     * @param array|null $groups
-     * @throws ValidationException
-     * @return static
-     */
-    public function validate(array $groups = null): static
-    {
-        $violations = self::getValidator()->validate($this, null, $groups);
-
-        if (count($violations) > 0) {
-            throw new ValidationException($violations);
-        }
-
-        return $this;
-    }
-
-    /**
-     * Get the validator instance
-     *
-     * @return ValidatorInterface
-     */
-    private static function getValidator(): ValidatorInterface
-    {
-        if (!self::$validator) {
-            self::$validator = Validation::createValidatorBuilder()
-                ->enableAttributeMapping()
-                ->getValidator();
-        }
-
-        return self::$validator;
-    }
-
-    /**
-     * Get the request's input according to the input sources
-     *
-     * @param Request $request
-     * @return array
-     */
-    public function getRequestInput(Request $request): array
-    {
-        return array_reduce(
-            array: $this->inputSources,
-            callback: fn($carry, $source) =>
-            array_merge($carry, match ($source) {
-                'COOKIE' => $request->cookies->all(),
-                'POST'   => $request->request->all(),
-                'PARAMS' => $request->attributes->all(),
-                'GET'    => $request->query->all(),
-                default  => [],
-            }),
-            initial: [],
-        );
-    }
-
-    /**
-     * Get the fillable data from the request
-     *
-     * Can be overriden when special treatment is needed.
-     *
-     * @param Request $request
-     * @return array
-     */
-    public function getFillableInput(Request $request): array
-    {
-        return array_intersect_key(
-            self::getRequestInput(request: $request),
-            array_flip($this->getFillable()),
-        );
-    }
-
-    /**
-     * Create a new instance of the DTO from a request
-     *
-     * @param Request $request
-     * @return static
-     */
-    public static function fromRequest(Request $request, array $groups = null): static
-    {
-        $dto = new static();
-
-        foreach ($dto->getFillableInput($request) as $property => $value) {
-            $dto->{$property}       = $value;
-            $dto->filled[$property] = true;
-        }
-
-        // Allow subclasses to preprocess values
-
-        // validate raw input values and throw appropriately in case of violations
-        $dto->validate($groups);
-
-        // cast the values to their respective types and return the DTO
-        if ($dto instanceof NormalizesInbound) {
-            $dto->normalizeInbound();
-        }
-
-        return $dto;
-    }
-
-    /**
-     * Convert the DTO to an entity
-     *
-     * Will auto-fill the entity's public properties with the DTO's public properties
-     *
-     * @throws LogicException
-     * @return object
-     */
-    public function toEntity($entity = null, array $context = []): object
-    {
-        $entity ??= $this->newEntityInstance();
-
-        if ($this instanceof NormalizesOutbound) {
-            $props = $this->normalizeOutbound($this->toArray());
-        } else {
-            $props = $this->toArray();
-        }
-        // Get properties already type-cast, ready to to be set on entity
-        $props = [...$props, ...$context];
-
-        $setters = $this->getEntitySetterMap(array_keys($props), $entity);
-
-        // Merge in context props (relations, injected domain values)
-        foreach ($props as $prop => $value) {
-            $method = $setters[$prop];
-            $method($value);
-        }
-
-        return $entity;
-    }
-
-    protected function newEntityInstance(): object
-    {
-        if (empty(static::$entityClass)) {
-            throw new LogicException('No entity class defined for DTO ' . get_class($this));
-        }
-        if (!class_exists(static::$entityClass)) {
-            throw new LogicException('Entity class ' . static::$entityClass . ' does not exist');
-        }
-        return new static::$entityClass();
-    }
-
-    /**
-     * Get a map of closure setters for the given properties
-     *
-     * @param null|array $propNames
-     * @param object $entity
-     * @return \Closure[]
-     * @throws LogicException
-     */
-    protected function getEntitySetterMap(?array $propNames, object $entity): array
-    {
-        $entityReflection = new \ReflectionClass($entity);
-        $entityClass     = $entityReflection->getName();
-
-        static $setterMap = [];
-        $classSetters = $setterMap[$entityClass] ??= [];
-
-        $map = [];
-        foreach ($propNames as $prop) {
-            if (isset($classSetters[$prop])) {
-                $map[$prop] = $classSetters[$prop];
-                continue;
-            }
-            try {
-                // Here we assume that DTO and entity have the same property names
-                // and that the entity has a setter for each property
-                if ($entityReflection->getMethod($setter = 'set' . ucfirst($prop))->isPublic()) {
-                    $setterMap[$entityClass][$prop] = $map[$prop] =
-                        static function (mixed $value) use ($entity, $setter) {
-                            $entity->$setter($value);
-                        };
-                    continue;
-                }
-            } catch (\ReflectionException $e) {
-                // No-op, fallback check below
-            }
-
-            try {
-                if ($entityReflection->getProperty($prop)->isPublic()) {
-                    $setterMap[$entityClass][$prop] = $map[$prop] =
-                        static function (mixed $value) use ($entity, $prop) {
-                            $entity->$prop = $value;
-                        };
-                    continue;
-                }
-            } catch (\ReflectionException $e) {
-                throw new LogicException("No public setter or property found for '{$prop}' in " . $entityClass);
-            }
-        }
-
-        return $map;
     }
 
     /**

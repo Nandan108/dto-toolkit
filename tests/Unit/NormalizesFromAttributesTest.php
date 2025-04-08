@@ -1,11 +1,11 @@
 <?php
 
-namespace Tests\Unit\Dto;
+namespace Tests\Unit;
 
 use DateTimeImmutable;
 use Mockery;
 use Nandan108\SymfonyDtoToolkit\Attribute\CastTo;
-use Nandan108\SymfonyDtoToolkit\Contracts\NormalizesOutbound;
+use Nandan108\SymfonyDtoToolkit\Contracts\NormalizesOutboundInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Nandan108\SymfonyDtoToolkit\BaseDto;
@@ -14,6 +14,35 @@ use Nandan108\SymfonyDtoToolkit\Traits\NormalizesFromAttributes;
 
 class NormalizesFromAttributesTest extends TestCase
 {
+    public function test_returns_normalized_properties(): void
+    {
+        $dto = new class extends BaseDto
+            // implements NormalizesInbound
+        {
+            use NormalizesFromAttributes;
+
+            #[CastTo('intOrNull')]
+            public string|int|null $age;
+        };
+
+        // Case 1: Assert that properties that are not "filled" are not normalized
+        $dto->age = "30";
+        $dto->normalizeInbound();
+        $this->assertSame("30", $dto->age);
+
+        // Case 2: Null input
+        $dto->fill(['age' => null])->normalizeInbound();
+        $this->assertNull($dto->age);
+
+        // Case 3: Assert that properties that are "filled" are normalized
+        $dto->fill(['age' => "30"])->normalizeInbound();
+        $this->assertSame(30, $dto->age);
+
+        // Case 4: Assert that invalid values are set to null
+        $dto->fill(['age' => "not-a-number"])->normalizeInbound();
+        $this->assertNull($dto->age);
+    }
+
     #[DataProvider('builtinCastProvider')]
     public function test_builtin_cast_methods(string $method, array $input, mixed $expected): void
     {
@@ -35,6 +64,54 @@ class NormalizesFromAttributesTest extends TestCase
         } else {
             $this->assertSame($expected, $result);
         }
+    }
+
+
+    public function test_normalize_outbound_applies_casts_to_tagged_properties(): void
+    {
+        $dto = new class extends BaseDto implements NormalizesOutboundInterface {
+            use NormalizesFromAttributes;
+
+            #[CastTo('trimmedString', outbound: true)]
+            public string $title;
+
+            #[CastTo('stringOrNull', outbound: true)]
+            public int|string|null $categoryId;
+
+            #[CastTo('stringOrNull', outbound: true)]
+            private int|string|null $privatePropWithSetter;
+            public function setPrivatePropWithSetter($value): void {
+                $this->privatePropWithSetter = $value;
+            }
+
+            public string $untouched;
+        };
+
+        $normalized = $dto->normalizeOutbound([
+            'title' => '  Hello  ',
+            'categoryId' => 42,
+            'untouched' => 'value',
+            'privatePropWithSetter' => 'val',
+        ]);
+
+        $this->assertSame('Hello', $normalized['title']);
+        $this->assertSame('42', $normalized['categoryId']);
+        $this->assertSame('value', $normalized['untouched']); // unchanged
+        $this->assertSame('val', $normalized['privatePropWithSetter']);
+    }
+
+    public function test_get_caster_throws_when_method_missing(): void
+    {
+        $dto = new class extends BaseDto {
+            // Note: no castToSomething method defined
+        };
+
+        $cast = new CastTo('something');
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage("Missing method 'castToSomething' for #[CastTo('something')]");
+
+        $cast->getCaster($dto);
     }
 
     public static function builtinCastProvider(): array
@@ -80,52 +157,4 @@ class NormalizesFromAttributesTest extends TestCase
             /*22*/['castToDateTimeOrNull', [new \stdClass()], null],
         ];
     }
-
-    public function test_normalize_outbound_applies_casts_to_tagged_properties(): void
-    {
-        $dto = new class extends BaseDto implements NormalizesOutbound {
-            use NormalizesFromAttributes;
-
-            #[CastTo('trimmedString', outbound: true)]
-            public string $title;
-
-            #[CastTo('stringOrNull', outbound: true)]
-            public int|string|null $categoryId;
-
-            #[CastTo('stringOrNull', outbound: true)]
-            private int|string|null $privatePropWithSetter;
-            public function setPrivatePropWithSetter($value): void {
-                $this->privatePropWithSetter = $value;
-            }
-
-            public string $untouched;
-        };
-
-        $normalized = $dto->normalizeOutbound([
-            'title' => '  Hello  ',
-            'categoryId' => 42,
-            'untouched' => 'value',
-            'privatePropWithSetter' => 'val',
-        ]);
-
-        $this->assertSame('Hello', $normalized['title']);
-        $this->assertSame('42', $normalized['categoryId']);
-        $this->assertSame('value', $normalized['untouched']); // unchanged
-        $this->assertSame('val', $normalized['privatePropWithSetter']);
-    }
-
-    public function test_get_caster_throws_when_method_missing(): void
-    {
-        $dto = new class extends BaseDto {
-            // Note: no castToSomething method defined
-        };
-
-        $cast = new CastTo('something');
-
-        $this->expectException(\LogicException::class);
-        $this->expectExceptionMessage("Missing method 'castToSomething' for #[CastTo('something')]");
-
-        $cast->getCaster($dto);
-    }
-
 }
