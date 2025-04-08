@@ -2,7 +2,6 @@
 
 ## To Do
 
-30. Add support for CasterInterface
 19. Add support for chaining multiple #[CastTo] attributes (Attribute::IS_REPEATABLE)
 19. Add support for #[CastArrayItemsTo] (extends #[CastTo]) attributes
 31. Add strict support to #[CastTo] attribute
@@ -59,4 +58,5 @@
 25. Extract trait + interface for ValidatesInput
 26. Extract trait + interface for CreatesFromArray
 27. Extract trait CreatesFromRequest (uses CreatesFromArray)
+30. Add support for CasterInterface
 

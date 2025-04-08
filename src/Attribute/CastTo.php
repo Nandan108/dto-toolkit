@@ -4,6 +4,7 @@ namespace  Nandan108\SymfonyDtoToolkit\Attribute;
 
 use Attribute;
 use Nandan108\SymfonyDtoToolkit\BaseDto;
+use Nandan108\SymfonyDtoToolkit\Contracts\CasterInterface;
 
 /**
  * Defines a casting method for a DTO property during normalization.
@@ -21,11 +22,14 @@ use Nandan108\SymfonyDtoToolkit\BaseDto;
  #[Attribute(Attribute::TARGET_PROPERTY | Attribute::IS_REPEATABLE)]
 class CastTo
 {
+    static protected string $methodPrefix = 'castTo';
+
     public function __construct(
         public string $method,
         /** @psalm-suppress PossiblyUnusedProperty */
         public bool $outbound = false,
         public array $args = [],
+        public ?array $constructorArgs = null,
     ) {}
 
     /**
@@ -37,7 +41,48 @@ class CastTo
      */
     public function getCaster(BaseDto $dto): mixed
     {
-        $method = 'castTo' . ucfirst($this->method);
+
+        if (class_exists($this->method)) {
+            static $casterCache = [];
+
+            $className = $this->method;
+
+            if (!isset($casterCache[$className])) {
+
+                if (!is_subclass_of($className, CasterInterface::class)) {
+                    throw new \LogicException("Class '$className' must implement " . CasterInterface::class);
+                }
+
+                if ($this->constructorArgs !== null) {
+                    $instance = new $className(...$this->constructorArgs);
+                } else {
+                    $ref = new \ReflectionClass($className);
+                    $ctor = $ref->getConstructor();
+
+                    if (!$ctor || $ctor->getNumberOfRequiredParameters() === 0) {
+                        $instance = $ref->newInstance();
+                    } elseif (BaseDto::$casterResolver) {
+                        $instance = BaseDto::$casterResolver->resolve($className);
+                    } else {
+                        throw new \LogicException("Caster {$className} requires constructor args, but none were provided and no container is available.");
+                    }
+                }
+
+                $casterCache[$className] = ['instance' => $instance, 'casters' => []];
+            }
+
+            $serializedArgs = serialize($this->args);
+            $instance = $casterCache[$className]['instance'];
+            $args = $this->args;
+            $caster = $casterCache[$className]['casters'][$serializedArgs] ??=
+                function($value) use ($instance, $args) {
+                    return $instance->cast($value, ...$args);
+                };
+
+            return $caster;
+        }
+
+        $method = static::$methodPrefix . ucfirst($this->method);
 
         if (!method_exists($dto, $method)) {
             throw new \LogicException("Missing method '{$method}' for #[CastTo('{$this->method}')] in " . static::class);

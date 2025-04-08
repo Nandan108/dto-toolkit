@@ -35,7 +35,7 @@ trait CreatesFromArray
         // fill the DTO with the input values
         foreach ($input as $property => $value) {
             $dto->{$property}       = $value;
-            $dto->filled[$property] = true;
+            $dto->_filled[$property] = true;
         }
 
         // validate raw input values and throw appropriately in case of violations

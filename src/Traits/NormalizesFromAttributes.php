@@ -12,7 +12,7 @@ trait NormalizesFromAttributes
         $casters = CastTo::getCastingClosureMap($this, outbound: false);
 
         foreach ($casters as $prop => $method) {
-            if (!empty($this->filled[$prop])) {
+            if (!empty($this->_filled[$prop])) {
                 $this->$prop = $method($this->$prop);
             }
         }

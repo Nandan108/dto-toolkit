@@ -42,9 +42,9 @@ class CreatesFromArrayTest extends TestCase
         $this->assertSame($rawItemId, $dto->item_id);
 
         // filled
-        $this->assertArrayHasKey('email', $dto->filled);
-        $this->assertArrayHasKey('age', $dto->filled);
-        $this->assertArrayHasKey('item_id', $dto->filled);
+        $this->assertArrayHasKey('email', $dto->_filled);
+        $this->assertArrayHasKey('age', $dto->_filled);
+        $this->assertArrayHasKey('item_id', $dto->_filled);
     }
 
     // Test the the DTO is validateda after being filled if it implements ValidatesInputInterface

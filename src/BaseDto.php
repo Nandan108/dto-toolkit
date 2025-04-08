@@ -2,6 +2,7 @@
 
 namespace Nandan108\SymfonyDtoToolkit;
 
+use Nandan108\SymfonyDtoToolkit\Contracts\CasterResolverInterface;
 use Nandan108\SymfonyDtoToolkit\Contracts\NormalizesOutboundInterface;
 
 abstract class BaseDto
@@ -16,19 +17,21 @@ abstract class BaseDto
      */
     protected array $_inputSources = ['POST'];
 
+    public static ?CasterResolverInterface $casterResolver = null;
+
     /**
      * List of properties that can be filled.
      *
      * @var array[string]
      **/
-    protected ?array $fillable = null;
+    protected ?array $_fillable = null;
 
     /**
      * List of properties that have been filled.
      * The key is the property name, and the value is always true.
      * @var array[true]
      * */
-    public array $filled = [];
+    public array $_filled = [];
 
     /**
      * The class name of the entity that this DTO maps to.
@@ -77,7 +80,7 @@ abstract class BaseDto
      */
     protected function getFillable(): array
     {
-        return $this->fillable ??= $this->getPublicPropNames($this);
+        return $this->_fillable ??= $this->getPublicPropNames($this);
     }
 
     /**
@@ -90,7 +93,7 @@ abstract class BaseDto
     public function toArray(?array $propNames = null): array
     {
         $vars = get_object_vars($this);
-        $keys = $propNames ?? array_keys($this->filled);
+        $keys = $propNames ?? array_keys($this->_filled);
 
         return array_intersect_key($vars, array_flip($keys));
     }
@@ -109,7 +112,7 @@ abstract class BaseDto
     {
         foreach ($values as $key => $value) {
             $this->$key         = $value;
-            $this->filled[$key] = true;
+            $this->_filled[$key] = true;
         }
 
         return $this;
@@ -129,7 +132,7 @@ abstract class BaseDto
     public function unfill(array $props): static
     {
         foreach ($props as $key) {
-            unset($this->filled[$key]);
+            unset($this->_filled[$key]);
         }
 
         return $this;
