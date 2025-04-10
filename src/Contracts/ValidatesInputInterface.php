@@ -1,8 +1,6 @@
 <?php
 
-namespace Nandan108\SymfonyDtoToolkit\Contracts;
-
-use Symfony\Component\Validator\Constraints\GroupSequence;
+namespace Nandan108\DtoToolkit\Contracts;
 
 interface ValidatesInputInterface
 {
@@ -11,5 +9,6 @@ interface ValidatesInputInterface
      *
      * @return void
      */
-    public function validate(string|GroupSequence|array|null $groups = null,);
+    public function validate(array $args = []): static;
 }
+

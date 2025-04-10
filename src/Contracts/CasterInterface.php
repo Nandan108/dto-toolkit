@@ -1,6 +1,6 @@
 <?php
 
-namespace Nandan108\SymfonyDtoToolkit\Contracts;
+namespace Nandan108\DtoToolkit\Contracts;
 
 interface CasterInterface
 {

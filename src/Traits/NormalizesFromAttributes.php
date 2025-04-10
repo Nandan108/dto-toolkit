@@ -1,9 +1,9 @@
 <?php
 
-namespace Nandan108\SymfonyDtoToolkit\Traits;
+namespace Nandan108\DtoToolkit\Traits;
 
 use LogicException;
-use Nandan108\SymfonyDtoToolkit\Attribute\CastTo;
+use Nandan108\DtoToolkit\Attribute\CastTo;
 
 trait NormalizesFromAttributes
 {

@@ -1,8 +1,8 @@
 <?php
 
-namespace Nandan108\SymfonyDtoToolkit\Traits;
+namespace Nandan108\DtoToolkit\Traits;
 
-use Nandan108\SymfonyDtoToolkit\BaseDto;
+use Nandan108\DtoToolkit\BaseDto;
 
 trait ExportsToEntity
 {

@@ -1,8 +1,9 @@
-# Symfony DTO Toolkit Backlog
+# DTO Toolkit Backlog
 
 ## To Do
 
-19. Add support for chaining multiple #[CastTo] attributes (Attribute::IS_REPEATABLE)
+39. Publish to GitHub and add CI
+37. Add support for chaining multiple #[CastTo] attributes (Attribute::IS_REPEATABLE)
 19. Add support for #[CastArrayItemsTo] (extends #[CastTo]) attributes
 31. Add strict support to #[CastTo] attribute
     > Add optional strict: bool flag to CastTo, enabling exceptions to be thrown on casting failure instead of silently returning null.
@@ -59,4 +60,5 @@
 26. Extract trait + interface for CreatesFromArray
 27. Extract trait CreatesFromRequest (uses CreatesFromArray)
 30. Add support for CasterInterface
+38. Split project in two packages: dto-toolkit and dto-toolkit/symfony
 

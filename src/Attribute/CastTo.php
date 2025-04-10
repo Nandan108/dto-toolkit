@@ -1,10 +1,10 @@
 <?php
 
-namespace  Nandan108\SymfonyDtoToolkit\Attribute;
+namespace  Nandan108\DtoToolkit\Attribute;
 
 use Attribute;
-use Nandan108\SymfonyDtoToolkit\BaseDto;
-use Nandan108\SymfonyDtoToolkit\Contracts\CasterInterface;
+use Nandan108\DtoToolkit\BaseDto;
+use Nandan108\DtoToolkit\Contracts\CasterInterface;
 
 /**
  * Defines a casting method for a DTO property during normalization.
@@ -25,7 +25,7 @@ class CastTo
     static protected string $methodPrefix = 'castTo';
 
     public function __construct(
-        public string $method,
+        public string $methodOrClass,
         /** @psalm-suppress PossiblyUnusedProperty */
         public bool $outbound = false,
         public array $args = [],
@@ -42,32 +42,13 @@ class CastTo
     public function getCaster(BaseDto $dto): mixed
     {
 
-        if (class_exists($this->method)) {
+        if (class_exists($this->methodOrClass)) {
             static $casterCache = [];
 
-            $className = $this->method;
+            $className = $this->methodOrClass;
 
             if (!isset($casterCache[$className])) {
-
-                if (!is_subclass_of($className, CasterInterface::class)) {
-                    throw new \LogicException("Class '$className' must implement " . CasterInterface::class);
-                }
-
-                if ($this->constructorArgs !== null) {
-                    $instance = new $className(...$this->constructorArgs);
-                } else {
-                    $ref = new \ReflectionClass($className);
-                    $ctor = $ref->getConstructor();
-
-                    if (!$ctor || $ctor->getNumberOfRequiredParameters() === 0) {
-                        $instance = $ref->newInstance();
-                    } elseif (BaseDto::$casterResolver) {
-                        $instance = BaseDto::$casterResolver->resolve($className);
-                    } else {
-                        throw new \LogicException("Caster {$className} requires constructor args, but none were provided and no container is available.");
-                    }
-                }
-
+                $instance = $this->resolveFromClass($className);
                 $casterCache[$className] = ['instance' => $instance, 'casters' => []];
             }
 
@@ -82,15 +63,62 @@ class CastTo
             return $caster;
         }
 
-        $method = static::$methodPrefix . ucfirst($this->method);
+        $method = static::$methodPrefix . ucfirst($this->methodOrClass);
 
         if (!method_exists($dto, $method)) {
-            throw new \LogicException("Missing method '{$method}' for #[CastTo('{$this->method}')] in " . static::class);
+            throw new \LogicException("Missing method '{$method}' for #[CastTo('{$this->methodOrClass}')] in " . static::class);
         }
 
         return fn($value) => $dto->$method($value, ...$this->args);
     }
 
+    /**
+     * Resolve the class name to a CasterInterface instance
+     *
+     * @param string $className The class name
+     * @return CasterInterface The resolved instance
+     */
+    protected function resolveFromClass(string $className): CasterInterface
+    {
+        if (!is_subclass_of($className, CasterInterface::class)) {
+            throw new \LogicException("Class '$className' must implement " . CasterInterface::class);
+        }
+
+        if ($this->constructorArgs !== null) {
+            $instance = new $className(...$this->constructorArgs);
+        } else {
+            $ref = new \ReflectionClass($className);
+            $ctor = $ref->getConstructor();
+
+            if (!$ctor || $ctor->getNumberOfRequiredParameters() === 0) {
+                $instance = $ref->newInstance();
+            } else {
+                $instance = $this->resolveFromClassWithContainer($className);
+            }
+        }
+
+        return $instance;
+    }
+
+    /**
+     * Resolve the class name to a CasterInterface instance using a container
+     * To be overriden by the framework-specific implementation
+     *
+     * @return CasterInterface
+     */
+    public function resolveFromClassWithContainer(string $className): ?CasterInterface
+    {
+        throw new \LogicException("Caster {$className} requires constructor args, but none were provided and no container is available.");
+    }
+
+    /**
+     * Get an associative array of [propName => castingClosure] for a DTO
+     *
+     * @param \Nandan108\DtoToolkit\BaseDto $dto
+     * @param bool $outbound
+     * @return array
+     * @psalm-suppress PossiblyUnusedMethod
+     */
     public static function getCastingClosureMap(
         BaseDto $dto,
         bool $outbound = false,

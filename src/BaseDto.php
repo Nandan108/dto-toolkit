@@ -1,24 +1,11 @@
 <?php
 
-namespace Nandan108\SymfonyDtoToolkit;
+namespace Nandan108\DtoToolkit;
 
-use Nandan108\SymfonyDtoToolkit\Contracts\CasterResolverInterface;
-use Nandan108\SymfonyDtoToolkit\Contracts\NormalizesOutboundInterface;
+use Nandan108\DtoToolkit\Contracts\NormalizesOutboundInterface;
 
 abstract class BaseDto
 {
-    /**
-     * List of sources to get the input from.
-     * Values possible: COOKIE, POST, PARAMS, GET
-     * All sources will be visited in the order they're given, and merged with the result.
-     * This means that if a value is present in multiple sources, the last one will be used.
-     *
-     * @var array
-     */
-    protected array $_inputSources = ['POST'];
-
-    public static ?CasterResolverInterface $casterResolver = null;
-
     /**
      * List of properties that can be filled.
      *
@@ -38,6 +25,7 @@ abstract class BaseDto
      * Optional since not all DTOs are mapped to entities.
      *
      * @var class-string
+     * @psalm-suppress PossiblyUnusedProperty
      **/
     protected static ?string $entityClass;
 
@@ -53,15 +41,21 @@ abstract class BaseDto
 
         $props = [];
         foreach ($reflectionClass->getProperties(\ReflectionProperty::IS_PUBLIC) as $prop) {
-            if ($prop->isPublic()) {
+            if ($prop->isPublic() && $prop->name !== '_filled') {
                 $props[] = $prop->getName();
             }
         }
         return $props;
     }
 
-
-
+    /**
+     * Get the DTO data content as an array.
+     * If the DTO implements NormalizesOutboundInterface, the casters (CastTo Attributes)
+     * declared with $outbound = true will be called to transform the data before returning it.
+     *
+     * @return class-string|null
+     * @psalm-suppress PossiblyUnusedMethod
+     */
     public function toOutboundArray(): array
     {
         $outbound = $this->toArray();
@@ -77,6 +71,7 @@ abstract class BaseDto
      * Get the fillable properties of the DTO
      *
      * @return array
+     * @psalm-suppress PossiblyUnusedMethod
      */
     protected function getFillable(): array
     {
@@ -84,8 +79,9 @@ abstract class BaseDto
     }
 
     /**
-     * Return an array of DTO properties corresponding to the given property names.
+     * Get DTO properties corresponding to the given property names as an array.
      * If no property names are given, all public, filled properties will be returned.
+     * The data is returned as-is, without any transformation.
      *
      * @param string[] $propNames
      * @return array
@@ -107,6 +103,8 @@ abstract class BaseDto
      *
      * @param array $values
      * @return static
+     *
+     * @psalm-suppress PossiblyUnusedMethod
      */
     public function fill(array $values): static
     {

@@ -4,12 +4,12 @@ namespace Tests\Unit;
 
 use DateTimeImmutable;
 use Mockery;
-use Nandan108\SymfonyDtoToolkit\Attribute\CastTo;
-use Nandan108\SymfonyDtoToolkit\Contracts\NormalizesOutboundInterface;
+use Nandan108\DtoToolkit\Attribute\CastTo;
+use Nandan108\DtoToolkit\Contracts\NormalizesOutboundInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use Nandan108\SymfonyDtoToolkit\BaseDto;
-use Nandan108\SymfonyDtoToolkit\Traits\NormalizesFromAttributes;
+use Nandan108\DtoToolkit\BaseDto;
+use Nandan108\DtoToolkit\Traits\NormalizesFromAttributes;
 
 
 class NormalizesFromAttributesTest extends TestCase

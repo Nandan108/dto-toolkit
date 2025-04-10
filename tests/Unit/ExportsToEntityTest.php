@@ -3,14 +3,12 @@
 namespace Tests\Unit;
 
 use Mockery;
-use Nandan108\SymfonyDtoToolkit\Contracts\NormalizesOutboundInterface;
-use Nandan108\SymfonyDtoToolkit\Traits\ExportsToEntity;
+use Nandan108\DtoToolkit\Contracts\NormalizesOutboundInterface;
+use Nandan108\DtoToolkit\Traits\ExportsToEntity;
 use PHPUnit\Framework\TestCase;
-use Nandan108\SymfonyDtoToolkit\Attribute\CastTo;
-use Nandan108\SymfonyDtoToolkit\BaseDto;
-use Nandan108\SymfonyDtoToolkit\Traits\CreatesFromRequest;
-use Nandan108\SymfonyDtoToolkit\Traits\NormalizesFromAttributes;
-use Symfony\Component\HttpFoundation\Request;
+use Nandan108\DtoToolkit\Attribute\CastTo;
+use Nandan108\DtoToolkit\BaseDto;
+use Nandan108\DtoToolkit\Traits\NormalizesFromAttributes;
 
 /** @psalm-suppress UnusedClass */
 class ExportsToEntityTest extends TestCase

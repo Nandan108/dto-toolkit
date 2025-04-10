@@ -1,24 +1,20 @@
 {
-    "name": "nandan108/symfony-dto-toolkit",
-    "description": "Modern PHP 8.1+ DTO system for Symfony, supporting attribute-driven input validation, normalization, and mapping to entities or array output",
+    "name": "nandan108/dto-toolkit",
+    "description": "Modern framework-agnostic, PHP 8.1+ DTO system, supporting attribute-driven input validation, normalization, and mapping to entities or array output",
     "type": "library",
     "require": {
-        "php": "^8.1",
-        "symfony/validator": "^6.0 || ^7.0",
-        "symfony/http-foundation": "^6.0 || ^7.0",
-        "symfony/http-kernel": "^6.0 || ^7.0"
+        "php": "^8.1"
     },
     "require-dev": {
         "phpunit/phpunit": "^10.0",
         "symfony/var-dumper": "^6.0 || ^7.0",
         "mockery/mockery": "^1.6",
-        "nunomaduro/collision": "^8.5",
         "vimeo/psalm": "^6.10"
     },
     "license": "MIT",
     "autoload": {
         "psr-4": {
-            "Nandan108\\SymfonyDtoToolkit\\": "src/"
+            "Nandan108\\DtoToolkit\\": "src/"
         }
     },
     "autoload-dev": {

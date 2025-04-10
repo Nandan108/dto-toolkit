@@ -2,17 +2,13 @@
 
 namespace Tests\Unit;
 
-use Nandan108\SymfonyDtoToolkit\Attribute\CastTo;
-use Nandan108\SymfonyDtoToolkit\Exception\ValidationException;
+use Nandan108\DtoToolkit\Attribute\CastTo;
 use PHPUnit\Framework\TestCase;
-use Nandan108\SymfonyDtoToolkit\BaseDto;
-use Nandan108\SymfonyDtoToolkit\Contracts\NormalizesInboundInterface;
-use Nandan108\SymfonyDtoToolkit\Contracts\ValidatesInputInterface;
-use Nandan108\SymfonyDtoToolkit\Traits\CreatesFromArray;
-use Nandan108\SymfonyDtoToolkit\Traits\CreatesFromRequest;
-use Nandan108\SymfonyDtoToolkit\Traits\NormalizesFromAttributes;
-use Nandan108\SymfonyDtoToolkit\Traits\ValidatesInput;
-use Symfony\Component\Validator\Constraints as Assert;
+use Nandan108\DtoToolkit\BaseDto;
+use Nandan108\DtoToolkit\Contracts\NormalizesInboundInterface;
+use Nandan108\DtoToolkit\Contracts\ValidatesInputInterface;
+use Nandan108\DtoToolkit\Traits\CreatesFromArray;
+use Nandan108\DtoToolkit\Traits\NormalizesFromAttributes;
 
 /** @psalm-suppress UnusedClass */
 class CreatesFromArrayTest extends TestCase
@@ -52,22 +48,80 @@ class CreatesFromArrayTest extends TestCase
     {
         $dtoClass = new class extends BaseDto implements ValidatesInputInterface {
             use CreatesFromArray;
-            use ValidatesInput;
+            #[\Override]
+            public function validate(array $args = []): static
+            {
+                // Simulate validation logic
+                if ($this->email === 'invalid-email') {
+                    throw new \Exception('Validation failed');
+                }
+            }
 
             public string|int $item_id;
             public string $email;
-            #[Assert\Email]
             public string|int|null $age;
         };
 
-        $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('Validation failed');
+        try {
+            $dtoClass::fromArray([
+                'item_id' => '5',
+                'age'     => '30',
+                'email'   => 'invalid-email',
+            ]);
+            $this->fail('Expected exception not thrown');
+        } catch (\Exception $e) {
+            // Assert that the exception message is as expected
+            $this->assertSame('Validation failed', $e->getMessage());
+        }
+    }
 
-        $dtoClass::fromArray([
-            'item_id' => '5',
-            'age'     => '30',
-            'email'   => 'invalid-email',
-        ]);
+    // Test the the DTO is validateda after being filled if it implements ValidatesInputInterface
+    public function test_validation_fails_if_args_are_given_but_dto_doesnt_implement_ValidatesInputInterface(): void
+    {
+        $dtoClass = new class extends BaseDto {
+            use CreatesFromArray;
+            public string $email;
+        };
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage('To support $args, the DTO must implement ValidatesInput.');
+
+        $dtoClass::fromArray(['email' => 'invalid-email'], ['some-args-for-validation']);
+    }
+
+    // Test that the fromArray method throws an exception if unknown properties are passed
+    // and ignoreUnknownProperties is false
+    public function test_throw_exception_for_unknown_properties_when_ignoreUnknownProperties_is_false(): void
+    {
+        $dtoClass = new class extends BaseDto {
+            use CreatesFromArray;
+            public string $email;
+        };
+
+        /** @psalm-suppress NoValue, UnusedVariable */
+        $dto = $dtoClass::fromArray(
+            // ignoreUnknownProperties: true, // default
+            input: [ // GET
+                'anUnknownProp' => 'foo',
+                'andAnother'    => 'bar',
+                'email'         => $rawEmail = 'john@example.com',
+            ],
+        );
+
+        $this->assertSame($rawEmail, $dto->email);
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage('Unknown properties: anUnknownProp, andAnother');
+
+        /** @psalm-suppress NoValue, UnusedVariable */
+        $dtoClass::fromArray(
+            ignoreUnknownProperties: false,
+            input: [ // GET
+                'anUnknownProp' => 'foo',
+                'andAnother'    => 'bar',
+                'email'         => $rawEmail = 'john@example.com',
+            ],
+        );
     }
 
     // that that a dto must extend BaseDto to use CreatesFromArray

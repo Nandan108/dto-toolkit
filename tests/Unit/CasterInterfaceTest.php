@@ -2,22 +2,14 @@
 
 namespace Tests\Unit;
 
-use Nandan108\SymfonyDtoToolkit\Attribute\CastTo;
-use Nandan108\SymfonyDtoToolkit\BaseDto;
+use Nandan108\DtoToolkit\Attribute\CastTo;
+use Nandan108\DtoToolkit\BaseDto;
 
-use Nandan108\SymfonyDtoToolkit\Contracts\CasterInterface;
-use Nandan108\SymfonyDtoToolkit\Contracts\CasterResolverInterface;
+use Nandan108\DtoToolkit\Contracts\CasterInterface;
 use PHPUnit\Framework\TestCase;
 
 class CasterInterfaceTest extends TestCase
 {
-    /** @psalm-suppress MissingOverrideAttribute */
-    #[\Override]
-    protected function tearDown(): void
-    {
-        BaseDto::$casterResolver = null; // isolate test state
-    }
-
     public function test_throws_if_class_does_not_exist(): void
     {
         $this->expectException(\LogicException::class);
@@ -70,7 +62,7 @@ class CasterInterfaceTest extends TestCase
 
     public function test_uses_container_resolver_when_constructor_args_required(): void
     {
-        $className = new class('required') implements CasterInterface {
+        $casterObj = new class('required') implements CasterInterface {
             public function __construct(public string $prefix) {}
             #[\Override]
             public function cast(mixed $value, mixed ...$args): mixed {
@@ -78,16 +70,16 @@ class CasterInterfaceTest extends TestCase
             }
         };
 
-        $casterClass = get_class($className);
-        BaseDto::$casterResolver = new class($casterClass) implements CasterResolverInterface {
-            public function __construct(private string $casterClass) {}
+        $casterClass = get_class($casterObj);
+
+        $castToSublass = new class($casterClass) extends CastTo {
             #[\Override]
-            public function resolve(string $casterClass): object {
-                return new $casterClass('Auto');
+            public function resolveFromClassWithContainer(string $className): CasterInterface {
+                return new $className('Auto');
             }
         };
 
-        $attr = new CastTo($casterClass);
+        $attr = new $castToSublass($casterClass);
         $dto = new class extends BaseDto {};
         $caster = $attr->getCaster($dto);
         $this->assertSame('Auto42', $caster('42'));

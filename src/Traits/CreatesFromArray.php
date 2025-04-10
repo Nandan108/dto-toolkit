@@ -1,11 +1,10 @@
 <?php
 
-namespace Nandan108\SymfonyDtoToolkit\Traits;
+namespace Nandan108\DtoToolkit\Traits;
 
-use Nandan108\SymfonyDtoToolkit\BaseDto;
-use Nandan108\SymfonyDtoToolkit\Contracts\NormalizesInboundInterface;
-use Nandan108\SymfonyDtoToolkit\Contracts\ValidatesInputInterface;
-use Symfony\Component\Validator\Constraints\GroupSequence;
+use Nandan108\DtoToolkit\BaseDto;
+use Nandan108\DtoToolkit\Contracts\NormalizesInboundInterface;
+use Nandan108\DtoToolkit\Contracts\ValidatesInputInterface;
 
 trait CreatesFromArray
 {
@@ -15,14 +14,15 @@ trait CreatesFromArray
      *
      * @template T of BaseDto
      * @param array $input
-     * @param string|GroupSequence|array|null $groups
+     * @param array $args
      * @return T
      * @throws \LogicException
      */
     public static function fromArray(
         array $input,
-        string|GroupSequence|array|null $groups = null,
-        BaseDto $dto = null
+        array $args = [],
+        BaseDto $dto = null,
+        bool $ignoreUnknownProperties = true,
     ): BaseDto {
         if (!$dto) {
             $dto = new static();
@@ -33,16 +33,24 @@ trait CreatesFromArray
         }
 
         // fill the DTO with the input values
-        foreach ($input as $property => $value) {
+        $fillables = $dto->getFillable();
+        $fillableInput = array_intersect_key($input, array_flip($fillables));
+        foreach ($fillableInput as $property => $value) {
             $dto->{$property}       = $value;
             $dto->_filled[$property] = true;
+        }
+        if (!$ignoreUnknownProperties) {
+            $unknownProperties = array_diff(array_keys($input), $fillables);
+            if ($unknownProperties) {
+                throw new \LogicException('Unknown properties: ' . implode(', ', $unknownProperties));
+            }
         }
 
         // validate raw input values and throw appropriately in case of violations
         if ($dto instanceof ValidatesInputInterface) {
-            $dto->validate($groups);
-        } elseif ($groups) {
-            throw new \LogicException('To support groups, the DTO must implement ValidatesInput.');
+            $dto->validate($args);
+        } elseif ($args) {
+            throw new \LogicException('To support $args, the DTO must implement ValidatesInput.');
         }
 
         // cast the values to their respective types and return the DTO
