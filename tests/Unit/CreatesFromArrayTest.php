@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Unit;
+namespace Nandan108\DtoToolkit\Tests\Unit;
 
 use Nandan108\DtoToolkit\Attribute\CastTo;
 use PHPUnit\Framework\TestCase;
@@ -11,17 +11,18 @@ use Nandan108\DtoToolkit\Traits\CreatesFromArray;
 use Nandan108\DtoToolkit\Traits\NormalizesFromAttributes;
 
 /** @psalm-suppress UnusedClass */
-class CreatesFromArrayTest extends TestCase
+final class CreatesFromArrayTest extends TestCase
 {
     public function test_instantiates_dto_from_array(): void
     {
+        /** @psalm-suppress ExtensionRequirementViolation */
         $dtoClass = new class extends BaseDto {
             use CreatesFromArray;
             use NormalizesFromAttributes;
 
-            public string|int $item_id;
-            public string $email;
-            public string|int|null $age;
+            public null|string|int $item_id = null;
+            public null|string $email = null;
+            public null|string|int $age = null;
         };
 
         /** @psalm-suppress NoValue, UnusedVariable */
@@ -32,9 +33,12 @@ class CreatesFromArrayTest extends TestCase
         ]);
 
         // still raw
+        /** @psalm-suppress UndefinedPropertyFetch */
         $this->assertSame($rawEmail, $dto->email);
         // still raw, taken from GET
+        /** @psalm-suppress UndefinedPropertyFetch */
         $this->assertSame($rawAge, $dto->age);
+        /** @psalm-suppress UndefinedPropertyFetch */
         $this->assertSame($rawItemId, $dto->item_id);
 
         // filled
@@ -55,11 +59,12 @@ class CreatesFromArrayTest extends TestCase
                 if ($this->email === 'invalid-email') {
                     throw new \Exception('Validation failed');
                 }
+                return $this;
             }
 
-            public string|int $item_id;
-            public string $email;
-            public string|int|null $age;
+            public null|string|int $item_id = null;
+            public null|string $email = null;
+            public null|string|int $age = null;
         };
 
         try {
@@ -80,7 +85,7 @@ class CreatesFromArrayTest extends TestCase
     {
         $dtoClass = new class extends BaseDto {
             use CreatesFromArray;
-            public string $email;
+            public ?string $email = null;
         };
 
         $this->expectException(\LogicException::class);
@@ -95,19 +100,18 @@ class CreatesFromArrayTest extends TestCase
     {
         $dtoClass = new class extends BaseDto {
             use CreatesFromArray;
-            public string $email;
+            public ?string $email = null;
         };
 
         /** @psalm-suppress NoValue, UnusedVariable */
-        $dto = $dtoClass::fromArray(
-            // ignoreUnknownProperties: true, // default
+        $dto = $dtoClass::fromArrayLoose(
             input: [ // GET
                 'anUnknownProp' => 'foo',
                 'andAnother'    => 'bar',
                 'email'         => $rawEmail = 'john@example.com',
             ],
         );
-
+        /** @psalm-suppress UndefinedPropertyFetch */
         $this->assertSame($rawEmail, $dto->email);
 
         $this->expectException(\LogicException::class);
@@ -115,7 +119,7 @@ class CreatesFromArrayTest extends TestCase
 
         /** @psalm-suppress NoValue, UnusedVariable */
         $dtoClass::fromArray(
-            ignoreUnknownProperties: false,
+            ignoreUnknownProps: false,
             input: [ // GET
                 'anUnknownProp' => 'foo',
                 'andAnother'    => 'bar',
@@ -130,6 +134,7 @@ class CreatesFromArrayTest extends TestCase
         $this->expectException(\LogicException::class);
         $this->expectExceptionMessage('must extend BaseDto to use CreatesFromArray');
 
+        /** @psalm-suppress ExtensionRequirementViolation */
         $dtoClass = new class {
             use CreatesFromArray;
         };
@@ -138,8 +143,9 @@ class CreatesFromArrayTest extends TestCase
     }
 
     // test that if dto is an instance of NormalizesInboundInterface, normalizeInbound() is called
-    public function test_FromArray_calls_normalizeInbound_on_DTOs_implementing_NormalizesInboundInterface()
+    public function test_FromArray_calls_normalizeInbound_on_DTOs_implementing_NormalizesInboundInterface(): void
     {
+        /** @psalm-suppress ExtensionRequirementViolation */
         $dtoClass = new class extends BaseDto implements NormalizesInboundInterface
             // implements NormalizesInbound
         {
@@ -147,10 +153,10 @@ class CreatesFromArrayTest extends TestCase
             use NormalizesFromAttributes;
 
             #[CastTo('intOrNull')]
-            public string|int|null $age;
+            public string|int|null $age = null;
 
             #[CastTo('trimmedString')]
-            public string $name;
+            public ?string $name = null;
         };
 
         /** @psalm-suppress NoValue, UnusedVariable */
@@ -160,8 +166,10 @@ class CreatesFromArrayTest extends TestCase
         ]);
 
         // Assert that the age property is normalized to an integer
+        /** @psalm-suppress UndefinedPropertyFetch */
         $this->assertSame(30, $dto->age);
         // Assert that the name property is normalized to a trimmed string
+        /** @psalm-suppress UndefinedPropertyFetch */
         $this->assertSame('sam', $dto->name);
 
     }

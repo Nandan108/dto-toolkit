@@ -9,14 +9,14 @@ abstract class BaseDto
     /**
      * List of properties that can be filled.
      *
-     * @var array[string]
+     * @var string[]
      **/
     protected ?array $_fillable = null;
 
     /**
      * List of properties that have been filled.
      * The key is the property name, and the value is always true.
-     * @var array[true]
+     * @var true[]
      * */
     public array $_filled = [];
 
@@ -32,7 +32,7 @@ abstract class BaseDto
     /**
      * Get the names of the public properties of an object
      *
-     * @param object|string|null $objectOrClass defaults to the current instance
+     * @param object|class-string|null $objectOrClass defaults to the current instance
      * @return array
      */
     protected function getPublicPropNames(object|string $objectOrClass = null): array
@@ -53,7 +53,7 @@ abstract class BaseDto
      * If the DTO implements NormalizesOutboundInterface, the casters (CastTo Attributes)
      * declared with $outbound = true will be called to transform the data before returning it.
      *
-     * @return class-string|null
+     * @return array
      * @psalm-suppress PossiblyUnusedMethod
      */
     public function toOutboundArray(): array

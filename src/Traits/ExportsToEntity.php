@@ -4,6 +4,9 @@ namespace Nandan108\DtoToolkit\Traits;
 
 use Nandan108\DtoToolkit\BaseDto;
 
+/**
+ * @psalm-require-extends BaseDto
+ **/
 trait ExportsToEntity
 {
     /**
@@ -11,22 +14,27 @@ trait ExportsToEntity
      *
      * Will auto-fill the entity's public properties with the DTO's public properties
      *
+     * @param object|null $entity The entity to fill. If null, a new instance will
+     *  be created from static::$entityClass.
+     * @param array $context Additional data to set on the entity. This can be used to set
+     *  relations or other properties that are not part of the DTO.
      * @throws \LogicException
      * @return object
      */
-    public function toEntity($entity = null, array $context = []): object
+    public function toEntity(object $entity = null, array $context = []): object
     {
         $entity ??= $this->newEntityInstance();
 
-        // Get properties already type-cast, ready to to be set on entity
-        $props = [...$this->toOutboundArray(), ...$context];
+        // Get properties already cast, ready to to be set on entity
+        /** @psalm-suppress UndefinedMethod */
+        $normalizedProps = $this->toOutboundArray();
 
-        $setters = $this->getEntitySetterMap(array_keys($props), $entity);
+        /** @psalm-suppress InvalidOperand */
+        $propsToSet = [...$normalizedProps, ...$context];
+        $setters = $this->getEntitySetterMap($entity, array_keys($propsToSet));
 
-        // Merge in context props (relations, injected domain values)
-        foreach ($props as $prop => $value) {
-            $method = $setters[$prop];
-            $method($value);
+        foreach ($propsToSet as $prop => $value) {
+            $setters[$prop]($value);
         }
 
         return $entity;
@@ -40,10 +48,12 @@ trait ExportsToEntity
      */
     protected function newEntityInstance(): object
     {
+        /** @psalm-suppress RedundantCondition */
         if (!$this instanceof BaseDto) {
             throw new \LogicException('DTO must extend BaseDto to use ExportsToEntity.');
         }
 
+        /** @psalm-suppress RiskyTruthyFalsyComparison */
         if (empty(static::$entityClass)) {
             throw new \LogicException('No entity class defined for DTO ' . get_class($this));
         }
@@ -56,17 +66,17 @@ trait ExportsToEntity
     }
 
     /**
-     * Get a map of closure setters for the given properties
+     * Get a map of closure setters for the given properties.
      *
-     * @param null|array $propNames
      * @param object $entity
+     * @param array $propNames
      * @return \Closure[]
      * @throws \LogicException
      */
-    protected function getEntitySetterMap(?array $propNames, object $entity): array
+    protected function getEntitySetterMap(object $entity, array $propNames): array
     {
         $entityReflection = new \ReflectionClass($entity);
-        $entityClass     = $entityReflection->getName();
+        $entityClass      = $entityReflection->getName();
 
         static $setterMap = [];
         $classSetters = $setterMap[$entityClass] ??= [];
@@ -84,23 +94,25 @@ trait ExportsToEntity
                 // and that the entity has a setter for each property
                 if ($entityReflection->getMethod($setter = 'set' . ucfirst($prop))->isPublic()) {
                     $setterMap[$entityClass][$prop] = $map[$prop] =
-                        static function (mixed $value) use ($entity, $setter) {
+                        static function (mixed $value) use ($entity, $setter): void {
                             $entity->$setter($value);
                         };
                     continue;
                 }
-            } catch (\ReflectionException $e) {}
+            } catch (\ReflectionException $e) {
+            }
 
             // No setter found, but the property is public? Make a setter closure that assigns directly.
             try {
                 if ($entityReflection->getProperty($prop)->isPublic()) {
                     $setterMap[$entityClass][$prop] = $map[$prop] =
-                        static function (mixed $value) use ($entity, $prop) {
+                        static function (mixed $value) use ($entity, $prop): void {
                             $entity->$prop = $value;
                         };
                     continue;
                 }
-            } catch (\ReflectionException $e) {}
+            } catch (\ReflectionException $e) {
+            }
 
             // No setter or public property found, throw an exception
             throw new \LogicException("No public setter or property found for '{$prop}' in " . $entityClass);

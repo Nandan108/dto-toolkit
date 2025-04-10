@@ -7,7 +7,7 @@ interface ValidatesInputInterface
     /**
      * Instanciates and calls a validator
      *
-     * @return void
+     * @psalm-suppress PossiblyUnusedMethod, PossiblyUnusedReturnValue
      */
     public function validate(array $args = []): static;
 }

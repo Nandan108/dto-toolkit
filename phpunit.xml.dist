@@ -6,7 +6,6 @@
          failOnWarning="true"
          failOnRisky="true"
          testdox="true"
-
          cacheDirectory=".phpunit.cache"
          executionOrder="depends,defects"
          requireCoverageMetadata="false"

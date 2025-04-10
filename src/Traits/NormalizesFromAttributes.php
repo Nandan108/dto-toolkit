@@ -5,6 +5,7 @@ namespace Nandan108\DtoToolkit\Traits;
 use LogicException;
 use Nandan108\DtoToolkit\Attribute\CastTo;
 
+/** @psalm-require-extends BaseDto */
 trait NormalizesFromAttributes
 {
     public function normalizeInbound(): void
@@ -70,7 +71,7 @@ trait NormalizesFromAttributes
     {
         return is_string($value) && $value !== '' ||
             is_numeric($value) ||
-            is_object($value && method_exists($value, '__toString'))
+            is_object($value) && method_exists($value, '__toString')
             ? (string)$value
             : null;
     }
@@ -108,7 +109,7 @@ trait NormalizesFromAttributes
      * Convert a value to an array or empty array
      *
      * @param mixed $value
-     * @return array
+     * @return string
      */
     public function castToTrimmedString(mixed $value): string
     {
@@ -121,11 +122,12 @@ trait NormalizesFromAttributes
      * Usage: #[CastTo('arrayFromCSV', args: [','])]
      *
      * @param string $value
-     * @param string $delimiter
+     * @param non-empty-string $delimiter
      * @return array
      */
     public function castToArrayFromCSV(string $value, string $delimiter = ','): array
     {
+        /** @psalm-suppress ArgumentTypeCoercion */
         return array_map('trim', explode($delimiter, $value));
     }
 

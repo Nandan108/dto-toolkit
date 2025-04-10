@@ -19,7 +19,7 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Tests\\": "tests/"
+            "Nandan108\\DtoToolkit\\Tests\\": "tests/"
         }
     },
     "authors": [

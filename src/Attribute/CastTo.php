@@ -1,10 +1,12 @@
 <?php
 
-namespace  Nandan108\DtoToolkit\Attribute;
+namespace Nandan108\DtoToolkit\Attribute;
 
 use Attribute;
 use Nandan108\DtoToolkit\BaseDto;
 use Nandan108\DtoToolkit\Contracts\CasterInterface;
+use Nandan108\DtoToolkit\Contracts\CasterResolverInterface;
+use Nandan108\DtoToolkit\Exception\CastingException;
 
 /**
  * Defines a casting method for a DTO property during normalization.
@@ -18,11 +20,16 @@ use Nandan108\DtoToolkit\Contracts\CasterInterface;
  * - The provided value must match the suffix of a method named castTo{$value}()
  * - The optional `$outbound` flag specifies if the cast is applied during output
  * normalization, meaning before returning an entity or array.
+ *
+ * @psalm-api
  */
- #[Attribute(Attribute::TARGET_PROPERTY | Attribute::IS_REPEATABLE)]
+#[Attribute(Attribute::TARGET_PROPERTY | Attribute::IS_REPEATABLE)]
 class CastTo
 {
     static protected string $methodPrefix = 'castTo';
+    public static ?CasterResolverInterface $customCasterResolver = null;
+    protected static ?\stdClass $globalMemoizedCasters = null;
+    public static \Closure $onCastResolved;
 
     public function __construct(
         public string $methodOrClass,
@@ -30,7 +37,12 @@ class CastTo
         public bool $outbound = false,
         public array $args = [],
         public ?array $constructorArgs = null,
-    ) {}
+    ) {
+        // Initialize the caster cache if it doesn't exist
+        self::$globalMemoizedCasters ??= new \stdClass();
+        /** @psalm-suppress RedundantPropertyInitializationCheck */
+        self::$onCastResolved ??= fn(): null => null;
+    }
 
     /**
      * Create a caster closure for the given method
@@ -39,37 +51,87 @@ class CastTo
      * @throws \LogicException If the method does not exist
      * @return \Closure A closure that takes a value to cast calls the casting method and returns the result.
      */
-    public function getCaster(BaseDto $dto): mixed
+    public function getCaster(BaseDto $dto): \Closure
     {
+        $cache          = static::$globalMemoizedCasters;
+        $args           = $this->args;
+        $serializedArgs = serialize($args);
+        $cacheKey       = $this->methodOrClass;
 
-        if (class_exists($this->methodOrClass)) {
-            static $casterCache = [];
+        // early return on cache hit
+        $casterMeta = $cache->$cacheKey['casters'][$serializedArgs] ?? null;
+        if ($casterMeta !== null) {
+            (static::$onCastResolved)($casterMeta, true);
+            return $casterMeta['caster'];
+        }
 
-            $className = $this->methodOrClass;
-
-            if (!isset($casterCache[$className])) {
-                $instance = $this->resolveFromClass($className);
-                $casterCache[$className] = ['instance' => $instance, 'casters' => []];
-            }
-
-            $serializedArgs = serialize($this->args);
-            $instance = $casterCache[$className]['instance'];
-            $args = $this->args;
-            $caster = $casterCache[$className]['casters'][$serializedArgs] ??=
-                function($value) use ($instance, $args) {
-                    return $instance->cast($value, ...$args);
-                };
-
+        $memoize = function (\Closure $caster, ?string $object, string $method) use (&$cache, $cacheKey, $serializedArgs): \Closure {
+            $cache->$cacheKey['casters'][$serializedArgs] = $casterMeta = compact('caster', 'object', 'method');
+            (static::$onCastResolved)($casterMeta, false);
             return $caster;
+        };
+
+        // Step 1: Class name resolution
+        if (class_exists($this->methodOrClass)) {
+            $instance = $cache->$cacheKey['instance'] ??= $this->resolveFromClass($this->methodOrClass);
+            return $memoize(
+                caster: fn(mixed $value): mixed => $instance->cast($value, ...$args),
+                object: $this->methodOrClass,
+                method: static::$methodPrefix . ucfirst($this->methodOrClass),
+            );
         }
 
-        $method = static::$methodPrefix . ucfirst($this->methodOrClass);
-
-        if (!method_exists($dto, $method)) {
-            throw new \LogicException("Missing method '{$method}' for #[CastTo('{$this->methodOrClass}')] in " . static::class);
+        // Step 2 & 3: Method resolution on DTO and CastTo
+        $methodName = static::$methodPrefix . ucfirst($this->methodOrClass);
+        foreach ([$dto, $this] as $target) {
+            if (method_exists($target, $methodName)) {
+                return $memoize(
+                    fn(mixed $value): mixed => $target->{$methodName}($value, ...$args),
+                        $target::class,
+                    $methodName,
+                );
+            }
         }
 
-        return fn($value) => $dto->$method($value, ...$this->args);
+        // Step 4: Custom resolver
+        if (static::$customCasterResolver) {
+            $caster = static::$customCasterResolver->resolve($this->methodOrClass, $this->constructorArgs);
+            // If the resolver returns a CasterInterface instance, wrap it in a closure
+            if ($caster instanceof CasterInterface) {
+                $cache->$cacheKey['instance'] = $caster;
+                $caster = fn(mixed $value): mixed => $caster->cast($value, ...$args);
+            }
+            return $memoize($caster,static::$customCasterResolver::class,$this->methodOrClass);
+        }
+
+        // Step 5: Fail
+        throw CastingException::unresolved($this->methodOrClass);
+    }
+
+    /**
+     * 🐞 Debugging utility: retrieve internal memoized caster data.
+     *
+     * @param string|null $methodKey The method key to retrieve
+     * @return \stdClass|array The memoized casters or a specific caster
+     * @internal For debugging and introspection purposes only.
+     * @psalm-suppress PossiblyUnusedMethod
+     */
+    public static function getCasterMetadata(?string $methodKey = null): \stdClass|array|null
+    {
+        if ($methodKey !== null) {
+            /** @var array */
+            return self::$globalMemoizedCasters->$methodKey;
+        }
+        return self::$globalMemoizedCasters;
+    }
+
+    public static function clearCasterMetadata(?string $methodKey = null): void
+    {
+        if ($methodKey !== null) {
+            unset(self::$globalMemoizedCasters->{$methodKey});
+        } else {
+            self::$globalMemoizedCasters = new \stdClass;
+        }
     }
 
     /**
@@ -81,13 +143,13 @@ class CastTo
     protected function resolveFromClass(string $className): CasterInterface
     {
         if (!is_subclass_of($className, CasterInterface::class)) {
-            throw new \LogicException("Class '$className' must implement " . CasterInterface::class);
+            throw CastingException::casterInterfaceNotImplemented($className);
         }
 
         if ($this->constructorArgs !== null) {
             $instance = new $className(...$this->constructorArgs);
         } else {
-            $ref = new \ReflectionClass($className);
+            $ref  = new \ReflectionClass($className);
             $ctor = $ref->getConstructor();
 
             if (!$ctor || $ctor->getNumberOfRequiredParameters() === 0) {
@@ -96,6 +158,10 @@ class CastTo
                 $instance = $this->resolveFromClassWithContainer($className);
             }
         }
+
+        // if (!($instance instanceof CasterInterface)) {
+        //     throw CastingException::casterInterfaceNotImplemented($className);
+        // }
 
         return $instance;
     }
@@ -106,7 +172,7 @@ class CastTo
      *
      * @return CasterInterface
      */
-    public function resolveFromClassWithContainer(string $className): ?CasterInterface
+    public function resolveFromClassWithContainer(string $className): CasterInterface
     {
         throw new \LogicException("Caster {$className} requires constructor args, but none were provided and no container is available.");
     }
@@ -126,20 +192,20 @@ class CastTo
         static $cache = [];
 
         $reflection = new \ReflectionClass($dto);
-        $dtoClass = $reflection->getName();
-        $casts = &$cache[$dtoClass];
+        $dtoClass   = $reflection->getName();
+        $casts      = &$cache[$dtoClass];
 
         if (!isset($casts)) {
-            $casts = [false => [], true => []];
+            $casts = [0 => [], 1 => []];
             foreach ($reflection->getProperties() as $property) {
                 foreach ($property->getAttributes(static::class) as $attr) {
                     /** @var CastTo $instance */
-                    $instance = $attr->newInstance();
-                    $casts[$instance->outbound][$property->getName()] = $instance->getCaster($dto);
+                    $instance                                         = $attr->newInstance();
+                    $casts[(int)$instance->outbound][$property->getName()] = $instance->getCaster($dto);
                 }
             }
         }
 
-        return $casts[$outbound];
+        return $casts[(int)$outbound];
     }
 }

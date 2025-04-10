@@ -1,46 +1,56 @@
 <?php
 
-namespace Tests\Unit;
+namespace Nandan108\DtoToolkit\Tests\Unit;
 
 use Nandan108\DtoToolkit\Attribute\CastTo;
 use Nandan108\DtoToolkit\BaseDto;
 
 use Nandan108\DtoToolkit\Contracts\CasterInterface;
+use Nandan108\DtoToolkit\Contracts\CasterResolverInterface;
+use Nandan108\DtoToolkit\Exception\CastingException;
 use PHPUnit\Framework\TestCase;
 
-class CasterInterfaceTest extends TestCase
+final class CasterInterfaceTest extends TestCase
 {
+    /** @psalm-suppress MissingOverrideAttribute */
+    #[\Override]
+    public function tearDown(): void
+    {
+        CastTo::$customCasterResolver = null;
+    }
+
     public function test_throws_if_class_does_not_exist(): void
     {
-        $this->expectException(\LogicException::class);
-        $this->expectExceptionMessage("Missing method 'castToFakeClass'");
-        $dto = new class extends BaseDto {};
+        $this->expectException($className = CastingException::class);
+        $this->expectExceptionMessage("Caster 'FakeClass' could not be resolved");
+        $dto  = new class extends BaseDto {};
         $attr = new CastTo('FakeClass');
         $attr->getCaster($dto);
     }
 
     public function test_throws_if_class_does_not_implement_interface(): void
     {
-        $className = new class {};
-        $dto = new class extends BaseDto {};
-        $attr = new CastTo(get_class($className));
-        $this->expectException(\LogicException::class);
-        $this->expectExceptionMessage("must implement");
+        $classNotImplementingCasterInterface = new class {};
+        $dto                                 = new class extends BaseDto {};
+        $attr                                = new CastTo($className = get_class($classNotImplementingCasterInterface));
+        $this->expectException(CastingException::class);
+        $this->expectExceptionMessage("Class '{$className}' does not implement the CasterInterface.");
         $attr->getCaster($dto);
     }
 
     public function test_instantiates_with_constructor_args(): void
     {
-        $casterClass = new class('X') implements CasterInterface {
+        $casterClass = new class ('X') implements CasterInterface {
             public function __construct(public string $prefix) {}
             #[\Override]
-            public function cast(mixed $value, mixed ...$args): mixed {
+            public function cast(mixed $value, mixed ...$args): mixed
+            {
                 return $this->prefix . $value;
             }
         };
 
-        $attr = new CastTo(get_class($casterClass), args: [], constructorArgs: ['X']);
-        $dto = new class extends BaseDto {};
+        $attr   = new CastTo(get_class($casterClass), args: [], constructorArgs: ['X']);
+        $dto    = new class extends BaseDto {};
         $caster = $attr->getCaster($dto);
         $this->assertSame('Xfoo', $caster('foo'));
     }
@@ -49,55 +59,61 @@ class CasterInterfaceTest extends TestCase
     {
         $casterClass = new class implements CasterInterface {
             #[\Override]
-            public function cast(mixed $value, mixed ...$args): mixed {
+            public function cast(mixed $value, mixed ...$args): mixed
+            {
                 return strtoupper($value);
             }
         };
 
-        $attr = new CastTo(get_class($casterClass));
-        $dto = new class extends BaseDto {};
+        $attr   = new CastTo(get_class($casterClass));
+        $dto    = new class extends BaseDto {};
         $caster = $attr->getCaster($dto);
         $this->assertSame('FOO', $caster('foo'));
     }
 
     public function test_uses_container_resolver_when_constructor_args_required(): void
     {
-        $casterObj = new class('required') implements CasterInterface {
+        $casterObj = new class ('required') implements CasterInterface {
             public function __construct(public string $prefix) {}
             #[\Override]
-            public function cast(mixed $value, mixed ...$args): mixed {
-                return $this->prefix . $value;
+            public function cast(mixed $value, mixed ...$args): mixed
+            {
+                return $this->prefix . ':' . $value;
             }
         };
 
         $casterClass = get_class($casterObj);
 
-        $castToSublass = new class($casterClass) extends CastTo {
+        $castToSublass = new class ($casterClass) extends CastTo {
+            /** @psalm-suppress MoreSpecificReturnType */
             #[\Override]
-            public function resolveFromClassWithContainer(string $className): CasterInterface {
-                return new $className('Auto');
+            public function resolveFromClassWithContainer(string $className): CasterInterface
+            {
+                /** @psalm-suppress InvalidStringClass */
+                return new $className('\SomeNameSpace\MyClass');
             }
         };
 
-        $attr = new $castToSublass($casterClass);
-        $dto = new class extends BaseDto {};
+        $attr   = new $castToSublass($casterClass);
+        $dto    = new class extends BaseDto {};
         $caster = $attr->getCaster($dto);
-        $this->assertSame('Auto42', $caster('42'));
+        $this->assertSame('\SomeNameSpace\MyClass:42', $caster('42'));
     }
 
-    public function test_throws_if_constructor_args_needed_and_no_resolver(): void
+    public function test_throws_if_constructor_args_are_needed_and_no_resolver_available(): void
     {
-        $className = new class('required') implements CasterInterface {
+        $className = new class ('required') implements CasterInterface {
             public function __construct(string $value) {}
             #[\Override]
-            public function cast(mixed $value, mixed ...$args): mixed {
+            public function cast(mixed $value, mixed ...$args): mixed
+            {
                 return $value;
             }
         };
 
         $casterClass = get_class($className);
-        $attr = new CastTo($casterClass);
-        $dto = new class extends BaseDto {};
+        $attr        = new CastTo($casterClass);
+        $dto         = new class extends BaseDto {};
 
         $this->expectException(\LogicException::class);
         $this->expectExceptionMessage("requires constructor args");
@@ -108,14 +124,15 @@ class CasterInterfaceTest extends TestCase
     {
         $className = new class implements CasterInterface {
             #[\Override]
-            public function cast(mixed $value, mixed ...$args): mixed {
+            public function cast(mixed $value, mixed ...$args): mixed
+            {
                 static $calls = 0;
                 return ++$calls . ':' . $value;
             }
         };
 
         $casterClass = get_class($className);
-        $dto = new class extends BaseDto {};
+        $dto         = new class extends BaseDto {};
 
         $attr1 = new CastTo($casterClass, args: ['a']);
         $attr2 = new CastTo($casterClass, args: ['a']);
@@ -128,5 +145,87 @@ class CasterInterfaceTest extends TestCase
         $this->assertSame('1:foo', $caster1('foo'));
         $this->assertSame('2:bar', $caster2('bar')); // reuses closure
         $this->assertSame('3:baz', $caster3('baz')); // new closure, new args
+    }
+
+    public function test_falls_back_to_customCasterResolver_if_class_does_not_exist(): void
+    {
+        $dto  = new class extends BaseDto {};
+        $attr = new CastTo(
+            $className = 'FakeClass',
+            args: $args = ['foo', 'baz'],
+            constructorArgs: $ctorArgs = ['bar']
+        );
+
+        // Test a custom CasterResolver returning a Closure
+        CastTo::$customCasterResolver = new class implements CasterResolverInterface {
+            #[\Override]
+            public function resolve(string $className, ?array $constructorArgs = []): CasterInterface|\Closure
+            {
+                /** @psalm-suppress MissingClosureParamType */
+                return function (mixed $value, ...$args) use ($className, $constructorArgs) {
+                    $ctorArgs   = json_encode($constructorArgs);
+                    $castParams = json_encode([$value, $args]);
+                    $returnVal = "executing {$className}(...$ctorArgs)->cast(...$castParams)";
+                    return $returnVal;
+                };
+            }
+        };
+
+        $casterClosure = $attr->getCaster($dto);
+        $this->assertSame(
+            "executing $className(...[\"bar\"])->cast(...[\"val\",[\"foo\",\"baz\"]])",
+            $casterClosure('val', 'foo', 'baz'),
+        );
+
+        // Test a custom CasterResolver returning a CasterInterface
+        CastTo::$customCasterResolver = new class () implements CasterResolverInterface {
+            public function __construct() {}
+
+            #[\Override]
+            public function resolve(string $className, ?array $constructorArgs = []): CasterInterface|\Closure
+            {
+                return new class ($className, $constructorArgs) implements CasterInterface {
+                    public function __construct(
+                        public string $className,
+                        public ?array $constructorArgs = null,
+                    ) {}
+
+                    #[\Override]
+                    public function cast(mixed $value, mixed ...$args): mixed
+                    {
+                        $ctorArgs   = json_encode($this->constructorArgs);
+                        $castParams = json_encode([$value, $args]);
+                        return "->cast() executing {$this->className}(...$ctorArgs)->cast(...$castParams)";
+                    }
+                };
+            }
+        };
+
+        /** @psalm-suppress InvalidReturnType, InvalidNullableReturnType, InvalidReturnStatement, NullableReturnStatement */
+        $getMeta = fn(): \stdClass => CastTo::getCasterMetadata();
+
+        // whipe out memoized caster data
+        $this->assertObjectHasProperty($className, $getMeta());
+        $attr::clearCasterMetadata();
+        $this->assertObjectNotHasProperty($className, $getMeta());
+
+        $casterClosure = $attr->getCaster($dto);
+        $this->assertSame(
+            "->cast() executing $className(...[\"bar\"])->cast(...[\"val\",[\"foo\",\"baz\"]])",
+            $casterClosure('val'),
+        );
+
+        /** @var array $casterMeta */
+        $casterMeta = $getMeta()->$className;
+        $this->assertArrayHasKey('casters', $casterMeta);
+        $attr::clearCasterMetadata($className);
+        $this->assertObjectNotHasProperty($className, $getMeta());
+
+        // get the caster again, which will re-fill the caster cache
+        $attr->getCaster($dto);
+        // this time, we use getCasterMetadata() with an argument (different code path)
+        /** @var array $casterMeta */
+        $casterMeta = $attr::getCasterMetadata($className);
+        $this->assertArrayHasKey('casters', $casterMeta);
     }
 }
