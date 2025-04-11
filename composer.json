@@ -1,6 +1,6 @@
 {
     "name": "nandan108/dto-toolkit",
-    "description": "Modern framework-agnostic, PHP 8.1+ DTO system, supporting attribute-driven input validation, normalization, and mapping to entities or array output",
+    "description": "A modern, framework-agnostic PHP 8.1+ DTO system with attribute-driven data normalization and mapping to entities or arrays.",
     "type": "library",
     "require": {
         "php": "^8.1"

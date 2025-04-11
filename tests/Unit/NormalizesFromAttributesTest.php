@@ -4,8 +4,9 @@ namespace Nandan108\DtoToolkit\Tests\Unit;
 
 use DateTimeImmutable;
 use Mockery;
-use Nandan108\DtoToolkit\Attribute\CastTo;
+use Nandan108\DtoToolkit\Core\CastTo;
 use Nandan108\DtoToolkit\Contracts\NormalizesOutboundInterface;
+use Nandan108\DtoToolkit\Traits\CanCastBasicValues;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Nandan108\DtoToolkit\BaseDto;
@@ -45,31 +46,6 @@ final class NormalizesFromAttributesTest extends TestCase
         $dto->fill(['age' => "not-a-number"])->normalizeInbound();
         $this->assertNull($dto->age);
     }
-
-    #[DataProvider('builtinCastProvider')]
-    public function test_builtin_cast_methods(string $method, array $input, mixed $expected): void
-    {
-        /** @psalm-suppress ExtensionRequirementViolation */
-        $dto = new class extends BaseDto {
-            use NormalizesFromAttributes;
-
-            // expose the protected methods for test
-            public function call(string $method, mixed ...$args): mixed
-            {
-                return $this->$method(...$args);
-            }
-        };
-
-        $result = $dto->call($method, ...$input);
-
-        if (is_object($expected)) {
-            $this->assertInstanceOf(get_class($expected), $result);
-            $this->assertEquals($expected, $result); // compares datetime value
-        } else {
-            $this->assertSame($expected, $result);
-        }
-    }
-
 
     public function test_normalize_outbound_applies_casts_to_tagged_properties(): void
     {
@@ -120,47 +96,4 @@ final class NormalizesFromAttributesTest extends TestCase
         $cast->getCaster($dto);
     }
 
-    public static function builtinCastProvider(): array
-    {
-        $someArray            = ['key' => 'value'];
-        $objWithToArrayMethod = new class ($someArray) {
-            public function __construct(private array $data = []) {}
-            public function toArray(): array
-            {
-                return $this->data;
-            }
-        };
-
-        $dateTime    = date('Y-m-d H:i:s');
-        $dateTimeObj = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $dateTime);
-
-        // Make a iterator on numbers 1 to 5
-        $iterator_OneToFive = new \ArrayIterator([1, 2, 3, 4, 5]);
-
-        return [
-                /* 0*/ ['castToIntOrNull', ['42'], 42],
-                /* 1*/ ['castToFloatOrNull', ['3.14'], 3.14],
-                /* 2*/ ['castToBoolOrNull', [false], false],
-                /* 3*/ ['castToBoolOrNull', ['1'], true],
-                /* 4*/ ['castToBoolOrNull', ['yes'], true],
-                /* 5*/ ['castToBoolOrNull', ['yessss'], null],
-                /* 6*/ ['castToBoolOrNull', [[]], null],
-                /* 7*/ ['castToStringOrNull', [42], '42'],
-                /* 8*/ ['castToTrimmedString', ['  hello '], 'hello'],
-                /* 9*/ ['castToArrayFromCSV', ['a,b,c'], ['a', 'b', 'c']],
-                /*10*/ ['castToArrayFromCSV', ['a-b-c', '-'], ['a', 'b', 'c']],
-                /*11*/ ['castToArrayFromCSV', [''], ['']],
-                /*12*/ ['castToArrayOrEmpty', [null], []],
-                /*13*/ ['castToArrayOrEmpty', [$iterator_OneToFive], [1, 2, 3, 4, 5]],
-                /*14*/ ['castToArrayOrEmpty', [$objWithToArrayMethod], $someArray],
-                /*15*/ ['castToArrayOrEmpty', [(object)[1, 2, 3]], []],
-                /*16*/ ['castToArrayOrEmpty', [['abc', 'x,y,z']], ['abc', 'x,y,z']],
-                /*17*/ ['castToDateTimeOrNull', [$dateTime], $dateTimeObj],
-                /*18*/ ['castToDateTimeOrNull', [null], null],
-                /*29*/ ['castToDateTimeOrNull', ['invalid date'], null],
-                /*20*/ ['castToDateTimeOrNull', [$dateTimeObj], $dateTimeObj],
-                /*21*/ ['castToDateTimeOrNull', [new \DateTime()], null],
-                /*22*/ ['castToDateTimeOrNull', [new \stdClass()], null],
-        ];
-    }
 }

@@ -2,7 +2,7 @@
 
 namespace Nandan108\DtoToolkit\Tests\Unit;
 
-use Nandan108\DtoToolkit\Attribute\CastTo;
+use Nandan108\DtoToolkit\Core\CastTo;
 use PHPUnit\Framework\TestCase;
 use Nandan108\DtoToolkit\BaseDto;
 use Nandan108\DtoToolkit\Contracts\NormalizesInboundInterface;

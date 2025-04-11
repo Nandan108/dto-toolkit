@@ -4,9 +4,10 @@ namespace Nandan108\DtoToolkit\Tests\Unit;
 
 use Mockery;
 use Nandan108\DtoToolkit\Contracts\NormalizesOutboundInterface;
+use Nandan108\DtoToolkit\Traits\CanCastBasicValues;
 use Nandan108\DtoToolkit\Traits\ExportsToEntity;
 use PHPUnit\Framework\TestCase;
-use Nandan108\DtoToolkit\Attribute\CastTo;
+use Nandan108\DtoToolkit\Core\CastTo;
 use Nandan108\DtoToolkit\BaseDto;
 use Nandan108\DtoToolkit\Traits\NormalizesFromAttributes;
 
@@ -69,6 +70,7 @@ final class ExportsToEntityTest extends TestCase
         $dto = new class extends BaseDto implements NormalizesOutboundInterface {
             use NormalizesFromAttributes;
             use ExportsToEntity;
+            use CanCastBasicValues;
 
             public ?int $id = null;
             #[CastTo('trimmedString')]

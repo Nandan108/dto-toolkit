@@ -37,6 +37,9 @@ trait ExportsToEntity
             $setters[$prop]($value);
         }
 
+        // call pre-output hook
+        $this->preOutput($entity);
+
         return $entity;
     }
 

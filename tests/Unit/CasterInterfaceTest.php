@@ -87,7 +87,7 @@ final class CasterInterfaceTest extends TestCase
         $castToSublass = new class ($casterClass) extends CastTo {
             /** @psalm-suppress MoreSpecificReturnType */
             #[\Override]
-            public function resolveFromClassWithContainer(string $className): CasterInterface
+            public function resolveWithContainer(string $className): CasterInterface
             {
                 /** @psalm-suppress InvalidStringClass */
                 return new $className('\SomeNameSpace\MyClass');

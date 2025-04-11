@@ -51,7 +51,7 @@ class CastTo
      * @throws \LogicException If the method does not exist
      * @return \Closure A closure that takes a value to cast calls the casting method and returns the result.
      */
-    public function getCaster(BaseDto $dto): \Closure
+    public function getCaster(?BaseDto $dto = null): \Closure
     {
         $cache          = static::$globalMemoizedCasters;
         $args           = $this->args;
@@ -83,7 +83,7 @@ class CastTo
 
         // Step 2 & 3: Method resolution on DTO and CastTo
         $methodName = static::$methodPrefix . ucfirst($this->methodOrClass);
-        foreach ([$dto, $this] as $target) {
+        foreach (array_filter([$dto, $this]) as $target) {
             if (method_exists($target, $methodName)) {
                 return $memoize(
                     fn(mixed $value): mixed => $target->{$methodName}($value, ...$args),
@@ -99,9 +99,9 @@ class CastTo
             // If the resolver returns a CasterInterface instance, wrap it in a closure
             if ($caster instanceof CasterInterface) {
                 $cache->$cacheKey['instance'] = $caster;
-                $caster = fn(mixed $value): mixed => $caster->cast($value, ...$args);
+                $caster                       = fn(mixed $value): mixed => $caster->cast($value, ...$args);
             }
-            return $memoize($caster,static::$customCasterResolver::class,$this->methodOrClass);
+            return $memoize($caster, static::$customCasterResolver::class, $this->methodOrClass);
         }
 
         // Step 5: Fail
@@ -146,33 +146,30 @@ class CastTo
             throw CastingException::casterInterfaceNotImplemented($className);
         }
 
+        // If constructor args are provided, instantiate the class using them.
         if ($this->constructorArgs !== null) {
-            $instance = new $className(...$this->constructorArgs);
-        } else {
-            $ref  = new \ReflectionClass($className);
-            $ctor = $ref->getConstructor();
-
-            if (!$ctor || $ctor->getNumberOfRequiredParameters() === 0) {
-                $instance = $ref->newInstance();
-            } else {
-                $instance = $this->resolveFromClassWithContainer($className);
-            }
+            // This will throw in case of signature mismatch.
+            return new $className(...$this->constructorArgs);
         }
 
-        // if (!($instance instanceof CasterInterface)) {
-        //     throw CastingException::casterInterfaceNotImplemented($className);
-        // }
+        $ref  = new \ReflectionClass($className);
+        $ctor = $ref->getConstructor();
+        // If no args are required, instantiate!
+        if (!$ctor || $ctor->getNumberOfRequiredParameters() === 0) {
+            return $ref->newInstance();
+        }
 
-        return $instance;
+        // ctorArgs needed but not provided: let DI container resolve it
+        return $this->resolveWithContainer($className);
     }
 
     /**
-     * Resolve the class name to a CasterInterface instance using a container
-     * To be overriden by the framework-specific implementation
+     * Resolve the class name to a CasterInterface instance using a container.
+     * To be overriden by the framework-specific implementation.
      *
      * @return CasterInterface
      */
-    public function resolveFromClassWithContainer(string $className): CasterInterface
+    public function resolveWithContainer(string $className): CasterInterface
     {
         throw new \LogicException("Caster {$className} requires constructor args, but none were provided and no container is available.");
     }
@@ -198,9 +195,13 @@ class CastTo
         if (!isset($casts)) {
             $casts = [0 => [], 1 => []];
             foreach ($reflection->getProperties() as $property) {
-                foreach ($property->getAttributes(static::class) as $attr) {
+                foreach ($property->getAttributes() as $attr) {
+                    // only allow CastTo attributes or subclasses
+                    if (!is_a($attr->getName(), self::class, true)) continue;
+
                     /** @var CastTo $instance */
-                    $instance                                         = $attr->newInstance();
+                    $instance = $attr->newInstance();
+
                     $casts[(int)$instance->outbound][$property->getName()] = $instance->getCaster($dto);
                 }
             }

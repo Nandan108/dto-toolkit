@@ -3,6 +3,9 @@
 ## To Do
 
 39. Publish to GitHub and add CI
+41. Add BaseDto::postLoad() and ::preOutput(array|object $entity) hooks
+    - postLoad() is run in fromArray() right before returning the $dto
+    - preOutput() is run right before returning the Array, Model or Entity
 37. Add support for chaining multiple #[CastTo] attributes (Attribute::IS_REPEATABLE)
 19. Add support for #[CastArrayItemsTo] (extends #[CastTo]) attributes
 31. Add strict support to #[CastTo] attribute
@@ -29,12 +32,14 @@
     - Add tests covering: default values, unfilled fields, and interaction with normal casting
 35. Add tests for strict and non-strict casting failure behavior
 20. Add #[MapTo('actualPropName')] for DTO → Entity name mismatches
-21. Add #[IgnoreMapping] attributes to ignore certain props
+21. Add #[MapTo(NULL)] attributes to ignore certain props
 22. Add #[CustomSetter('setSomethingSpecial')] to override default name
 23. Add toOutputArray() for array output with application of outbound casting
 24. Refactor toEntity() to base it on toOutputArray() + getEntitySetterMap() + using setters
 28. Add nested DTO support with recursive normalization + validation
 29. CastTo for array items (CastArrayItemsTo Attribute or $applyToArrayItems argument?)
+40. Add support for `fromFields`: #[CastTo(AddressInputCaster::class, fromFields: ['street', 'number', 'zip', 'city'])]
+
 
 ## Completed
 

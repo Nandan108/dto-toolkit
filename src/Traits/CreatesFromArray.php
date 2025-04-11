@@ -64,6 +64,8 @@ trait CreatesFromArray
             $dto->normalizeInbound();
         }
 
+        $dto->postLoad();
+
         return $dto;
     }
 

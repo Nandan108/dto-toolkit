@@ -135,4 +135,32 @@ abstract class BaseDto
 
         return $this;
     }
+
+    /**
+     * Post-load hook.
+     *
+     * This method is a hook for subclasses to implement any
+     * additional logic after the DTO has been loaded with data.
+     *
+     * @return void
+     * @psalm-suppress PossiblyUnusedMethod
+     */
+    protected function postLoad() {
+       // no-op - to be implemented in subclasses
+    }
+
+    /**
+     * Pre-output hook.
+     *
+     * This method is a hook for subclasses to implement any additional
+     * logic before an Entity, array, Model, or other output is returned.
+     *
+     * @param array|object $output The output data to be processed
+     * @return void
+     * @psalm-suppress PossiblyUnusedMethod
+     * @psalm-suppress PossiblyUnusedParam
+     */
+    protected function preOutput(array|object $output) {
+        // no-op - to be implemented in subclasses
+    }
 }
