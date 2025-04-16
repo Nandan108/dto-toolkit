@@ -1,150 +1,129 @@
-
 # Casters
 
 Casters are a central feature of the DTO Toolkit. They allow you to modify the shape of:
-- **Inbound data**, after validation, before hydrating a DTO
-- **Outbound data**, before transforming a DTO to an entity or output
+
+- **Inbound data**, after validation and before hydrating a DTO
+- **Outbound data**, before exporting from the DTO (to array, entity or model)
 
 The goal of this project is to provide expressive, declarative syntax for writing lean DTOs and clean controller logic.
 
-For example, after declaring a DTO class:
+---
+
+## 🔄 Inbound vs Outbound Casting
+
+The `#[CastTo(...)]` attribute supports an optional `outbound: true` flag to indicate **when** the casting should occur:
+
+- **Inbound casting** (default) applies when the DTO is being created from raw input, such as request data or an array (`fromArray()`)
+- **Outbound casting** applies when transforming the DTO back to an entity or output format (`toEntity()`, `toOutboundArray()`)
+
+This separation allows for clean and flexible data flows:
+
+- Sanitize or type-convert values on the way **in**
+- Format or enrich values on the way **out**
+
+### ✅ Example: Outbound Casting Only
 
 ```php
-class MyDto extends BaseDto implements NormalizesOutboundInterface {
-    use NormalizesFromAttributes;
-
-    #[CastTo::trimmed()]
-    public ?string $name = null;
-}
-
-$entity = MyDto::fromArray([...])->toEntity();
-```
-
-And once the Laravel adapter is available, you could write a controller like this:
-
-```php
-public function save(Request $request): Response
-{
-    // Create model from request data
-    $model = MyInputDto::fromRequest($request)->toModel()->save();
-
-    // Prepare response using output DTO
-    return response()->json(
-        MyOutputDto::fromModel($model)->toResponse()
-    );
-}
+#[CastTo\DateTime(outbound: true)]
+public ?string $createdAt = null;
 ```
 
 ---
 
 ## Declaring and Using Casters
 
-The DTO Toolkit supports **three ways** to declare how a property should be cast. Each offers different trade-offs in reusability, expressiveness, and discoverability.
+The DTO Toolkit supports **three styles** of declaring casters.
+
+Each offers different trade-offs in reusability, expressiveness, and discoverability.
 
 ---
 
-### 1. Method-Based Casters via String Identifier
+### 1. ✅ Attribute Casters (Recommended DX)
+
+Use predefined attribute classes for each transformation. These are expressive, type-safe, and auto-discoverable.
+
+```php
+use Nandan108\DtoToolkit\CastTo;
+
+class MyDto extends FullDto {
+    #[CastTo\Trimmed]
+    public ?string $name;
+
+    #[CastTo\Slug('~')]
+    public ?string $title;
+
+    #[CastTo\Rounded(2)]
+    public float|string|null $price;
+}
+```
+
+This syntax mimics Symfony Validator or Serializer attributes.
+
+#### Argument Syntax
+For casters that take one argument that affects casting logic in a clear way, it is permissible to provide a value using the positional syntax (see Slug and Rounded examples above). In other situations (more arguments or outbound: true) using the named argument syntax is advised for clarity.
+```php
+   #[CastTo\Rounded(2, outbound:true)]
+   public float|string|null $price;
+```
+
+---
+
+### 2. 🛠️ Custom Caster Classes (`CasterInterface`)
+
+Define reusable casting logic in your own class.
+
+```php
+#[CastTo(MyCustomCaster::class, args: ['param'], constructorArgs: [])]
+public string $value;
+```
+
+```php
+class MyCustomCaster implements CasterInterface {
+    public function cast(mixed $value, array $args = []): mixed {
+        // custom logic here
+    }
+}
+```
+
+If `constructorArgs` are not provided, the system may fall back to container-based resolution (adapter-defined).
+
+---
+
+### 3. ⚙️ Method-Based Caster (String Identifier)
+
+Lightweight syntax that calls a method on the DTO or the core `CastTo` class.
 
 ```php
 #[CastTo('slug', args: ['separator'])]
 public string $slug;
-```
 
-This resolves to a method call (e.g., `castToSlug($value, ...$args)`) that can be defined:
-- On the DTO class
-- On the `CastTo` class
-- Via an inherited trait
-
-#### ✅ Pros
-- Great for one-off or lightweight logic
-- Keeps logic close to the DTO
-
-#### ❌ Cons
-- No type safety
-- Not IDE-discoverable
-- Easy to misname the method
-- No dependency injection
-
----
-
-### 2. Caster Classes (`CasterInterface`)
-
-```php
-#[CastTo(SlugCast::class, args: ['separator'], constructorArgs: [])]
-public string $slug;
-```
-
-Casters must implement:
-
-```php
-interface CasterInterface
-{
-    public function cast(mixed $value, mixed ...$args): mixed;
+public function castToSlug(string $value, string $separator = '-') {
+    return Str::slug($value, $separator);
 }
 ```
 
-If `constructorArgs` aren't provided and the caster requires them, the system attempts container resolution. This behavior is adapter-specific.
-
-#### ✅ Pros
-- Reusable and testable
-- Supports dependency injection
-- Clear separation of concerns
-
-#### ❌ Cons
-- More verbose
-- Requires a class per transformation
-
-#### 📦 Suggested namespaces for custom casters:
-- `App\Dto\Casts\`
-- `App\Dto\Casting\`
+This is useful for one-off transformations where defining a full class would be overkill.
 
 ---
 
-### 3. Static CastTo Constructors (Best DX)
+## 🧭 Caster Naming Conventions
 
-This approach uses static factory methods on your `CastTo` subclass to define reusable attribute declarations:
+To distinguish core vs. project-specific casters:
 
-```php
-#[CastTo::slug('separator')]
-public string $slug;
-```
+- Use `#[CastTo\Trimmed]`, `#[CastTo\FloatType]`, etc. for **core attributes**
+- Use `#[Cast\ToSlug]`, `#[Cast\ToPostalCode]`, etc. for **project- or adapter-specific casters**
 
-In your `CastTo` subclass:
-
-```php
-public static function slug(string $sep): static
-{
-    return new static('slug', [$sep]);
-    // or
-    return new static(MySlugCaster::class, args: [$sep]);
-}
-
-public function castToSlug($value, $sep): string {
-    return Str::slug($value, $sep);
-}
-```
-
-#### ✅ Pros
-- IDE-discoverable
-- Type-safe and expressive
-- Great for adapter packages (Laravel/Symfony)
-
-#### ❌ Cons
-- Requires a `CastTo` subclass per adapter or domain
-
-#### Suggested usage:
-- In a Laravel adapter: `Nandan108\DtoToolkit\Laravel\Attribute\CastTo`
-- In a Symfony adapter: `Nandan108\DtoToolkit\Symfony\Attribute\CastTo`
+This convention mirrors Symfony's Validator system (`Assert\NotBlank`, etc.).
 
 ---
 
-## Summary Table
+## ✅ Summary Table
 
-| Method                         | Discoverability | Type Safety | DI Support | Recommended For |
-|--------------------------------|-----------------|-------------|------------|------------------|
-| `#[CastTo('type', ...)]`       | ❌              | ❌          | ❌         | One-shot DTO-local casters |
-| `#[CastTo(TypeCast::class)]`   | ✅              | ✅          | ✅         | Reusable transformations |
-| `#[CastTo::type(...)]`         | ✅              | ✅          | ❌/✅       | Best DX, adapters, helper methods |
+| Method                          | Discoverability | Type Safety | DI Support | Recommended For               |
+|---------------------------------|-----------------|-------------|------------|-------------------------------|
+| `#[CastTo\SomeType]`           | ✅              | ✅          | ✅         | Most expressive and readable |
+| `#[CastTo(Class::class)]`       | ✅              | ✅          | ✅         | Reusable custom logic         |
+| `#[CastTo('slug')]`             | ❌              | ❌          | ❌         | One-off transformations       |
 
 ---
 
@@ -157,28 +136,24 @@ public function castToSlug($value, $sep): string {
 
 ---
 
-## Caster Resolution Order
+## 🧠 Order of Caster Resolution
 
-Resolution occurs in this order:
-
-1. `class_exists($caster)`?
-    - If constructorArgs are provided: instantiate
-    - If no constructorArgs needed: instantiate
-    - If required but missing: call `resolveWithContainer($class)` (adapter-defined)
+1. If `class_exists($methodOrClass)`:
+    - If `constructorArgs` provided: instantiate
+    - If not: instantiate with no arguments
+    - If required args missing: attempt container resolution (adapter-defined)
 2. Method on the DTO class
-3. Method on the CastTo class
-4. Delegate to `CastTo::$customCasterResolver->resolve($castName)` if defined
+3. Method on the `CastTo` class
+4. Delegate to `CastTo::$customCasterResolver->resolve(...)` (if defined)
 5. Throw `CastingException`
 
 ---
 
-## Caster Caching
+## 🔁 Caster Caching
 
-Each `CastTo` attribute is resolved to a **closure** that’s cached with metadata for inspection:
+Each `CastTo` attribute is resolved to a closure and cached.
 
-- Class-based casters are memoized by class name (single instance kept in memory)
-    - ⚠️ `constructorArgs` are *not* part of the cache key — they should only be used with DI
-    - Logic-altering arguments must be passed via `args`
-- Method-based casters are cached by method name + `serialize(args)`
-- Use `CastTo::getCasterMetadata(?string $methodKey = null)` to inspect cache
-- Use `CastTo::clearCasterMetadata()` to reset
+- Class-based casters are memoized by class name + `serialize(constructorArgs)`
+- Method-based casters are cached by method + `serialize(args)`
+- `CastTo::getCasterMetadata()` lets you inspect cached casters
+- `CastTo::clearCasterMetadata()` resets the cache

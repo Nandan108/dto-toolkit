@@ -1,18 +1,23 @@
 <?php
 
-namespace Nandan108\DtoToolkit\Attribute;
+namespace Nandan108\DtoToolkit;
 
 use Attribute;
-use Nandan108\DtoToolkit\BaseDto;
+use Nandan108\DtoToolkit\Core\BaseDto;
+use Nandan108\DtoToolkit\Contracts\Bootable;
 use Nandan108\DtoToolkit\Contracts\CasterInterface;
 use Nandan108\DtoToolkit\Contracts\CasterResolverInterface;
+use Nandan108\DtoToolkit\Contracts\Injectable;
 use Nandan108\DtoToolkit\Exception\CastingException;
 
 /**
  * Defines a casting method for a DTO property during normalization.
+ * Should be used through concrete Caster Attribute subclasses.
+ * #[CastTo('SomeType')]
  *
+ * Can also be used directly with a DTO caster method name or a CasterInterface class name.
  * Usage:
- *   #[CastTo('SomeType')]
+ *   #[CasterCore('SomeType')]
  *   public string|SomeType|null $property;
  *
  * This will call the method castToSomeType($value) on the DTO.
@@ -32,7 +37,7 @@ class CastTo
     public static \Closure $onCastResolved;
 
     public function __construct(
-        public string $methodOrClass,
+        public ?string $methodOrClass = null,
         /** @psalm-suppress PossiblyUnusedProperty */
         public bool $outbound = false,
         public array $args = [],
@@ -53,10 +58,11 @@ class CastTo
      */
     public function getCaster(?BaseDto $dto = null): \Closure
     {
+        $serialize      = fn(mixed $data, $prefix      = '') => $data ? $prefix . serialize($data) : 'null';
         $cache          = static::$globalMemoizedCasters;
         $args           = $this->args;
-        $serializedArgs = serialize($args);
-        $cacheKey       = $this->methodOrClass;
+        $serializedArgs = $serialize($args);
+        $cacheKey       = $this->methodOrClass . $serialize($this->constructorArgs, ':');
 
         // early return on cache hit
         $casterMeta = $cache->$cacheKey['casters'][$serializedArgs] ?? null;
@@ -72,10 +78,15 @@ class CastTo
         };
 
         // Step 1: Class name resolution
-        if (class_exists($this->methodOrClass)) {
+        if ($this instanceof CasterInterface) {
+            $instance = $cache->$cacheKey['instance'] ??= $this;
+        } elseif (class_exists($this->methodOrClass)) {
             $instance = $cache->$cacheKey['instance'] ??= $this->resolveFromClass($this->methodOrClass);
+        }
+        // if we have an caster class instance, return a caster
+        if (isset($instance)) {
             return $memoize(
-                caster: fn(mixed $value): mixed => $instance->cast($value, ...$args),
+                caster: fn(mixed $value): mixed => $instance->cast($value, $args),
                 object: $this->methodOrClass,
                 method: static::$methodPrefix . ucfirst($this->methodOrClass),
             );
@@ -99,7 +110,7 @@ class CastTo
             // If the resolver returns a CasterInterface instance, wrap it in a closure
             if ($caster instanceof CasterInterface) {
                 $cache->$cacheKey['instance'] = $caster;
-                $caster                       = fn(mixed $value): mixed => $caster->cast($value, ...$args);
+                $caster                       = fn(mixed $value): mixed => $caster->cast($value, $args);
             }
             return $memoize($caster, static::$customCasterResolver::class, $this->methodOrClass);
         }
@@ -116,7 +127,7 @@ class CastTo
      * @internal For debugging and introspection purposes only.
      * @psalm-suppress PossiblyUnusedMethod
      */
-    public static function getCasterMetadata(?string $methodKey = null): \stdClass|array|null
+    public static function _getCasterMetadata(?string $methodKey = null): \stdClass|array|null
     {
         if ($methodKey !== null) {
             /** @var array */
@@ -124,8 +135,8 @@ class CastTo
         }
         return self::$globalMemoizedCasters;
     }
-
-    public static function clearCasterMetadata(?string $methodKey = null): void
+    /** 🐞 Debugging utility: clear internal memoized caster data. */
+    public static function _clearCasterMetadata(?string $methodKey = null): void
     {
         if ($methodKey !== null) {
             unset(self::$globalMemoizedCasters->{$methodKey});
@@ -149,14 +160,24 @@ class CastTo
         // If constructor args are provided, instantiate the class using them.
         if ($this->constructorArgs !== null) {
             // This will throw in case of signature mismatch.
-            return new $className(...$this->constructorArgs);
+            $instance = new $className(...$this->constructorArgs);
+
+            if ($instance instanceof Injectable) $instance->inject();
+            if ($instance instanceof Bootable) $instance->boot();
+
+            return $instance;
         }
 
         $ref  = new \ReflectionClass($className);
         $ctor = $ref->getConstructor();
         // If no args are required, instantiate!
         if (!$ctor || $ctor->getNumberOfRequiredParameters() === 0) {
-            return $ref->newInstance();
+            $instance = $ref->newInstance();
+
+            if ($instance instanceof Injectable) $instance->inject();
+            if ($instance instanceof Bootable) $instance->boot();
+
+            return $instance;
         }
 
         // ctorArgs needed but not provided: let DI container resolve it
@@ -182,10 +203,8 @@ class CastTo
      * @return array
      * @psalm-suppress PossiblyUnusedMethod
      */
-    public static function getCastingClosureMap(
-        BaseDto $dto,
-        bool $outbound = false,
-    ): array {
+    public static function getCastingClosureMap(BaseDto $dto, bool $outbound = false): array
+    {
         static $cache = [];
 
         $reflection = new \ReflectionClass($dto);
@@ -195,9 +214,11 @@ class CastTo
         if (!isset($casts)) {
             $casts = [0 => [], 1 => []];
             foreach ($reflection->getProperties() as $property) {
-                foreach ($property->getAttributes() as $attr) {
+                $attributes = $property->getAttributes();
+                foreach ($attributes as $attr) {
                     // only allow CastTo attributes or subclasses
-                    if (!is_a($attr->getName(), self::class, true)) continue;
+                    $attrIsCasting = is_a($attr->getName(), self::class, true);
+                    if (!$attrIsCasting) continue;
 
                     /** @var CastTo $instance */
                     $instance = $attr->newInstance();

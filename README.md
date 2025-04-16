@@ -64,14 +64,17 @@ Adapters will provide support for:
 - `toEntity()` or `toModel()` adapter-specific hydration
 - `toResponse()` generation
 - DI for class-based casters resolution
--
+- Graceful handling of validation and casting exceptions in HTTP contexts, with standardized API error responses
+
 ---
 
 ## 📚 Documentation
 
+- [DTO Fundamentals](docs/DtoFundamentals.md) – what DTOs are, why they matter, and how to use them in modern PHP
 - [Casters](docs/Casting.md) – how casting works and how to write your own
+- [Lifecycle](docs/DtoLifecycle.md) – Understanding the lifecycle of a DTO
 - [Lifecycle Hooks](docs/Hooks.md) – customize behavior with `postLoad()` and `preOutput()`
-- Input/Output DTOs *(coming soon)*
+- [Toolkit Comparison](docs/Comparison.md) – see how this toolkit compares to other PHP DTO/mapping libraries
 - Validation *(coming soon)*
 - Writing Adapters *(coming soon)*
 

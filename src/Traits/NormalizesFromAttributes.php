@@ -3,7 +3,7 @@
 namespace Nandan108\DtoToolkit\Traits;
 
 use LogicException;
-use Nandan108\DtoToolkit\Attribute\CastTo;
+use Nandan108\DtoToolkit\CastTo as CastTo;
 
 /** @psalm-require-extends \Nandan108\DtoToolkit\BaseDto */
 trait NormalizesFromAttributes

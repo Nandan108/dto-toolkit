@@ -2,7 +2,7 @@
 
 namespace Nandan108\DtoToolkit\Traits;
 
-use Nandan108\DtoToolkit\BaseDto;
+use Nandan108\DtoToolkit\Core\BaseDto;
 
 /**
  * @psalm-require-extends BaseDto

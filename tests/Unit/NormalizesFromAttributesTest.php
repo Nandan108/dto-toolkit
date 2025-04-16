@@ -4,12 +4,13 @@ namespace Nandan108\DtoToolkit\Tests\Unit;
 
 use DateTimeImmutable;
 use Mockery;
-use Nandan108\DtoToolkit\Core\CastTo;
+use Nandan108\DtoToolkit\CastTo;
+use Nandan108\DtoToolkit\Cast;
 use Nandan108\DtoToolkit\Contracts\NormalizesOutboundInterface;
-use Nandan108\DtoToolkit\Traits\CanCastBasicValues;
+// use Nandan108\DtoToolkit\Traits\CanCastBasicValues;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use Nandan108\DtoToolkit\BaseDto;
+use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Exception\CastingException;
 use Nandan108\DtoToolkit\Traits\NormalizesFromAttributes;
 
@@ -22,7 +23,7 @@ final class NormalizesFromAttributesTest extends TestCase
         $dto = new class extends BaseDto {
             use NormalizesFromAttributes;
 
-            #[CastTo('intOrNull')]
+            #[CastTo\Integer(nullable: true)]
             public null|string|int $age = null;
         };
 
@@ -53,13 +54,22 @@ final class NormalizesFromAttributesTest extends TestCase
         $dto = new class extends BaseDto implements NormalizesOutboundInterface {
             use NormalizesFromAttributes;
 
-            #[CastTo('trimmedString', outbound: true)]
+            #[CastTo\Trimmed(outbound: true)]
             public ?string $title = null;
 
-            #[CastTo('stringOrNull', outbound: true)]
+            #[CastTo\Str(outbound: true)]
             public int|string|null $categoryId = null;
 
-            #[CastTo('stringOrNull', outbound: true)]
+            #[CastTo\Str(outbound: true, nullable: true)]
+            public int|string|null $foo = null;
+
+            #[CastTo\Str(outbound: true)]
+            public int|string|null $emptyString = null;
+
+            #[CastTo\Str(outbound: true, nullable: true)]
+            public int|string|null $emptyStringNullable = null;
+
+            #[CastTo\Str(outbound: true)]
             private int|string|null $privatePropWithSetter = null;
             public function setPrivatePropWithSetter(string $value): void
             {
@@ -74,12 +84,21 @@ final class NormalizesFromAttributesTest extends TestCase
             'categoryId'            => 42,
             'untouched'             => 'value',
             'privatePropWithSetter' => 'val',
+            'foo'                   => ['foo'],
+            'emptyString'           => '',
+            'emptyStringNullable'   => '',
+
         ]);
 
-        $this->assertSame('Hello', $normalized['title']);
-        $this->assertSame('42', $normalized['categoryId']);
-        $this->assertSame('value', $normalized['untouched']); // unchanged
-        $this->assertSame('val', $normalized['privatePropWithSetter']);
+        $this->assertSame($normalized, [
+            'title'                 => 'Hello',
+            'categoryId'            => '42',
+            'untouched'             => 'value',
+            'privatePropWithSetter' => 'val',
+            'foo'                   => null,
+            'emptyString'           => '',
+            'emptyStringNullable'   => null,
+        ]);
     }
 
     public function test_get_caster_throws_when_method_missing(): void

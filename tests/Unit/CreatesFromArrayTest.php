@@ -2,9 +2,9 @@
 
 namespace Nandan108\DtoToolkit\Tests\Unit;
 
-use Nandan108\DtoToolkit\Core\CastTo;
+use Nandan108\DtoToolkit\CastTo;
 use PHPUnit\Framework\TestCase;
-use Nandan108\DtoToolkit\BaseDto;
+use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Contracts\NormalizesInboundInterface;
 use Nandan108\DtoToolkit\Contracts\ValidatesInputInterface;
 use Nandan108\DtoToolkit\Traits\CreatesFromArray;
@@ -152,10 +152,10 @@ final class CreatesFromArrayTest extends TestCase
             use CreatesFromArray;
             use NormalizesFromAttributes;
 
-            #[CastTo('intOrNull')]
+            #[CastTo\Integer]
             public string|int|null $age = null;
 
-            #[CastTo('trimmedString')]
+            #[CastTo\Trimmed]
             public ?string $name = null;
         };
 

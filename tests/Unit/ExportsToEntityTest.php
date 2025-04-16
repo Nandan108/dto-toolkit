@@ -3,12 +3,11 @@
 namespace Nandan108\DtoToolkit\Tests\Unit;
 
 use Mockery;
+use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Contracts\NormalizesOutboundInterface;
-use Nandan108\DtoToolkit\Traits\CanCastBasicValues;
 use Nandan108\DtoToolkit\Traits\ExportsToEntity;
 use PHPUnit\Framework\TestCase;
-use Nandan108\DtoToolkit\Core\CastTo;
-use Nandan108\DtoToolkit\BaseDto;
+use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Traits\NormalizesFromAttributes;
 
 /** @psalm-suppress UnusedClass */
@@ -70,15 +69,17 @@ final class ExportsToEntityTest extends TestCase
         $dto = new class extends BaseDto implements NormalizesOutboundInterface {
             use NormalizesFromAttributes;
             use ExportsToEntity;
-            use CanCastBasicValues;
+            // use CanCastBasicValues;
 
             public ?int $id = null;
-            #[CastTo('trimmedString')]
+            #[CastTo\Trimmed]
             public ?string $name = null;
-            #[CastTo('intOrNull')]
+            #[CastTo\Integer(true)]
             public null|int|string $age = null;
             #[CastTo('trimmedString')]
             public ?string $email = null;
+
+            public function castToTrimmedString(?string $str) { return trim($str ?? ''); }
         };
 
         $dto->fill([

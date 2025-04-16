@@ -1,6 +1,6 @@
 <?php
 
-namespace Nandan108\DtoToolkit;
+namespace Nandan108\DtoToolkit\Core;
 
 use Nandan108\DtoToolkit\Contracts\NormalizesOutboundInterface;
 
@@ -145,7 +145,7 @@ abstract class BaseDto
      * @return void
      * @psalm-suppress PossiblyUnusedMethod
      */
-    protected function postLoad() {
+    public function postLoad() {
        // no-op - to be implemented in subclasses
     }
 
@@ -160,7 +160,7 @@ abstract class BaseDto
      * @psalm-suppress PossiblyUnusedMethod
      * @psalm-suppress PossiblyUnusedParam
      */
-    protected function preOutput(array|object $output) {
+    public function preOutput(array|object $output) {
         // no-op - to be implemented in subclasses
     }
 }

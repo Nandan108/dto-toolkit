@@ -2,7 +2,7 @@
 
 namespace Nandan108\DtoToolkit\Traits;
 
-use Nandan108\DtoToolkit\BaseDto;
+use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Contracts\NormalizesInboundInterface;
 use Nandan108\DtoToolkit\Contracts\ValidatesInputInterface;
 
@@ -64,6 +64,7 @@ trait CreatesFromArray
             $dto->normalizeInbound();
         }
 
+        // call post-load hook
         $dto->postLoad();
 
         return $dto;

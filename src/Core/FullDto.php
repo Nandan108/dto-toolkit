@@ -2,7 +2,6 @@
 
 namespace Nandan108\DtoToolkit\Core;
 
-use Nandan108\DtoToolkit\BaseDto;
 use Nandan108\DtoToolkit\Traits;
 use Nandan108\DtoToolkit\Contracts\NormalizesInboundInterface;
 use Nandan108\DtoToolkit\Contracts\NormalizesOutboundInterface;
