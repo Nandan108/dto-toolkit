@@ -23,8 +23,10 @@ final class Slug extends CastBase implements CasterInterface
 
         $this->checkIntlAvailable();
 
+        /** @psalm-suppress PossiblyNullReference */
         $value = \Transliterator::create('Any-Latin; Latin-ASCII; [\u0100-\u7fff] remove')->transliterate($value);
 
+        /** @psalm-suppress PossiblyNullArgument */
         return strtolower(trim(preg_replace('/[^A-Za-z0-9]+/', $separator, $value), $separator));
     }
 

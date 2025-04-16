@@ -91,6 +91,7 @@ final class CasterInterfaceTest extends TestCase
             public function resolveWithContainer(string $className): CasterInterface
             {
                 /** @psalm-suppress InvalidStringClass */
+                /** @var CasterInterface */
                 return new $className('\SomeNameSpace\MyClass');
             }
         };

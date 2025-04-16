@@ -65,6 +65,7 @@ trait CreatesFromArray
         }
 
         // call post-load hook
+        /** @psalm-suppress UndefinedMethod */
         $dto->postLoad();
 
         return $dto;

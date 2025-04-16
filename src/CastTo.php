@@ -34,6 +34,11 @@ class CastTo
     static protected string $methodPrefix = 'castTo';
     public static ?CasterResolverInterface $customCasterResolver = null;
     protected static ?\stdClass $globalMemoizedCasters = null;
+
+    /**
+     * @internal A hook closure that is called when a cast is resolved.
+     * @var \Closure(array $casterMeta, bool $isCacheHit): void
+     */
     public static \Closure $onCastResolved;
 
     public function __construct(
@@ -56,13 +61,14 @@ class CastTo
      * @throws \LogicException If the method does not exist
      * @return \Closure A closure that takes a value to cast calls the casting method and returns the result.
      */
-    public function getCaster(?BaseDto $dto = null): \Closure
+    public function getCaster(BaseDto $dto): \Closure
     {
-        $serialize      = fn(mixed $data, $prefix      = '') => $data ? $prefix . serialize($data) : 'null';
-        $cache          = static::$globalMemoizedCasters;
-        $args           = $this->args;
-        $serializedArgs = $serialize($args);
-        $cacheKey       = $this->methodOrClass . $serialize($this->constructorArgs, ':');
+        $serialize           = fn(mixed $data, string $prefix           = ''): string => $data ? $prefix . serialize($data) : 'null';
+        $cache               = static::$globalMemoizedCasters;
+        $args                = $this->args;
+        $serializedArgs      = $serialize($args);
+        $this->methodOrClass ??= $this::class;
+        $cacheKey            = $this->methodOrClass . $serialize($this->constructorArgs, ':');
 
         // early return on cache hit
         $casterMeta = $cache->$cacheKey['casters'][$serializedArgs] ?? null;
@@ -71,51 +77,73 @@ class CastTo
             return $casterMeta['caster'];
         }
 
-        $memoize = function (\Closure $caster, ?string $object, string $method) use (&$cache, $cacheKey, $serializedArgs): \Closure {
-            $cache->$cacheKey['casters'][$serializedArgs] = $casterMeta = compact('caster', 'object', 'method');
+        /** @var ?CasterInterface $instance */
+        $instance = null;
+
+        // Helper function to memoize the caster
+        $memoizeCaster   = function (\Closure $caster   = null, ?string $object   = null, string $method   = null) use (&$cache, &$cacheKey, $serializedArgs, &$instance, $args): \Closure {
+            $caster ??= fn(mixed $value): mixed => $instance?->cast($value, $args);
+            $object ??= $this->methodOrClass;
+            $method ??= static::$methodPrefix . ucfirst($this->methodOrClass ?? '');
+            $cache->$cacheKey['casters'][$serializedArgs] = $casterMeta = [
+                'caster' => $caster,
+                'object' => $object,
+                'method' => $method,
+            ];
             (static::$onCastResolved)($casterMeta, false);
             return $caster;
         };
+        $memoizeInstance = function (CasterInterface $casterInstance) use ($cache, $cacheKey, &$instance): void {
+            $this->methodOrClass = $casterInstance::class;
+            $instance = $cache->$cacheKey['instance'] ??= $casterInstance;
+        };
 
-        // Step 1: Class name resolution
+        // Check if we're using an Attribute Caster
         if ($this instanceof CasterInterface) {
-            $instance = $cache->$cacheKey['instance'] ??= $this;
-        } elseif (class_exists($this->methodOrClass)) {
-            $instance = $cache->$cacheKey['instance'] ??= $this->resolveFromClass($this->methodOrClass);
+            $memoizeInstance($this);
+            return $memoizeCaster();
         }
-        // if we have an caster class instance, return a caster
-        if (isset($instance)) {
-            return $memoize(
-                caster: fn(mixed $value): mixed => $instance->cast($value, $args),
-                object: $this->methodOrClass,
-                method: static::$methodPrefix . ucfirst($this->methodOrClass),
+
+        // Throw if no method or class name was provided
+        if ($this->methodOrClass === '') {
+            throw new \LogicException('No casting method name or class provided.');
+        }
+
+        // A class name was provided? Resolve and use it.
+        if (class_exists($this->methodOrClass)) {
+            // if a class name is provided, we need to resolve it
+            $memoizeInstance($this->resolveFromClass($this->methodOrClass));
+            return $memoizeCaster();
+        }
+
+        // A DTO 'CastTo'+method-name was provided? Use it.
+        $methodName = static::$methodPrefix . ucfirst($this->methodOrClass);
+        if (method_exists($dto, $methodName)) {
+            return $memoizeCaster(
+                caster: fn(mixed $value): mixed => $dto->{$methodName}($value, ...$args),
+                object: $dto::class,
+                method: $methodName,
             );
         }
 
-        // Step 2 & 3: Method resolution on DTO and CastTo
-        $methodName = static::$methodPrefix . ucfirst($this->methodOrClass);
-        foreach (array_filter([$dto, $this]) as $target) {
-            if (method_exists($target, $methodName)) {
-                return $memoize(
-                    fn(mixed $value): mixed => $target->{$methodName}($value, ...$args),
-                        $target::class,
-                    $methodName,
-                );
-            }
-        }
-
-        // Step 4: Custom resolver
+        // Use a the custom resolver, if available.
         if (static::$customCasterResolver) {
-            $caster = static::$customCasterResolver->resolve($this->methodOrClass, $this->constructorArgs);
-            // If the resolver returns a CasterInterface instance, wrap it in a closure
+            $caster = static::$customCasterResolver
+                ->resolve($this->methodOrClass, $this->constructorArgs);
             if ($caster instanceof CasterInterface) {
-                $cache->$cacheKey['instance'] = $caster;
-                $caster                       = fn(mixed $value): mixed => $caster->cast($value, $args);
+                // If the resolver returns a CasterInterface instance, wrap it in a closure
+                $memoizeInstance($caster);
+                $caster   = fn(mixed $value): mixed => $caster->cast($value, $args);
+            } else {
+                // If the resolver returns a closure, use it directly
             }
-            return $memoize($caster, static::$customCasterResolver::class, $this->methodOrClass);
+            return $memoizeCaster(
+                caster: $caster,
+                object: static::$customCasterResolver::class,
+                method: $this->methodOrClass,
+            );
         }
 
-        // Step 5: Fail
         throw CastingException::unresolved($this->methodOrClass);
     }
 
@@ -198,7 +226,7 @@ class CastTo
     /**
      * Get an associative array of [propName => castingClosure] for a DTO
      *
-     * @param \Nandan108\DtoToolkit\BaseDto $dto
+     * @param \Nandan108\DtoToolkit\Core\BaseDto $dto
      * @param bool $outbound
      * @return array
      * @psalm-suppress PossiblyUnusedMethod

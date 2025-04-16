@@ -2,12 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [v0.2.0] - 2025-04-16
 
-### Added
-- New documentation: Mapping, Fundamentals, Comparison
-- Linked additional docs from README
-- Design philosophy updates (zero magic, opt-in magic)
+### Changed
+- Refactored casting system to use Symfony-style dedicated attribute casters as the primary method
+  - Introduced individual caster attributes under `CastTo\*` (e.g., `#[CastTo\Trimmed]`, `#[CastTo\FloatType]`)
+  - Removed support for the invalid syntax `#[CastTo::methodName(...)]`
+  - Replaced legacy `CanCastBasicValues` trait with modular caster attribute classes
+  - Retained support for method- and class-based casters using `#[CastTo('methodOrClass')]`
+- Added `CastBase` base class to support shared logic and optional dependency injection via `#[Injected]`
+- Introduced `CastingException` for structured error handling during cast operations
+
+### Docs
+- Added: `docs/DtoLifecycle.md` – explains the full lifecycle of a DTO (creation, validation, normalization, output)
+- Updated: `docs/Casting.md` – clarified caster declaration styles and pros/cons
+- Updated: `README.md` with revised feature list and new links
+- Added: `docs/Mapping.md` documenting yet-unimplemented MapTo/MapFrom Attributes
+- Added: `docs/Fundamentals.md` - explains the concept of DTO and use cases
+- Added: `docs/Comparison.md` - compare the toolkit with other libraries in the PHP ecosystem
+- Linked docs from README
+- Added to README: Design philosophy updates (zero magic, opt-in magic)
+- Backlog: Tidied PBI format, cleaned up and updated various items.
 
 ---
 

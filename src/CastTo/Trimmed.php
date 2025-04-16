@@ -22,7 +22,7 @@ final class Trimmed extends CastBase
     {
         [$characters, $where] = $args;
 
-        $v = is_string($value) ? $value : null;
+        $v = is_string($value) ? $value : '';
         return match ($where) {
             'left'  => ltrim($v, $characters),
             'right' => rtrim($v, $characters),

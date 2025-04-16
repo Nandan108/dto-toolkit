@@ -18,7 +18,7 @@ final class CastingException extends RuntimeException
     /** @psalm-suppress PossiblyUnusedProperty */
     public mixed $operand = null;
 
-    public static $maxOperandTextLength = 100;
+    public static int $maxOperandTextLength = 100;
 
     public static function unresolved(string $methodOrClass): self
     {
@@ -34,9 +34,14 @@ final class CastingException extends RuntimeException
         return $e;
     }
 
-    public static function castingFailure(string $className, mixed $operand, string $methodName = null, array $args = [], ?string $messageOverride = null): self
+    /** @psalm-suppress PossiblyUnusedMethod */
+    public static function castingFailure(string $className, mixed $operand, ?string $methodName = null, array $args = [], ?string $messageOverride = null): self
     {
-        $caster = $className . ($methodName ? '::' . $methodName : '');
+        $caster = $className;
+        if ($methodName !== null && $methodName !== '') {
+            $caster .= '::' . $methodName;
+        }
+
         if ($args) {
             try {
                 $caster .= '(' . json_encode($args, JSON_THROW_ON_ERROR) . ')';
@@ -47,30 +52,36 @@ final class CastingException extends RuntimeException
         $operandType = gettype($operand);
 
         $message = "Caster {$caster} failed to cast $operandType";
-        $message = $messageOverride
-            ? rtrim($messageOverride, '.') . ': ' . $message
-            : $message;
+        $message = ($messageOverride === null || $messageOverride === '')
+            ? $message
+            : rtrim($messageOverride, '.') . ': ' . $message;
 
-        $getJson  = function ($operand) {
+        $getJson  = function (mixed $operand): string|null {
             try {
-                return json_encode($operand, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+                return json_encode($operand, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: null;
             } catch (\JsonException $e) {
                 return '[not serializable: ' . $e->getMessage() . ']';
             }
         };
-        $addOpVal = function($txt) use(&$message) {
-            if (!$txt) return;
+        $addOpVal = function(?string $txt) use(&$message): void {
+            if ($txt === null || $txt === '') return;
             $message .= ", value: ";
+            /** @psalm-suppress PossiblyNullArgument */
             $message .= strlen($txt) > self::$maxOperandTextLength
                 ? substr($txt, 0, self::$maxOperandTextLength) . '...'
                 : $txt;
         };
 
         if (empty($operand) || is_scalar($operand) || is_array($operand)) {
-            $addOpVal($getJson($operand) ?? var_export($operand, true));
+            if (($encOp = $getJson($operand)) !== null) {
+                $addOpVal($encOp);
+            } elseif ($encOp = var_export($operand, true)) {
+                $addOpVal($encOp);
+            }
         } elseif (is_object($operand)) {
             $message .= ", class: " . get_class($operand);
             if (method_exists($operand, '__toString')) {
+                /** @psalm-suppress PossiblyNullArgument */
                 $addOpVal($getJson($operand->__toString()));
             } elseif ($operand instanceof \JsonSerializable) {
                 $addOpVal($getJson($operand));

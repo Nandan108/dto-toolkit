@@ -31,6 +31,8 @@ final class CanCastBasicValuesTest extends TestCase
             $caster          = $casterAttribute->getCaster($dto);
         } elseif ($method instanceof CastTo) {
             $caster = $method->getCaster($dto);
+        } else {
+            $this->fail('Invalid method type: ' . gettype($method));
         }
 
         // Call the caster closure with the input value and get the result
@@ -44,9 +46,9 @@ final class CanCastBasicValuesTest extends TestCase
                 $this->assertSame($expected, $result);
             }
         } catch (\Exception $e) {
-            if (is_string($expected) && is_a($e, $expected)) {
+            if (is_string($expected) && class_exists($expected) && is_a($e, $expected)) {
                 $this->assertInstanceOf($expected, $e);
-                if ($exceptionMessage) {
+                if ($exceptionMessage !== null && $exceptionMessage > '') {
                     $this->assertStringContainsString($exceptionMessage, $e->getMessage());
                 }
             } else {

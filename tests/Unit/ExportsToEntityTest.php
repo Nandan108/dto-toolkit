@@ -79,7 +79,7 @@ final class ExportsToEntityTest extends TestCase
             #[CastTo('trimmedString')]
             public ?string $email = null;
 
-            public function castToTrimmedString(?string $str) { return trim($str ?? ''); }
+            public function castToTrimmedString(?string $str): string { return trim($str ?? ''); }
         };
 
         $dto->fill([

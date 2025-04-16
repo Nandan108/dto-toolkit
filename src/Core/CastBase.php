@@ -33,6 +33,7 @@ abstract class CastBase extends CastTo implements CasterInterface
     {
         foreach ((new \ReflectionClass($this))->getProperties() as $prop) {
             if (! $prop->getAttributes(Injected::class)) continue;
+            /** @psalm-suppress UndefinedMethod */
             $type = $prop->getType()?->getName();
             if (! $type) throw new \RuntimeException("Cannot inject untyped property {$prop->getName()}");
             $value = $this->resolveFromContainer($type);
@@ -57,7 +58,7 @@ abstract class CastBase extends CastTo implements CasterInterface
      *
      * @param mixed $value
      * @param mixed[] $args passed from Attribute constructor
-     * @return void
+     * @return mixed
      */
     #[\Override]
     abstract public function cast(mixed $value, array $args = []): mixed;

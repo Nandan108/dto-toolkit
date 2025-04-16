@@ -35,7 +35,7 @@ final class Enum extends CastBase implements CasterInterface
             throw new CastingException("Enum caster: '{$enumClass}' is not a backed enum.");
         }
         $enumVals = array_map(
-            static fn($case) => $case->value,
+            static fn(BackedEnum $case): string|int => $case->value,
             $enumClass::cases()
         );
         if (in_array($value, $enumVals, true)) {

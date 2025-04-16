@@ -5,7 +5,7 @@ namespace Nandan108\DtoToolkit\Traits;
 use LogicException;
 use Nandan108\DtoToolkit\CastTo as CastTo;
 
-/** @psalm-require-extends \Nandan108\DtoToolkit\BaseDto */
+/** @psalm-require-extends \Nandan108\DtoToolkit\Core\BaseDto */
 trait NormalizesFromAttributes
 {
     public function normalizeInbound(): void

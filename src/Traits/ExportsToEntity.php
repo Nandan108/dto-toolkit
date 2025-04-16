@@ -38,6 +38,7 @@ trait ExportsToEntity
         }
 
         // call pre-output hook
+        /** @psalm-suppress UndefinedMethod */
         $this->preOutput($entity);
 
         return $entity;

@@ -12,7 +12,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 
 // Dummy service to inject
-class DummySlugger
+final class DummySlugger
 {
     public function slugify(string $text): string
     {
@@ -22,10 +22,10 @@ class DummySlugger
 
 // Caster using #[Injected]
 #[\Attribute(\Attribute::TARGET_PROPERTY)]
-class SlugifyCaster extends CastBase
+final class SlugifyCaster extends CastBase
 {
-    #[Injected]
-    private DummySlugger $slugger;
+    /** @psalm-suppress PropertyNotSetInConstructor */
+    #[Injected] private DummySlugger $slugger;
 
 
     #[\Override]
@@ -44,11 +44,12 @@ class SlugifyCaster extends CastBase
     }
 }
 
+/** @psalm-suppress PropertyNotSetInConstructor */
 #[\Attribute(\Attribute::TARGET_PROPERTY)]
-class BridgeBasedSlugifyCaster extends CastBase
+final class BridgeBasedSlugifyCaster extends CastBase
 {
-    #[Injected]
-    private DummySlugger $slugger;
+    /** @psalm-suppress PropertyNotSetInConstructor */
+    #[Injected] private DummySlugger $slugger;
 
     #[\Override]
     public function cast(mixed $value, array $args = []): string
@@ -99,8 +100,8 @@ final class CastBaseInjectionTest extends TestCase
     public function testResolveFromContainerThrowsByDefault(): void
     {
         $caster = new class extends CastBase {
-            #[Injected]
-            private DummySlugger $slugger;
+            /** @psalm-suppress PropertyNotSetInConstructor */
+            #[Injected] private DummySlugger $slugger;
 
             /**
              * Dummy cast() method that's never called in this test

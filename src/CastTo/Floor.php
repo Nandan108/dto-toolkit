@@ -18,8 +18,10 @@ final class Floor extends CastBase implements CasterInterface
     {
         [$nullable] = $args;
 
-        return is_numeric($value)
-            ? floor($value)
-            : ($nullable ? null : 0);
+        if (!is_numeric($value)) {
+            return $nullable ? null : 0;
+        }
+
+        return (int)floor((float)$value);
     }
 }

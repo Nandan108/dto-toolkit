@@ -21,7 +21,6 @@ final class CastingExceptionTest extends TestCase
         $this->assertInstanceOf(CastingException::class, $exception);
         $this->assertStringContainsString("Caster $className($serializedArgs) failed to cast", $exception->getMessage());
         $this->assertEquals($className, $exception->className);
-        $this->assertIsArray($exception->args);
         $this->assertIsObject($exception->operand);
     }
 
@@ -45,7 +44,7 @@ final class CastingExceptionTest extends TestCase
             operand: $resource,
             args: [],
         );
-        fclose($resource);
+        if ($resource) fclose($resource);
 
         $this->assertStringContainsString('failed to cast resource', $exception->getMessage());
     }
@@ -82,7 +81,7 @@ final class CastingExceptionTest extends TestCase
             operand: 'foo',
             args: ['bad' => $resource],
         );
-        fclose($resource);
+        if ($resource) fclose($resource);
 
         $this->assertStringContainsString('(?args?)', $exception->getMessage());
     }
@@ -142,7 +141,7 @@ final class CastingExceptionTest extends TestCase
 
 }
 
-class StringableClass
+final class StringableClass
 {
     public function __toString(): string
     {
@@ -150,7 +149,7 @@ class StringableClass
     }
 }
 
-class JsonLike implements \JsonSerializable
+final class JsonLike implements \JsonSerializable
 {
     public function __construct(public mixed $prop = 'foo') {
         $this->prop = ['x' => 'y'];

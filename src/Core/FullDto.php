@@ -6,7 +6,7 @@ use Nandan108\DtoToolkit\Traits;
 use Nandan108\DtoToolkit\Contracts\NormalizesInboundInterface;
 use Nandan108\DtoToolkit\Contracts\NormalizesOutboundInterface;
 
-/** @psalm-suppress UnusedClass */
+/** @psalm-api */
 class FullDto extends BaseDto implements NormalizesInboundInterface, NormalizesOutboundInterface
 {
     use Traits\CreatesFromArray;
