@@ -106,14 +106,102 @@ This is useful for one-off transformations where defining a full class would be 
 
 ---
 
+## 🔗 Caster Chaining
+
+You can now apply multiple `#[CastTo(...)]` attributes to a single property.
+They will be executed **in order**, allowing you to build rich transformation pipelines.
+
+```php
+#[CastTo\Trimmed]
+#[CastTo\Slug('-')]
+public ?string $title;
+```
+
+This trims the input string, then slugifies it.
+
+Chaining also supports **modifiers** that affect how casters are applied.
+
+---
+
+### 🧩 Modifier Attributes
+
+Modifier attributes implement the `CastModifier` interface and control the behavior of the **caster chain**.
+
+You can place modifiers before or after casters depending on their function:
+
+---
+
+#### 📚 Example: `#[PerItem]`
+
+Apply the next N casters to each item in an array.
+
+```php
+#[CastTo\ArrayFromCsv]
+#[PerItem(2), CastTo\Floating, CastTo\Rounded(2)]
+#[CastTo\CsvFromArray(';')]
+public string $prices = '10,12.45533,0';
+```
+
+This:
+1. Parses the CSV into an array
+2. Applies float conversion + rounding to each item
+3. Implodes the array back to CSV with `;`
+
+---
+
+#### 🧯 Example: `#[FailTo]` *(post-modifier)*
+
+Catch any exceptions thrown by previous casters and return a fallback value:
+
+```php
+#[CastTo\JsonDecode]
+#[CastTo\Dto(AddressDto::class)]
+#[FailTo(fallback: [], handler: 'handleDtoFailure')]
+```
+
+This wraps all prior casting in a try/catch.
+If an error occurs, `handleDtoFailure(Throwable $e, mixed $fallback)` is called on the DTO.
+
+---
+
+#### 🧷 Example: `#[FailNextTo]` *(pre-modifier)*
+
+Wraps only the **next** caster in a try/catch:
+
+```php
+#[FailNextTo('n/a')]
+#[CastTo\Floating]
+```
+
+---
+
+#### 🛠️ Writing Your Own Modifiers
+
+To define a custom modifier, implement:
+
+```php
+interface CastModifier {
+    public function modify(ArrayIterator $queue, Closure $chain, BaseDto $dto): Closure;
+}
+```
+
+Modifiers can:
+- Slice the next N attributes using `$attr = CastTo::sliceNextAttributes($queue, $N)`
+- Build a subchain with `CastTo::buildCasterChain($attr, $dto);`
+- Wrap or conditionally apply transformations
+
+---
+
 ## 🧭 Caster Naming Conventions
 
-To distinguish core vs. project-specific casters:
+Core, adapter and project casters can't share the same namespace, which forces differing prefixes. I propose these conventions:
 
-- Use `#[CastTo\Trimmed]`, `#[CastTo\FloatType]`, etc. for **core attributes**
-- Use `#[Cast\ToSlug]`, `#[Cast\ToPostalCode]`, etc. for **project- or adapter-specific casters**
-
-This convention mirrors Symfony's Validator system (`Assert\NotBlank`, etc.).
+- For **core** attributes: **CastTo**\\*
+    E.g. `#[CastTo\Trimmed]`, `#[CastTo\Floating]`, etc.
+- For **adapter**-specific casters: **Casts**\\To\*
+    E.g. `#[Casts\ToCarbon]`, `#[Casts\ToModel(User::class)]`, etc.
+- For **project**-specific casters: **Cast**\\To\*
+    E.g. `#[Cast\ToFoo]`, `#[Cast\ToPostalCode]`, etc.
 
 ---
 

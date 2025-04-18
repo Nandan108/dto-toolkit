@@ -41,10 +41,8 @@ trait CreatesFromArray
         /** @psalm-suppress InaccessibleMethod */
         $fillables     = $dto->getFillable();
         $fillableInput = array_intersect_key($input, array_flip($fillables));
-        foreach ($fillableInput as $property => $value) {
-            $dto->{$property}        = $value;
-            $dto->_filled[$property] = true;
-        }
+        $dto->fill($fillableInput);
+
         if (!$ignoreUnknownProps) {
             $unknownProperties = array_diff(array_keys($input), $fillables);
             if ($unknownProperties) {

@@ -6,7 +6,7 @@ use Nandan108\DtoToolkit\Core\CastBase;
 use Nandan108\DtoToolkit\Contracts\CasterInterface;
 
 #[\Attribute(\Attribute::TARGET_PROPERTY)]
-final class FloatType extends CastBase
+final class Floating extends CastBase
 {
     #[\Override]
     public function cast(mixed $value, array $args = []): ?float

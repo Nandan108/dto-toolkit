@@ -2,11 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.2.1] - 2025-04-19
+
+### Added
+- Support for multiple `#[CastTo]` attributes per property (caster chaining)
+- `CastModifier` interface for attributes that modify the behavior of casters in the chain
+- New `#[PerItem]` modifier to apply the next N casters to each element of an array
+
+### Changed
+- Refactored `CastTo::getCastingClosureMap()` to support middleware-style caster chaining
+  - Introduced `CastTo::buildCasterChain()` to compose casting pipelines
+  - Introduced `CastTo::sliceNextAttributes()` to assist modifier behavior
+
+🎉 This version lays the foundation for advanced casting scenarios with full chain control.
+
+---
+
 ## [v0.2.0] - 2025-04-16
 
 ### Changed
 - Refactored casting system to use Symfony-style dedicated attribute casters as the primary method
-  - Introduced individual caster attributes under `CastTo\*` (e.g., `#[CastTo\Trimmed]`, `#[CastTo\FloatType]`)
+  - Introduced individual caster attributes under `CastTo\*` (e.g., `#[CastTo\Trimmed]`, `#[CastTo\Floating]`)
   - Removed support for the invalid syntax `#[CastTo::methodName(...)]`
   - Replaced legacy `CanCastBasicValues` trait with modular caster attribute classes
   - Retained support for method- and class-based casters using `#[CastTo('methodOrClass')]`

@@ -7,6 +7,7 @@ use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Contracts\Bootable;
 use Nandan108\DtoToolkit\Contracts\CasterInterface;
 use Nandan108\DtoToolkit\Contracts\CasterResolverInterface;
+use Nandan108\DtoToolkit\Contracts\CastModifier;
 use Nandan108\DtoToolkit\Contracts\Injectable;
 use Nandan108\DtoToolkit\Exception\CastingException;
 
@@ -133,7 +134,7 @@ class CastTo
             if ($caster instanceof CasterInterface) {
                 // If the resolver returns a CasterInterface instance, wrap it in a closure
                 $memoizeInstance($caster);
-                $caster   = fn(mixed $value): mixed => $caster->cast($value, $args);
+                $caster = fn(mixed $value): mixed => $caster->cast($value, $args);
             } else {
                 // If the resolver returns a closure, use it directly
             }
@@ -145,6 +146,14 @@ class CastTo
         }
 
         throw CastingException::unresolved($this->methodOrClass);
+    }
+
+    /**
+     * @return bool True if the modifier applies to outbound casting, false otherwise.
+     */
+    public function isOutbound(): bool
+    {
+        return $this->outbound;
     }
 
     /**
@@ -239,23 +248,90 @@ class CastTo
         $dtoClass   = $reflection->getName();
         $casts      = &$cache[$dtoClass];
 
+        // Populate the caster cache with per-phase-per-property composed casters
         if (!isset($casts)) {
-            $casts = [0 => [], 1 => []];
+            $casts = [];
+
             foreach ($reflection->getProperties() as $property) {
+                $propName   = $property->getName();
                 $attributes = $property->getAttributes();
-                foreach ($attributes as $attr) {
-                    // only allow CastTo attributes or subclasses
-                    $attrIsCasting = is_a($attr->getName(), self::class, true);
-                    if (!$attrIsCasting) continue;
 
-                    /** @var CastTo $instance */
-                    $instance = $attr->newInstance();
+                $casterAttrByPhase = [0 => [], 1 => []];
 
-                    $casts[(int)$instance->outbound][$property->getName()] = $instance->getCaster($dto);
+                // instantiate the attributes
+                $attrInstances = array_map(fn($attr) => $attr->newInstance(), $attributes);
+                // filter out the ones that are not CastTo or CastModifier
+                $attrInstances = array_filter($attrInstances, fn($attr) => $attr instanceof CastTo || $attr instanceof CastModifier);
+
+                // separate into inbound and outbound chains
+                foreach ($attrInstances as $attrInstance) {
+                    $casterAttrByPhase[(int)$attrInstance->isOutbound()][] = $attrInstance;
+                }
+
+                // build the chain for each phase
+                foreach ($casterAttrByPhase as $phase => $attrInstances) {
+                    if ($attrInstances) {
+                        $casts[$phase][$propName] = self::buildCasterChain($attrInstances,$dto);
+                    }
                 }
             }
         }
+        // return the casters for the requested phase
+        return $casts[$outbound] ?? [];
+    }
 
-        return $casts[(int)$outbound];
+    /**
+     * Build a chain of casters from the given attributes
+     *
+     * @param array $attributes The attributes to process
+     * @param BaseDto $dto The DTO instance
+     * @return \Closure A closure that takes a value to cast and returns the result.
+     */
+    public static function buildCasterChain(array $attributes, BaseDto $dto): \Closure
+    {
+        $queue = new \ArrayIterator($attributes);
+        $chain = fn(mixed $value): mixed => $value;
+
+        while ($queue->valid()) {
+            $attr = $queue->current();
+            $queue->next();
+
+            if ($attr instanceof CastModifier) {
+                $chain = $attr->modify($queue, $chain, $dto);
+                continue;
+            }
+
+            if ($attr instanceof CastTo) {
+                $caster = $attr->getCaster($dto);
+                $chain  = fn(mixed $value): mixed => $caster($chain($value));
+            }
+        }
+
+        return $chain;
+    }
+
+    /**
+     * Slice the next $count attributes from the queue.
+     * Any encountered CastModifier attributes are included in the slice, but do not count towards the $count.
+     *
+     * @param \ArrayIterator $queue The queue of attributes to be processed
+     * @param int $count The number of attributes to slice
+     * @return array The sliced attributes
+     */
+    public static function sliceNextAttributes(\ArrayIterator $queue, int $count): array
+    {
+        $subset = [];
+
+        for ($i = 0; $i < $count && $queue->valid(); $queue->next()) {
+            $next = $queue->current();
+            $nextIsACast = $next instanceof CastTo;
+
+            if ($nextIsACast || $next instanceof CastModifier) {
+                $subset[] = $next;
+                $i += (int)$nextIsACast;
+            }
+        }
+
+        return $subset;
     }
 }

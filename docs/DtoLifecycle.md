@@ -37,7 +37,7 @@ If the DTO implements `NormalizesInboundInterface`, all `#[CastTo(...)]` attribu
 
 This phase:
 - Transforms raw values into the appropriate internal types
-- Uses method-based or class-based casters (like `#[CastTo\FloatType]`)
+- Uses method-based or class-based casters (like `#[CastTo\Floating]`)
 
 Only properties marked as filled will be normalized unless future features (e.g., `#[AlwaysCast]`) are added.
 

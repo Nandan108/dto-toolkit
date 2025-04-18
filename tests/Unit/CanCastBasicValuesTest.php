@@ -89,7 +89,7 @@ final class CanCastBasicValuesTest extends TestCase
             'Ceil'                              => [new CastTo\Ceil, 1.2, 2],
             'CsvFromArray'                      => [new CastTo\CsvFromArray, ['a', 'b', 'c'], 'a,b,c'],
             'CsvFromArray:separator:"-"'        => [new CastTo\CsvFromArray(separator: '-'), ['a', 'b', 'c'], 'a-b-c'],
-            'FloatType'                         => [new CastTo\FloatType, '3.14', 3.14],
+            'Floating'                          => [new CastTo\Floating, '3.14', 3.14],
             'Floor:1.2'                         => [new CastTo\Floor, 1.2, 1],
             'Floor'                             => [new CastTo\Floor, null, 0],
             'Floor(nullable):not-a-number'      => [new CastTo\Floor(nullable: true), 'not-a-number', null],

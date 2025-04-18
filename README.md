@@ -105,6 +105,7 @@ It favors:
 - **Zero magic** in the core — everything is traceable, explicit, and predictable
 - **Opt-in magic** in adapters — for just the right touch of convenience when working with frameworks
 - **Separation of concerns** and **composability** — inspired by the Unix philosophy of doing one thing well
+- **Performance-conscious by design** — DTOs should feel lightweight and fast to use, even in large batch transformations.
 
 Verbose code is a tax on your time. This toolkit aims to keep things sharp, concise, and purposeful — so you can focus on what matters.
 
