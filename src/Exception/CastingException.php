@@ -2,6 +2,8 @@
 
 namespace Nandan108\DtoToolkit\Exception;
 
+use Nandan108\DtoToolkit\Contracts\CasterInterface;
+use Nandan108\DtoToolkit\Contracts\CastModifierInterface;
 use RuntimeException;
 
 final class CastingException extends RuntimeException
@@ -37,6 +39,9 @@ final class CastingException extends RuntimeException
     /** @psalm-suppress PossiblyUnusedMethod */
     public static function castingFailure(string $className, mixed $operand, ?string $methodName = null, array $args = [], ?string $messageOverride = null): self
     {
+        $type = is_a($className, CasterInterface::class, true)
+            ? 'Caster'
+            : (is_a($className, CastModifierInterface::class, true));
         $caster = $className;
         if ($methodName !== null && $methodName !== '') {
             $caster .= '::' . $methodName;

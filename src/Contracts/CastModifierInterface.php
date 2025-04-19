@@ -4,7 +4,7 @@ namespace Nandan108\DtoToolkit\Contracts;
 
 use Nandan108\DtoToolkit\Core\BaseDto;
 
-interface CastModifier
+interface CastModifierInterface
 {
     /**
      * @return bool True if the modifier applies to outbound casting, false otherwise.
