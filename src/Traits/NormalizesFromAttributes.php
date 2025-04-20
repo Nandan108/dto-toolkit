@@ -2,8 +2,7 @@
 
 namespace Nandan108\DtoToolkit\Traits;
 
-use LogicException;
-use Nandan108\DtoToolkit\CastTo as CastTo;
+use Nandan108\DtoToolkit\CastTo;
 
 /** @psalm-require-extends \Nandan108\DtoToolkit\Core\BaseDto */
 trait NormalizesFromAttributes
@@ -21,7 +20,7 @@ trait NormalizesFromAttributes
 
     public function normalizeOutbound(array $props): array
     {
-        $casters    = CastTo::getCastingClosureMap($this, outbound: true);
+        $casters = CastTo::getCastingClosureMap($this, outbound: true);
         $normalized = [];
 
         foreach ($props as $prop => $value) {

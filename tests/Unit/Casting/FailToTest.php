@@ -2,8 +2,8 @@
 
 namespace Tests\Unit\Casting;
 
-use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Attribute\CastModifier\FailTo;
+use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Core\FullDto;
 use PHPUnit\Framework\TestCase;
@@ -18,7 +18,7 @@ final class FailToTest extends TestCase
             public mixed $value = null;
         };
 
-        $dto->fill(['value' => new \stdClass]);
+        $dto->fill(['value' => new \stdClass()]);
         $dto->normalizeInbound();
         $this->assertSame('fallback', $dto->value);
     }
@@ -39,16 +39,17 @@ final class FailToTest extends TestCase
 
             public function handleFail(mixed $value, mixed $fallback, \Throwable $e, BaseDto $dto): string
             {
-                $this->context['called']  = true;
+                $this->context['called'] = true;
                 $this->context['message'] = $e->getMessage();
-                return 'recovered to ' . $fallback;
+
+                return 'recovered to '.$fallback;
             }
         };
 
         // use a \stdClass since casting it to a string will throw
         $dto->fill([
-            'value_1' => new \stdClass,
-            'value_2' => new \stdClass,
+            'value_1' => new \stdClass(),
+            'value_2' => new \stdClass(),
         ])->normalizeInbound();
 
         $this->assertSame('RECOVERED TO FALLBACK', $dto->value_1);
@@ -60,7 +61,7 @@ final class FailToTest extends TestCase
         );
     }
 
-    public function test_bad_failure_handler_throws(): void
+    public function testBadFailureHandlerThrows(): void
     {
         $dto = new class extends FullDto {
             #[CastTo\Str]
@@ -74,15 +75,14 @@ final class FailToTest extends TestCase
 
         // use a \stdClass since casting it to a string will throw
         $dto->normalizeInbound();
-
     }
 }
 
 final class FailTo_CastFailureHandler
 {
-    /** @psalm-suppress UnusedParam, PossiblyUnusedParam */
+    /** @psalm-suppress PossiblyUnusedMethod, UnusedParam, PossiblyUnusedParam */
     public static function handleFail(mixed $value, mixed $fallback): string
     {
-        return 'uncovered to ' . $fallback;
+        return 'uncovered to '.$fallback;
     }
 }

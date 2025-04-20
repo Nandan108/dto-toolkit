@@ -3,8 +3,6 @@
 namespace Nandan108\DtoToolkit\CastTo;
 
 use Nandan108\DtoToolkit\Core\CastBase;
-use Nandan108\DtoToolkit\Contracts\CasterInterface;
-use Nandan108\DtoToolkit\Exception\CastingException;
 
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class Trimmed extends CastBase
@@ -27,7 +25,7 @@ final class Trimmed extends CastBase
         return match ($where) {
             'left'  => ltrim($v, $characters),
             'right' => rtrim($v, $characters),
-            default => trim($v, $characters)
+            default => trim($v, $characters),
         };
     }
 }

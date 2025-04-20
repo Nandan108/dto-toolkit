@@ -11,7 +11,8 @@
         "symfony/var-dumper": "^6.0 || ^7.0",
         "mockery/mockery": "^1.6",
         "vimeo/psalm": "^6.10",
-        "nunomaduro/collision": "^8.5"
+        "nunomaduro/collision": "^8.5",
+        "friendsofphp/php-cs-fixer": "^3.75"
     },
     "license": "MIT",
     "autoload": {
@@ -31,6 +32,7 @@
         }
     ],
     "scripts": {
+        "cs-fix": "./vendor/bin/php-cs-fixer fix",
         "psalm": "./vendor/bin/psalm",
         "test": "./vendor/bin/phpunit",
         "testAndCover": "./vendor/bin/phpunit --coverage-text --coverage-html coverage"

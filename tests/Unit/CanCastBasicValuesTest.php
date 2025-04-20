@@ -2,24 +2,20 @@
 
 namespace Nandan108\DtoToolkit\Tests\Unit;
 
-use DateTimeImmutable;
-use Mockery;
 // use Nandan108\DtoToolkit\Core\CastTo;
-use Nandan108\DtoToolkit\Contracts\NormalizesOutboundInterface;
 // use Nandan108\DtoToolkit\Traits\CanCastBasicValues;
-use Nandan108\DtoToolkit\Enum\IntCastMode;
-use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\TestCase;
-use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\CastTo;
+use Nandan108\DtoToolkit\Core\BaseDto;
+use Nandan108\DtoToolkit\Enum\IntCastMode;
 use Nandan108\DtoToolkit\Exception\CastingException;
 use Nandan108\DtoToolkit\Traits\NormalizesFromAttributes;
-
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\TestCase;
 
 final class CanCastBasicValuesTest extends TestCase
 {
     #[DataProvider('builtinCastProvider')]
-    public function test_builtin_cast_methods(mixed $method, mixed $input, mixed $expected, array $args = [], ?string $exceptionMessage = null): void
+    public function testBuiltinCastMethods(mixed $method, mixed $input, mixed $expected, array $args = [], ?string $exceptionMessage = null): void
     {
         // /** @psalm-suppress ExtensionRequirementViolation */
         $dto = new class extends BaseDto {
@@ -29,11 +25,11 @@ final class CanCastBasicValuesTest extends TestCase
         // create caster Attribute using static helper method, and from it get the caster Closure
         if (is_string($method)) {
             $casterAttribute = new CastTo($method, args: $args);
-            $caster          = $casterAttribute->getCaster($dto);
+            $caster = $casterAttribute->getCaster($dto);
         } elseif ($method instanceof CastTo) {
             $caster = $method->getCaster($dto);
         } else {
-            $this->fail('Invalid method type: ' . gettype($method));
+            $this->fail('Invalid method type: '.gettype($method));
         }
 
         // Call the caster closure with the input value and get the result
@@ -49,47 +45,52 @@ final class CanCastBasicValuesTest extends TestCase
         } catch (\Exception $e) {
             if (is_string($expected) && class_exists($expected) && is_a($e, $expected)) {
                 $this->assertInstanceOf($expected, $e);
-                if ($exceptionMessage !== null && $exceptionMessage > '') {
+                if (null !== $exceptionMessage && $exceptionMessage > '') {
                     $this->assertStringContainsString($exceptionMessage, $e->getMessage());
                 }
             } else {
                 throw $e;
             }
         }
-
     }
 
     public static function builtinCastProvider(): array
     {
-        $dateTime    = date('Y-m-d H:i:s');
-        $dateTimeObj = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $dateTime);
+        $dateTime = date('Y-m-d H:i:s');
+        $dateTimeObj = \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $dateTime);
 
-        $stringable      = new class ($strVal = 'foo') {
-            public function __construct(public string $strVal) {}
-            public function __toString(): string { return $this->strVal; }
+        $stringable = new class($strVal = 'foo') {
+            public function __construct(public string $strVal)
+            {
+            }
+
+            public function __toString(): string
+            {
+                return $this->strVal;
+            }
         };
-        $circular        = ['bar' => 'bar'];
-        $circular['foo'] = &$circular; //circular ref
+        $circular = ['bar' => 'bar'];
+        $circular['foo'] = &$circular; // circular ref
 
         return [
-            'Boolean:false'                   => [new CastTo\Boolean, false, false],
-            'Boolean:"1"'                     => [new CastTo\Boolean, '1', true],
-            'Boolean:yes'                     => [new CastTo\Boolean, 'yes', true],
-            'Boolean:yesss (non-bool string)' => [new CastTo\Boolean, 'yessss', CastingException::class],
-            'Boolean:12 (non-zero int)'       => [new CastTo\Boolean, 12, true],
-            'Boolean:"10"'                    => [new CastTo\Boolean, '10', CastingException::class],
-            'Boolean:[] (array)'              => [new CastTo\Boolean, [], CastingException::class],
-            'Boolean:null'                    => [new CastTo\Boolean, null, CastingException::class],
-            'Str:42'                          => [new CastTo\Str, 42, '42'],
-            'Str:""'                          => [new CastTo\Str, '', ''],
-            'Str:"foo"'                       => [new CastTo\Str, $stringable, 'foo'],
-            'Str:null'                        => [new CastTo\Str, null, CastingException::class],
-            'Trimmed'                         => [new CastTo\Trimmed, '  hello ', 'hello'],
+            'Boolean:false'                   => [new CastTo\Boolean(), false, false],
+            'Boolean:"1"'                     => [new CastTo\Boolean(), '1', true],
+            'Boolean:yes'                     => [new CastTo\Boolean(), 'yes', true],
+            'Boolean:yesss (non-bool string)' => [new CastTo\Boolean(), 'yessss', CastingException::class],
+            'Boolean:12 (non-zero int)'       => [new CastTo\Boolean(), 12, true],
+            'Boolean:"10"'                    => [new CastTo\Boolean(), '10', CastingException::class],
+            'Boolean:[] (array)'              => [new CastTo\Boolean(), [], CastingException::class],
+            'Boolean:null'                    => [new CastTo\Boolean(), null, CastingException::class],
+            'Str:42'                          => [new CastTo\Str(), 42, '42'],
+            'Str:""'                          => [new CastTo\Str(), '', ''],
+            'Str:"foo"'                       => [new CastTo\Str(), $stringable, 'foo'],
+            'Str:null'                        => [new CastTo\Str(), null, CastingException::class],
+            'Trimmed'                         => [new CastTo\Trimmed(), '  hello ', 'hello'],
             'Trimmed:left'                    => [new CastTo\Trimmed('to', 'left'), 'othello', 'hello'],
             'Trimmed:right'                   => [new CastTo\Trimmed('to', 'right'), 'hotelot', 'hotel'],
             'Slug'                            => [new CastTo\Slug(separator: '.'), 'Let\'s go for Smörgåsbord', 'let.s.go.for.smorgasbord'],
-            'Capitalized'                     => [new CastTo\Capitalized, 'hello', 'Hello'],
-            'Uppercase'                       => [new CastTo\Uppercase, 'hello', 'HELLO'],
+            'Capitalized'                     => [new CastTo\Capitalized(), 'hello', 'Hello'],
+            'Uppercase'                       => [new CastTo\Uppercase(), 'hello', 'HELLO'],
             'DateTime'                        => [new CastTo\DateTime(format: 'Y-m-d H:i:s'), $dateTime, $dateTimeObj],
             'DateTime:invalid date'           => [
                 new CastTo\DateTime(format: 'Y-m-d H:i:s'), // caster
@@ -99,14 +100,14 @@ final class CanCastBasicValuesTest extends TestCase
                 'Unable to parse date with format \'Y-m-d H:i:s\' from \'invalid date\'', // expected message
             ],
             'DateTime:\stdClass'              => [new CastTo\DateTime(format: 'Y-m-d H:i:s'), new \stdClass(), CastingException::class],
-            'ArrayFromCsv'                    => [new CastTo\ArrayFromCsv, 'a,b,c', ['a', 'b', 'c']],
+            'ArrayFromCsv'                    => [new CastTo\ArrayFromCsv(), 'a,b,c', ['a', 'b', 'c']],
             'ArrayFromCsv:sep:"-"'            => [new CastTo\ArrayFromCsv(separator: '-'), 'a-b-c', ['a', 'b', 'c']],
-            'ArrayFromCsv:empty'              => [new CastTo\ArrayFromCsv, '', ['']],
-            'CsvFromArray'                    => [new CastTo\CsvFromArray, ['a', 'b', 'c'], 'a,b,c'],
+            'ArrayFromCsv:empty'              => [new CastTo\ArrayFromCsv(), '', ['']],
+            'CsvFromArray'                    => [new CastTo\CsvFromArray(), ['a', 'b', 'c'], 'a,b,c'],
             'CsvFromArray:separator:"-"'      => [new CastTo\CsvFromArray(separator: '-'), ['a', 'b', 'c'], 'a-b-c'],
-            'Floating'                        => [new CastTo\Floating, '3.14', 3.14],
-            'Integer:not-a-number'            => [new CastTo\Integer, 'not-a-number', CastingException::class],
-            'Integer:numeric-stringable'      => [new CastTo\Integer, new $stringable('123.4'), 123],
+            'Floating'                        => [new CastTo\Floating(), '3.14', 3.14],
+            'Integer:not-a-number'            => [new CastTo\Integer(), 'not-a-number', CastingException::class],
+            'Integer:numeric-stringable'      => [new CastTo\Integer(), new $stringable('123.4'), 123],
             'Integer:Ceil'                    => [new CastTo\Integer(IntCastMode::Ceil), '123.532', 124],
             'Integer:Ceil_neg'                => [new CastTo\Integer(IntCastMode::Ceil), '-123.532', -123],
             'Integer:Floor'                   => [new CastTo\Integer(IntCastMode::Floor), '123.532', 123],
@@ -115,11 +116,11 @@ final class CanCastBasicValuesTest extends TestCase
             'Integer:Round_neg'               => [new CastTo\Integer(IntCastMode::Round), '-123.532', -124],
             'Integer:Trunc'                   => [new CastTo\Integer(IntCastMode::Trunc), '123.532', 123],
             'Integer:Trunc_neg'               => [new CastTo\Integer(IntCastMode::Trunc), '-123.532', -123],
-            'Lowercase'                       => [new CastTo\Lowercase, 'HELLo!', 'hello!'],
+            'Lowercase'                       => [new CastTo\Lowercase(), 'HELLo!', 'hello!'],
             'Rounded(2)'                      => [new CastTo\Rounded(2), 0.991, 0.99],
             'Rounded(1)'                      => [new CastTo\Rounded(1), 0.991, 1.0],
-            'JsonEncode(valid)'               => [new CastTo\JsonEncode, [1, 'a', null, true], '[1,"a",null,true]'],
-            'JsonEncode(invalid)'             => [new CastTo\JsonEncode, $circular, CastingException::class, [], 'Failed to cast value to JSON'],
+            'JsonEncode(valid)'               => [new CastTo\JsonEncode(), [1, 'a', null, true], '[1,"a",null,true]'],
+            'JsonEncode(invalid)'             => [new CastTo\JsonEncode(), $circular, CastingException::class, [], 'Failed to cast value to JSON'],
             // Valid string-backed enum
             'Enum(Status):circular-ref'       => [new CastTo\Enum(Status::class), $circular, CastingException::class, [], 'Invalid enum backing value'],
             'Enum(Status):[] (array)'         => [new CastTo\Enum(Status::class), [], CastingException::class],
@@ -135,22 +136,22 @@ final class CanCastBasicValuesTest extends TestCase
             // Invalid integer
             'Enum(Code):500'                  => [new CastTo\Enum(Code::class), 500, CastingException::class, [], 'Invalid enum backing value: 500'],
             // Invalid Enum Class
-            'Enum(Invalid):500'               => [new CastTo\Enum('Invalid'), 'any-val', CastingException::class, [], 'Enum caster: \'Invalid\' is not a valid enum'],
+            'Enum(Invalid):500'               => [new CastTo\Enum('Invalid'), 'any-val', \InvalidArgumentException::class, [], 'Enum caster: \'Invalid\' is not a valid enum'],
             // Invalid Enum Class
-            'Enum(NotBacked):500'             => [new CastTo\Enum(NotBacked::class), 'any-val', CastingException::class, [], 'Enum caster: \'' . NotBacked::class . '\' is not a backed enum'],
+            'Enum(NotBacked):500'             => [new CastTo\Enum(NotBacked::class), 'any-val', \InvalidArgumentException::class, [], 'Enum caster: \''.NotBacked::class.'\' is not a backed enum'],
         ];
     }
 }
 
 enum Status: string
 {
-    case Draft     = 'draft';
+    case Draft = 'draft';
     case Published = 'published';
 }
 
 enum Code: int
 {
-    case OK       = 200;
+    case OK = 200;
     case NotFound = 404;
 }
 

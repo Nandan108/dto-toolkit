@@ -17,16 +17,17 @@ final class CasterChainBuilder
     }
 
     /**
-     * Build a chain of casters from the given attributes
+     * Build a chain of casters from the given attributes.
      *
-     * @param array $attributes The attributes to process
-     * @param BaseDto $dto The DTO instance
-     * @return \Closure A closure that takes a value to cast and returns the result.
+     * @param array   $attributes The attributes to process
+     * @param BaseDto $dto        The DTO instance
+     *
+     * @return \Closure a closure that takes a value to cast and returns the result
      */
     public static function buildCasterChain(array $attributes, BaseDto $dto): \Closure
     {
         $queue = new \ArrayIterator($attributes);
-        $chain = fn(mixed $value): mixed => $value;
+        $chain = fn (mixed $value): mixed => $value;
 
         while ($queue->valid()) {
             $attr = $queue->current();
@@ -39,8 +40,7 @@ final class CasterChainBuilder
 
             if ($attr instanceof CastTo) {
                 $caster = $attr->getCaster($dto);
-                $chain  = fn(mixed $value): mixed =>
-                    $caster($chain($value));
+                $chain = fn (mixed $value): mixed => $caster($chain($value));
             }
         }
 
@@ -52,7 +52,8 @@ final class CasterChainBuilder
      * Any encountered CastModifier attributes are included in the slice, but do not count towards the $count.
      *
      * @param \ArrayIterator $queue The queue of attributes to be processed
-     * @param int $count The number of attributes to slice
+     * @param int            $count The number of attributes to slice
+     *
      * @return array The sliced attributes
      */
     public static function sliceNextAttributes(\ArrayIterator $queue, int $count): array
@@ -60,12 +61,12 @@ final class CasterChainBuilder
         $subset = [];
 
         for ($i = 0; $i < $count && $queue->valid(); $queue->next()) {
-            $next        = $queue->current();
+            $next = $queue->current();
             $nextIsACast = $next instanceof CastTo;
 
             if ($nextIsACast || $next instanceof CastModifierInterface) {
                 $subset[] = $next;
-                $i += (int)$nextIsACast;
+                $i += (int) $nextIsACast;
             }
         }
 

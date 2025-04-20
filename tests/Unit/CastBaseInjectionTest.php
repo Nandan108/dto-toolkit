@@ -26,8 +26,6 @@ final class SlugifyCaster extends CastBase
 {
     /** @psalm-suppress PropertyNotSetInConstructor */
     #[Injected] private DummySlugger $slugger;
-
-
     #[\Override]
     public function cast(mixed $value, array $args = []): string
     {
@@ -37,7 +35,7 @@ final class SlugifyCaster extends CastBase
     #[\Override]
     protected function resolveFromContainer(string $type): mixed
     {
-        if ($type === DummySlugger::class) {
+        if (DummySlugger::class === $type) {
             return new DummySlugger();
         }
         throw new \RuntimeException("Unknown type: $type");
@@ -50,7 +48,6 @@ final class BridgeBasedSlugifyCaster extends CastBase
 {
     /** @psalm-suppress PropertyNotSetInConstructor */
     #[Injected] private DummySlugger $slugger;
-
     #[\Override]
     public function cast(mixed $value, array $args = []): string
     {
@@ -77,7 +74,7 @@ final class CastBaseInjectionTest extends TestCase
 
     public function testBridgeBasedInjection(): void
     {
-        /** @var ContainerInterface & MockObject $mockContainer */
+        /** @var ContainerInterface&MockObject $mockContainer */
         $mockContainer = $this->createMock(ContainerInterface::class);
         $mockContainer->method('get')
             ->with(DummySlugger::class)
@@ -102,19 +99,18 @@ final class CastBaseInjectionTest extends TestCase
         $caster = new class extends CastBase {
             /** @psalm-suppress PropertyNotSetInConstructor */
             #[Injected] private DummySlugger $slugger;
-
             /**
-             * Dummy cast() method that's never called in this test
-             * @return mixed
+             * Dummy cast() method that's never called in this test.
              */
             #[\Override]
-            public function cast(mixed $value, array $args = []): mixed {
+            public function cast(mixed $value, array $args = []): mixed
+            {
                 return $this->slugger->slugify((string) $value);
             }
         };
 
         $this->expectException(\LogicException::class);
-        $this->expectExceptionMessage("No container resolver defined in Core");
+        $this->expectExceptionMessage('No container resolver defined in Core');
 
         $caster->inject();
     }

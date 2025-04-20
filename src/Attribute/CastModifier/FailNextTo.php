@@ -19,6 +19,7 @@ class FailNextTo extends FailTo
     public function modify(\ArrayIterator $queue, \Closure $chain, BaseDto $dto): \Closure
     {
         $subchain = CasterChainBuilder::buildCasterSubchain(1, $queue, $dto);
+        // ToDo, if subchain is empty, throw a CastingException
         $handler = $this->getHandler($dto);
 
         return function (mixed $value) use ($chain, $subchain, $dto, $handler): mixed {

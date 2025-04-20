@@ -2,23 +2,22 @@
 
 namespace Nandan108\DtoToolkit\Traits;
 
-use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Contracts\NormalizesInboundInterface;
 use Nandan108\DtoToolkit\Contracts\ValidatesInputInterface;
+use Nandan108\DtoToolkit\Core\BaseDto;
 
 /**
  * @psalm-require-extends BaseDto
  **/
 trait CreatesFromArray
 {
-
     /**
-     * Create a new instance of the DTO from a request
+     * Create a new instance of the DTO from a request.
      *
-     * @param array $input
-     * @param array $validationArgs Array of arguments to pass to the validator
-     * @param BaseDto|null $dto The DTO to use. If null, a new instance will be created.
-     * @param bool $ignoreUnknownProps If true, unknown properties will be ignored
+     * @param array        $validationArgs     Array of arguments to pass to the validator
+     * @param BaseDto|null $dto                The DTO to use. If null, a new instance will be created.
+     * @param bool         $ignoreUnknownProps If true, unknown properties will be ignored
+     *
      * @throws \LogicException
      */
     public static function fromArray(
@@ -33,20 +32,20 @@ trait CreatesFromArray
 
             /** @psalm-suppress TypeDoesNotContainType, RedundantCondition */
             if (!$dto instanceof BaseDto) {
-                throw new \LogicException(static::class . ' must extend BaseDto to use CreatesFromArray.');
+                throw new \LogicException(static::class.' must extend BaseDto to use CreatesFromArray.');
             }
         }
 
         // fill the DTO with the input values
         /** @psalm-suppress InaccessibleMethod */
-        $fillables     = $dto->getFillable();
+        $fillables = $dto->getFillable();
         $fillableInput = array_intersect_key($input, array_flip($fillables));
         $dto->fill($fillableInput);
 
         if (!$ignoreUnknownProps) {
             $unknownProperties = array_diff(array_keys($input), $fillables);
             if ($unknownProperties) {
-                throw new \LogicException('Unknown properties: ' . implode(', ', $unknownProperties));
+                throw new \LogicException('Unknown properties: '.implode(', ', $unknownProperties));
             }
         }
 
@@ -70,12 +69,10 @@ trait CreatesFromArray
     }
 
     /**
-     * Create a new instance of the DTO from a request, ignoring unknown properties
+     * Create a new instance of the DTO from a request, ignoring unknown properties.
      *
-     * @param array $input
-     * @param array $validationArgs Array of arguments to pass to the validator
-     * @param BaseDto|null $dto The DTO to use. If null, a new instance will be created.
-     * @return BaseDto
+     * @param array        $validationArgs Array of arguments to pass to the validator
+     * @param BaseDto|null $dto            The DTO to use. If null, a new instance will be created.
      *
      * @throws \LogicException
      */

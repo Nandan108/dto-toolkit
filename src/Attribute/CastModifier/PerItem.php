@@ -2,7 +2,6 @@
 
 namespace Nandan108\DtoToolkit\Attribute\CastModifier;
 
-use Mockery\Generator\StringManipulation\Pass\ClassNamePass;
 use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Contracts\CastModifierInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
@@ -21,18 +20,20 @@ class PerItem implements CastModifierInterface
     public function __construct(
         public readonly int $count = 1,
         public readonly bool $outbound = false,
-    ) {}
+    ) {
+    }
 
     #[\Override]
-    function isOutbound(): bool
+    public function isOutbound(): bool
     {
         return $this->outbound;
     }
 
     /**
      * @param \ArrayIterator $queue The queue of attributes to be processed
-     * @param \Closure $chain The chain of callables to be executed
-     * @param BaseDto $dto The DTO instance
+     * @param \Closure       $chain The chain of callables to be executed
+     * @param BaseDto        $dto   The DTO instance
+     *
      * @return \Closure A closure that applies the composed caster on each element of the passed array value
      */
     #[\Override]
@@ -50,12 +51,7 @@ class PerItem implements CastModifierInterface
 
             // If the value is not an array, we throw!
             if (!is_array($value)) {
-                throw CastingException::castingFailure(
-                    messageOverride: 'PerItem modifier expected an array value, received ' . gettype($value),
-                    className: get_class($this),
-                    operand: $value,
-                    args: ['count' => $this->count],
-                );
+                throw CastingException::castingFailure(messageOverride: 'PerItem modifier expected an array value, received '.gettype($value), className: get_class($this), operand: $value, args: ['count' => $this->count]);
             }
 
             return array_map($subchain, $value);

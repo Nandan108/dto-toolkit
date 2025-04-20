@@ -3,7 +3,6 @@
 namespace Nandan108\DtoToolkit\CastTo;
 
 use Nandan108\DtoToolkit\Core\CastBase;
-use Nandan108\DtoToolkit\Exception\CastingException;
 
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class ArrayFromCsv extends CastBase
@@ -14,7 +13,8 @@ final class ArrayFromCsv extends CastBase
     }
 
     #[\Override]
-    public function cast(mixed $value, array $args = []):  array {
+    public function cast(mixed $value, array $args = []): array
+    {
         [$separator] = $args;
 
         $value = $this->throwIfNotStringable($value);

@@ -2,8 +2,8 @@
 
 namespace Nandan108\DtoToolkit\CastTo;
 
-use Nandan108\DtoToolkit\Core\CastBase;
 use Nandan108\DtoToolkit\Contracts\CasterInterface;
+use Nandan108\DtoToolkit\Core\CastBase;
 
 /** @psalm-api */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]

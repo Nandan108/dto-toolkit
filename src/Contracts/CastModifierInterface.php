@@ -7,7 +7,7 @@ use Nandan108\DtoToolkit\Core\BaseDto;
 interface CastModifierInterface
 {
     /**
-     * @return bool True if the modifier applies to outbound casting, false otherwise.
+     * @return bool true if the modifier applies to outbound casting, false otherwise
      */
     public function isOutbound(): bool;
 

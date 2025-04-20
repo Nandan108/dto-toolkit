@@ -13,7 +13,8 @@ final class CsvFromArray extends CastBase
     }
 
     #[\Override]
-    public function cast(mixed $value, array $args = []): ?string {
+    public function cast(mixed $value, array $args = []): ?string
+    {
         [$separator] = $args;
 
         return is_array($value)

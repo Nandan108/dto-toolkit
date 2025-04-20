@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Nandan108\DtoToolkit\Tests\Unit;
 
-use PHPUnit\Framework\TestCase;
 use Nandan108\DtoToolkit\Exception\CastingException;
+use PHPUnit\Framework\TestCase;
 
 final class CastingExceptionTest extends TestCase
 {
     public function testCastingFailureWithObjectOperand(): void
     {
-        $exception      = CastingException::castingFailure(
+        $exception = CastingException::castingFailure(
             className: $className = '\App\CastTo\Slug',
             operand: new \stdClass(),
             args: $args = ['test']
@@ -38,13 +38,15 @@ final class CastingExceptionTest extends TestCase
 
     public function testCastingFailureWithUnrepresentableValue(): void
     {
-        $resource  = fopen('php://temp', 'r');
+        $resource = fopen('php://temp', 'r');
         $exception = CastingException::castingFailure(
             className: $className = 'App\CastTo\ResourceTest',
             operand: $resource,
             args: [],
         );
-        if ($resource) fclose($resource);
+        if ($resource) {
+            fclose($resource);
+        }
 
         $this->assertStringContainsString('failed to cast resource', $exception->getMessage());
     }
@@ -75,23 +77,25 @@ final class CastingExceptionTest extends TestCase
 
     public function testCastingFailureWithUnencodableArgs(): void
     {
-        $resource  = fopen('php://temp', 'r');
+        $resource = fopen('php://temp', 'r');
         $exception = CastingException::castingFailure(
             className: 'App\CastTo\BrokenArgs',
             operand: 'foo',
             args: ['bad' => $resource],
         );
-        if ($resource) fclose($resource);
+        if ($resource) {
+            fclose($resource);
+        }
 
         $this->assertStringContainsString('(?args?)', $exception->getMessage());
     }
 
     public function testCastingFailureWithJsonEncodingFailure(): void
     {
-        $operand   = new JsonLike();
+        $operand = new JsonLike();
         // set up a cyclic reference
         // this will cause json_encode to fail
-        $operand->prop = (object)['x' => 'y'];
+        $operand->prop = (object) ['x' => 'y'];
         $operand->prop->x = $operand;
 
         $exception = CastingException::castingFailure(
@@ -108,7 +112,7 @@ final class CastingExceptionTest extends TestCase
         CastingException::$maxOperandTextLength = 20;
 
         $longString = str_repeat('A', 100);
-        $exception  = CastingException::castingFailure(
+        $exception = CastingException::castingFailure(
             className: 'App\CastTo\Truncator',
             operand: $longString,
             args: [],
@@ -117,6 +121,7 @@ final class CastingExceptionTest extends TestCase
         $this->assertStringContainsString(substr($longString, 0, 15), $exception->getMessage());
         $this->assertStringContainsString('...', $exception->getMessage());
     }
+
     public function testCastingFailureWithToStringObject(): void
     {
         $exception = CastingException::castingFailure(
@@ -138,20 +143,20 @@ final class CastingExceptionTest extends TestCase
 
         $this->assertStringContainsString('"x":"y"', $exception->getMessage());
     }
-
 }
 
 final class StringableClass
 {
     public function __toString(): string
     {
-        return "stringified!";
+        return 'stringified!';
     }
 }
 
 final class JsonLike implements \JsonSerializable
 {
-    public function __construct(public mixed $prop = 'foo') {
+    public function __construct(public mixed $prop = 'foo')
+    {
         $this->prop = ['x' => 'y'];
     }
 

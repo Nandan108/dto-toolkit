@@ -3,26 +3,26 @@
 namespace Nandan108\DtoToolkit\Tests\Unit;
 
 use Nandan108\DtoToolkit\CastTo;
-use PHPUnit\Framework\TestCase;
-use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Contracts\NormalizesInboundInterface;
 use Nandan108\DtoToolkit\Contracts\ValidatesInputInterface;
+use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Traits\CreatesFromArray;
 use Nandan108\DtoToolkit\Traits\NormalizesFromAttributes;
+use PHPUnit\Framework\TestCase;
 
 /** @psalm-suppress UnusedClass */
 final class CreatesFromArrayTest extends TestCase
 {
-    public function test_instantiates_dto_from_array(): void
+    public function testInstantiatesDtoFromArray(): void
     {
         /** @psalm-suppress ExtensionRequirementViolation */
         $dtoClass = new class extends BaseDto {
             use CreatesFromArray;
             use NormalizesFromAttributes;
 
-            public null|string|int $item_id = null;
-            public null|string $email = null;
-            public null|string|int $age = null;
+            public string|int|null $item_id = null;
+            public ?string $email = null;
+            public string|int|null $age = null;
         };
 
         /** @psalm-suppress NoValue, UnusedVariable */
@@ -48,23 +48,25 @@ final class CreatesFromArrayTest extends TestCase
     }
 
     // Test the the DTO is validateda after being filled if it implements ValidatesInputInterface
-    public function test_dto_is_validated_in_fromArray_if_it_implements_ValidatesInputInterface(): void
+    public function testDtoIsValidatedInFromArrayIfItImplementsValidatesInputInterface(): void
     {
         $dtoClass = new class extends BaseDto implements ValidatesInputInterface {
             use CreatesFromArray;
+
             #[\Override]
             public function validate(array $args = []): static
             {
                 // Simulate validation logic
-                if ($this->email === 'invalid-email') {
+                if ('invalid-email' === $this->email) {
                     throw new \Exception('Validation failed');
                 }
+
                 return $this;
             }
 
-            public null|string|int $item_id = null;
-            public null|string $email = null;
-            public null|string|int $age = null;
+            public string|int|null $item_id = null;
+            public ?string $email = null;
+            public string|int|null $age = null;
         };
 
         try {
@@ -81,7 +83,7 @@ final class CreatesFromArrayTest extends TestCase
     }
 
     // Test the the DTO is validateda after being filled if it implements ValidatesInputInterface
-    public function test_validation_fails_if_args_are_given_but_dto_doesnt_implement_ValidatesInputInterface(): void
+    public function testValidationFailsIfArgsAreGivenButDtoDoesntImplementValidatesInputInterface(): void
     {
         $dtoClass = new class extends BaseDto {
             use CreatesFromArray;
@@ -96,7 +98,7 @@ final class CreatesFromArrayTest extends TestCase
 
     // Test that the fromArray method throws an exception if unknown properties are passed
     // and ignoreUnknownProperties is false
-    public function test_throw_exception_for_unknown_properties_when_ignoreUnknownProperties_is_false(): void
+    public function testThrowExceptionForUnknownPropertiesWhenIgnoreUnknownPropertiesIsFalse(): void
     {
         $dtoClass = new class extends BaseDto {
             use CreatesFromArray;
@@ -129,7 +131,7 @@ final class CreatesFromArrayTest extends TestCase
     }
 
     // that that a dto must extend BaseDto to use CreatesFromArray
-    public function test_throws_exception_if_dto_class_does_not_extend_BaseDto(): void
+    public function testThrowsExceptionIfDtoClassDoesNotExtendBaseDto(): void
     {
         $this->expectException(\LogicException::class);
         $this->expectExceptionMessage('must extend BaseDto to use CreatesFromArray');
@@ -143,12 +145,11 @@ final class CreatesFromArrayTest extends TestCase
     }
 
     // test that if dto is an instance of NormalizesInboundInterface, normalizeInbound() is called
-    public function test_FromArray_calls_normalizeInbound_on_DTOs_implementing_NormalizesInboundInterface(): void
+    public function testFromArrayCallsNormalizeInboundOnDTOsImplementingNormalizesInboundInterface(): void
     {
         /** @psalm-suppress ExtensionRequirementViolation */
-        $dtoClass = new class extends BaseDto implements NormalizesInboundInterface
+        $dtoClass = new class extends BaseDto implements NormalizesInboundInterface {
             // implements NormalizesInbound
-        {
             use CreatesFromArray;
             use NormalizesFromAttributes;
 
@@ -161,8 +162,8 @@ final class CreatesFromArrayTest extends TestCase
 
         /** @psalm-suppress NoValue, UnusedVariable */
         $dto = $dtoClass->fromArray([
-            'age'  => "30",
-            'name' => "  sam   ",
+            'age'  => '30',
+            'name' => '  sam   ',
         ]);
 
         // Assert that the age property is normalized to an integer
@@ -171,6 +172,5 @@ final class CreatesFromArrayTest extends TestCase
         // Assert that the name property is normalized to a trimmed string
         /** @psalm-suppress UndefinedPropertyFetch */
         $this->assertSame('sam', $dto->name);
-
     }
 }

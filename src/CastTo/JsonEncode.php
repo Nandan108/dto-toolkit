@@ -2,8 +2,8 @@
 
 namespace Nandan108\DtoToolkit\CastTo;
 
-use Nandan108\DtoToolkit\Core\CastBase;
 use Nandan108\DtoToolkit\Contracts\CasterInterface;
+use Nandan108\DtoToolkit\Core\CastBase;
 use Nandan108\DtoToolkit\Exception\CastingException;
 
 /** @psalm-api */
@@ -24,13 +24,9 @@ final class JsonEncode extends CastBase implements CasterInterface
 
         $json = json_encode($value, $flags, $depth);
 
-        if ($json === false) {
+        if (false === $json) {
             $error = json_last_error_msg();
-            throw CastingException::castingFailure(
-                className: static::class,
-                operand: $value,
-                messageOverride: "Failed to cast value to JSON: $error",
-            );
+            throw CastingException::castingFailure(className: static::class, operand: $value, messageOverride: "Failed to cast value to JSON: $error");
         }
 
         return $json;

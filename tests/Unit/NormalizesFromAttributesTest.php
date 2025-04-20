@@ -2,23 +2,17 @@
 
 namespace Nandan108\DtoToolkit\Tests\Unit;
 
-use DateTimeImmutable;
-use Mockery;
-use Nandan108\DtoToolkit\Attribute\CastModifier\FailNextTo;
 use Nandan108\DtoToolkit\CastTo;
-use Nandan108\DtoToolkit\Cast;
 use Nandan108\DtoToolkit\Contracts\NormalizesOutboundInterface;
 // use Nandan108\DtoToolkit\Traits\CanCastBasicValues;
-use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\TestCase;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Exception\CastingException;
 use Nandan108\DtoToolkit\Traits\NormalizesFromAttributes;
-
+use PHPUnit\Framework\TestCase;
 
 final class NormalizesFromAttributesTest extends TestCase
 {
-    public function test_returns_normalized_properties(): void
+    public function testReturnsNormalizedProperties(): void
     {
         /** @psalm-suppress ExtensionRequirementViolation */
         $dto = new class extends BaseDto {
@@ -26,22 +20,22 @@ final class NormalizesFromAttributesTest extends TestCase
 
             #[CastTo\IfNull(-1)]
             #[CastTo\Integer]
-            public null|string|int $age = null;
+            public string|int|null $age = null;
         };
 
         // Case 1: Assert that properties that are not "filled" are not normalized
-        $dto->age = "30";
+        $dto->age = '30';
         $dto->normalizeInbound();
         /** @psalm-suppress RedundantCondition */
-        $this->assertSame("30", $dto->age);
+        $this->assertSame('30', $dto->age);
 
         // Case 2: Assert that properties that are "filled" are normalized
-        $dto->fill(['age' => "30"])->normalizeInbound();
+        $dto->fill(['age' => '30'])->normalizeInbound();
         /** @psalm-suppress DocblockTypeContradiction */
         $this->assertSame(30, $dto->age);
     }
 
-    public function test_normalize_outbound_applies_casts_to_tagged_properties(): void
+    public function testNormalizeOutboundAppliesCastsToTaggedProperties(): void
     {
         /** @psalm-suppress ExtensionRequirementViolation */
         $dto = new class extends BaseDto implements NormalizesOutboundInterface {
@@ -61,6 +55,7 @@ final class NormalizesFromAttributesTest extends TestCase
 
             #[CastTo\Str(outbound: true)]
             private int|string|null $privatePropWithSetter = null;
+
             public function setPrivatePropWithSetter(string $value): void
             {
                 $this->privatePropWithSetter = $value;
@@ -69,7 +64,7 @@ final class NormalizesFromAttributesTest extends TestCase
             public ?string $untouched = null;
         };
 
-        $fooPrinter = new Class {
+        $fooPrinter = new class {
             public function __toString(): string
             {
                 return 'foo';
@@ -83,7 +78,6 @@ final class NormalizesFromAttributesTest extends TestCase
             'privatePropWithSetter' => 'val',
             'foo'                   => $fooPrinter,
             'emptyString'           => '',
-
         ]);
 
         $this->assertSame($normalized, [
@@ -96,7 +90,7 @@ final class NormalizesFromAttributesTest extends TestCase
         ]);
     }
 
-    public function test_get_caster_throws_when_method_missing(): void
+    public function testGetCasterThrowsWhenMethodMissing(): void
     {
         $dto = new class extends BaseDto {
             // Note: no castToSomething method defined
@@ -109,5 +103,4 @@ final class NormalizesFromAttributesTest extends TestCase
 
         $cast->getCaster($dto);
     }
-
 }

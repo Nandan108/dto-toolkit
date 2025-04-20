@@ -17,6 +17,7 @@ interface NormalizesInboundInterface
      * This happens AFTER validation, since it makes no sense to validate already-coerced values.
      *
      * @return void
+     *
      * @psalm-suppress PossiblyUnusedMethod
      */
     public function normalizeInbound();

@@ -2,23 +2,22 @@
 
 namespace Nandan108\DtoToolkit\Tests\Unit;
 
-use Mockery;
 use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Contracts\NormalizesOutboundInterface;
-use Nandan108\DtoToolkit\Traits\ExportsToEntity;
-use PHPUnit\Framework\TestCase;
 use Nandan108\DtoToolkit\Core\BaseDto;
+use Nandan108\DtoToolkit\Traits\ExportsToEntity;
 use Nandan108\DtoToolkit\Traits\NormalizesFromAttributes;
+use PHPUnit\Framework\TestCase;
 
 /** @psalm-suppress UnusedClass */
 final class ExportsToEntityTest extends TestCase
 {
-    public function test_dto_instanciates_new_entity_from_entityClass_property(): void
+    public function testDtoInstanciatesNewEntityFromEntityClassProperty(): void
     {
         $dto = new class extends BaseDto {
             use ExportsToEntity;
             /** @psalm-suppress NonInvariantDocblockPropertyType */
-            static protected ?string $entityClass = EntityClassToInstanciateFromName::class;
+            protected static ?string $entityClass = EntityClassToInstanciateFromName::class;
             /** @psalm-suppress PossiblyUnusedProperty */
             public ?string $someProp = null;
         };
@@ -32,18 +31,25 @@ final class ExportsToEntityTest extends TestCase
         $this->assertNotSame($entity1, $entity2, 'Each call to toEntity() should instanciate and return a new entity');
     }
 
-    public function test_maps_dto_fields_to_entity_setters(): void
+    public function testMapsDtoFieldsToEntitySetters(): void
     {
         // Create dummy entity
-        $entity = Mockery::mock(new class {
+        $entity = \Mockery::mock(new class {
             public ?int $id = null;
             public ?string $name = null;
             public int|string|null $age = null;
             public ?string $email = null;
 
             // note, these setters are not being used because the entity is mocked
-            public function setName(string $name): void { $this->name = $name; }
-            public function setAge(int $age): void { $this->age = $age; }
+            public function setName(string $name): void
+            {
+                $this->name = $name;
+            }
+
+            public function setAge(int $age): void
+            {
+                $this->age = $age;
+            }
             // no setter for email
         });
 
@@ -59,8 +65,8 @@ final class ExportsToEntityTest extends TestCase
 
         /** @psalm-suppress UndefinedMagicMethod, UndefinedInterfaceMethod */
         $entity->shouldReceive('setAge')
-            ->once()->with($intAge = (int)$inputAge)
-            ->andReturnUsing(function (int  $val) use ($entity) {
+            ->once()->with($intAge = (int) $inputAge)
+            ->andReturnUsing(function (int $val) use ($entity) {
                 $entity->age = $val;
             });
 
@@ -75,16 +81,19 @@ final class ExportsToEntityTest extends TestCase
             #[CastTo\Trimmed]
             public ?string $name = null;
             #[CastTo\Integer]
-            public null|int|string $age = null;
+            public int|string|null $age = null;
             #[CastTo('trimmedString')]
             public ?string $email = null;
 
-            public function castToTrimmedString(?string $str): string { return trim($str ?? ''); }
+            public function castToTrimmedString(?string $str): string
+            {
+                return trim($str ?? '');
+            }
         };
 
         $dto->fill([
-            'name' => $trimmedName,
-            'age'  => $intAge,
+            'name'  => $trimmedName,
+            'age'   => $intAge,
             'email' => 'some@email',
         ]);
 
@@ -100,12 +109,12 @@ final class ExportsToEntityTest extends TestCase
         $this->assertNull($entity->email);
     }
 
-    public function test_throws_exception_if_entity_class_does_not_exist(): void
+    public function testThrowsExceptionIfEntityClassDoesNotExist(): void
     {
         $dto = new class extends BaseDto {
             use ExportsToEntity;
             /** @psalm-suppress NonInvariantDocblockPropertyType */
-            static protected ?string $entityClass = 'NonExistentClass';
+            protected static ?string $entityClass = 'NonExistentClass';
         };
 
         $this->expectException(\LogicException::class);
@@ -113,12 +122,13 @@ final class ExportsToEntityTest extends TestCase
 
         $dto->toEntity();
     }
-    public function test_throws_exception_if_entity_class_is_not_set(): void
+
+    public function testThrowsExceptionIfEntityClassIsNotSet(): void
     {
         $dto = new class extends BaseDto {
             use ExportsToEntity;
             /** @psalm-suppress NonInvariantDocblockPropertyType */
-            static protected ?string $entityClass = null;
+            protected static ?string $entityClass = null;
         };
 
         $this->expectException(\LogicException::class);
@@ -127,7 +137,7 @@ final class ExportsToEntityTest extends TestCase
         $dto->toEntity();
     }
 
-    public function test_throws_exception_if_dto_class_does_not_extend_BaseDto(): void
+    public function testThrowsExceptionIfDtoClassDoesNotExtendBaseDto(): void
     {
         /** @psalm-suppress ExtensionRequirementViolation */
         $dto = new class {
@@ -140,12 +150,12 @@ final class ExportsToEntityTest extends TestCase
         $dto->toEntity();
     }
 
-    public function test_throws_exception_if_entity_class_has_no_way_to_set_property(): void
+    public function testThrowsExceptionIfEntityClassHasNoWayToSetProperty(): void
     {
         $dto = new class extends BaseDto {
             use ExportsToEntity;
             /** @psalm-suppress NonInvariantDocblockPropertyType */
-            static protected ?string $entityClass = EntityClassToInstanciateFromName::class;
+            protected static ?string $entityClass = EntityClassToInstanciateFromName::class;
             public ?string $someProp = null;
             public ?string $email = null;
         };
@@ -158,12 +168,13 @@ final class ExportsToEntityTest extends TestCase
 }
 
 /**
- * Dummy class for reflection testing
+ * Dummy class for reflection testing.
  *
  * @psalm-suppress UnusedClass
  * */
-final class EntityClassToInstanciateFromName {
+final class EntityClassToInstanciateFromName
+{
     /** @psalm-suppress PossiblyUnusedProperty */
     public ?string $someProp = null;
     // no setter for email
-};
+}

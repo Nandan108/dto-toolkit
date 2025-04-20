@@ -16,6 +16,7 @@ abstract class BaseDto
     /**
      * List of properties that have been filled.
      * The key is the property name, and the value is always true.
+     *
      * @var true[]
      * */
     public array $_filled = [];
@@ -25,26 +26,27 @@ abstract class BaseDto
      * Optional since not all DTOs are mapped to entities.
      *
      * @var class-string
+     *
      * @psalm-suppress PossiblyUnusedProperty
      **/
     protected static ?string $entityClass;
 
     /**
-     * Get the names of the public properties of an object
+     * Get the names of the public properties of an object.
      *
      * @param object|class-string|null $objectOrClass defaults to the current instance
-     * @return array
      */
-    protected function getPublicPropNames(object|string $objectOrClass = null): array
+    protected function getPublicPropNames(object|string|null $objectOrClass = null): array
     {
         $reflectionClass = new \ReflectionClass($objectOrClass ?? $this);
 
         $props = [];
         foreach ($reflectionClass->getProperties(\ReflectionProperty::IS_PUBLIC) as $prop) {
-            if ($prop->isPublic() && $prop->name !== '_filled') {
+            if ($prop->isPublic() && '_filled' !== $prop->name) {
                 $props[] = $prop->getName();
             }
         }
+
         return $props;
     }
 
@@ -53,7 +55,6 @@ abstract class BaseDto
      * If the DTO implements NormalizesOutboundInterface, the casters (CastTo Attributes)
      * declared with $outbound = true will be called to transform the data before returning it.
      *
-     * @return array
      * @psalm-suppress PossiblyUnusedMethod
      */
     public function toOutboundArray(): array
@@ -68,9 +69,8 @@ abstract class BaseDto
     }
 
     /**
-     * Get the fillable properties of the DTO
+     * Get the fillable properties of the DTO.
      *
-     * @return array
      * @psalm-suppress PossiblyUnusedMethod
      */
     protected function getFillable(): array
@@ -84,7 +84,6 @@ abstract class BaseDto
      * The data is returned as-is, without any transformation.
      *
      * @param string[] $propNames
-     * @return array
      */
     public function toArray(?array $propNames = null): array
     {
@@ -101,15 +100,12 @@ abstract class BaseDto
      * This means that they will be included in further processing such as
      * normalization, export, or entity mapping.
      *
-     * @param array $values
-     * @return static
-     *
      * @psalm-suppress PossiblyUnusedMethod
      */
     public function fill(array $values): static
     {
         foreach ($values as $key => $value) {
-            $this->$key         = $value;
+            $this->$key = $value;
             $this->_filled[$key] = true;
         }
 
@@ -123,8 +119,6 @@ abstract class BaseDto
      * but they will be excluded from further processing such as
      * normalization, export, or entity mapping.
      *
-     * @param array $props
-     * @return static
      * @psalm-suppress PossiblyUnusedMethod
      */
     public function unfill(array $props): static
@@ -143,10 +137,12 @@ abstract class BaseDto
      * additional logic after the DTO has been loaded with data.
      *
      * @return void
+     *
      * @psalm-suppress PossiblyUnusedMethod
      */
-    public function postLoad() {
-       // no-op - to be implemented in subclasses
+    public function postLoad()
+    {
+        // no-op - to be implemented in subclasses
     }
 
     /**
@@ -156,11 +152,14 @@ abstract class BaseDto
      * logic before an Entity, array, Model, or other output is returned.
      *
      * @param array|object $output The output data to be processed
+     *
      * @return void
+     *
      * @psalm-suppress PossiblyUnusedMethod
      * @psalm-suppress PossiblyUnusedParam
      */
-    public function preOutput(array|object $output) {
+    public function preOutput(array|object $output)
+    {
         // no-op - to be implemented in subclasses
     }
 }
