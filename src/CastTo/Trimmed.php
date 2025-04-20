@@ -22,7 +22,8 @@ final class Trimmed extends CastBase
     {
         [$characters, $where] = $args;
 
-        $v = is_string($value) ? $value : '';
+        $v = $this->throwIfNotStringable($value);
+
         return match ($where) {
             'left'  => ltrim($v, $characters),
             'right' => rtrim($v, $characters),

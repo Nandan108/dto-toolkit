@@ -6,9 +6,9 @@ use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Contracts\CastModifierInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 
-class CasterChainBuilder
+final class CasterChainBuilder
 {
-    public static function buildCasterSubchain(int $length, \ArrayIterator $queue, BaseDto $dto)
+    public static function buildCasterSubchain(int $length, \ArrayIterator $queue, BaseDto $dto): \Closure
     {
         $subAttrs = self::sliceNextAttributes($queue, $length);
         $subchain = self::buildCasterChain($subAttrs, $dto);
@@ -39,7 +39,8 @@ class CasterChainBuilder
 
             if ($attr instanceof CastTo) {
                 $caster = $attr->getCaster($dto);
-                $chain  = fn(mixed $value): mixed => $caster($chain($value));
+                $chain  = fn(mixed $value): mixed =>
+                    $caster($chain($value));
             }
         }
 

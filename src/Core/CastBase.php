@@ -7,6 +7,7 @@ use Nandan108\DtoToolkit\Attribute\Injected;
 use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Contracts\CasterInterface;
 use Nandan108\DtoToolkit\Bridge\ContainerBridge;
+use Nandan108\DtoToolkit\Exception\CastingException;
 
 abstract class CastBase extends CastTo implements CasterInterface
 {
@@ -15,11 +16,12 @@ abstract class CastBase extends CastTo implements CasterInterface
      * @param array $args should contain any argument values used to parameterize caster behavior
      * @param bool $outbound indicates whether this casting should be done after validation (inbound) or before outputting
      */
-    public function __construct(bool $outbound = false, array $args = []) {
+    public function __construct(bool $outbound = false, array $args = [])
+    {
         parent::__construct(
             methodOrClass: static::class,
             outbound: $outbound,
-            args: $args
+            args: $args,
         );
     }
 
@@ -32,13 +34,33 @@ abstract class CastBase extends CastTo implements CasterInterface
     public function inject(): void
     {
         foreach ((new \ReflectionClass($this))->getProperties() as $prop) {
-            if (! $prop->getAttributes(Injected::class)) continue;
+            if (!$prop->getAttributes(Injected::class)) continue;
             /** @psalm-suppress UndefinedMethod */
             $type = $prop->getType()?->getName();
-            if (! $type) throw new \RuntimeException("Cannot inject untyped property {$prop->getName()}");
+            if (!$type) throw new \RuntimeException("Cannot inject untyped property {$prop->getName()}");
             $value = $this->resolveFromContainer($type);
             $prop->setValue($this, $value);
         }
+    }
+
+    protected function is_stringable(mixed $val): bool
+    {
+        return is_string($val) ||
+            is_numeric($val) ||
+            is_object($val) && method_exists($val, '__toString');
+
+    }
+
+    protected function throwIfNotStringable(mixed $value, string $expected = 'numeric, string or Stringable'): string
+    {
+        $this->is_stringable($value) or
+            throw CastingException::castingFailure(
+                className: $this::class,
+                operand: $value,
+                messageOverride: "Expected: $expected, but got " . gettype($value),
+            );
+
+        return (string)$value;
     }
 
     /**

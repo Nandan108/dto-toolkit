@@ -19,7 +19,7 @@ final class CastingExceptionTest extends TestCase
         $serializedArgs = json_encode($args);
 
         $this->assertInstanceOf(CastingException::class, $exception);
-        $this->assertStringContainsString("Caster $className($serializedArgs) failed to cast", $exception->getMessage());
+        $this->assertStringContainsString("Class $className($serializedArgs) failed to cast", $exception->getMessage());
         $this->assertEquals($className, $exception->className);
         $this->assertIsObject($exception->operand);
     }

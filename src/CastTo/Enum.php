@@ -8,45 +8,47 @@ use Nandan108\DtoToolkit\Exception\CastingException;
 use UnitEnum;
 use BackedEnum;
 
-#[\Attribute(\Attribute::TARGET_PROPERTY)]
+#[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class Enum extends CastBase implements CasterInterface
 {
-    public function __construct(
-        string $enumClass,
-        bool $nullable = false,
-        bool $outbound = false,
-    ) {
-        parent::__construct($outbound, [$enumClass, $nullable]);
+    public function __construct(string $enumClass, bool $outbound = false)
+    {
+        parent::__construct($outbound, [$enumClass]);
     }
 
     #[\Override]
-    public function cast(mixed $value, array $args = []): ?UnitEnum
+    public function cast(mixed $value, array $args = []): BackedEnum
     {
-        [$enumClass, $nullable] = $args;
+        $enumClass = (string)($args[0] ?? '');
 
-        if ($value === null) {
-            if ($nullable) return null;
-            throw new CastingException("Enum caster received null, but nullable = false.");
-        }
+        $throw = static function (?string $messageOverride=null) use ($value): never {
+            if ($messageOverride === null) {
+                try {
+                    $value = json_encode($value, JSON_THROW_ON_ERROR);
+                } catch (\JsonException $e) {
+                    $value = '?'.$e->getMessage().'?';
+                }
+                $messageOverride = "Invalid enum backing value: $value.";
+            }
+            throw CastingException::castingFailure(
+                className: self::class,
+                operand: $value,
+                messageOverride: $messageOverride,
+            );
+        };
+
         if (!enum_exists($enumClass)) {
-            throw new CastingException("Enum caster: '{$enumClass}' is not a valid enum.");
-        }
-        if (!is_a($enumClass, BackedEnum::class, true)) {
-            throw new CastingException("Enum caster: '{$enumClass}' is not a backed enum.");
-        }
-        $enumVals = array_map(
-            static fn(BackedEnum $case): string|int => $case->value,
-            $enumClass::cases()
-        );
-        if (in_array($value, $enumVals, true)) {
-            return $enumClass::from($value);
+            $throw("Enum caster: '{$enumClass}' is not a valid enum.");
         }
 
-        throw CastingException::castingFailure(
-            className: self::class,
-            operand: $value,
-            args: $args,
-            messageOverride: "Value '{$value}' is invalid for this enum."
-        );
+        if (!is_a($enumClass, BackedEnum::class, true)) {
+            $throw("Enum caster: '{$enumClass}' is not a backed enum.");
+        }
+
+        try {
+            return $enumClass::tryFrom($value);
+        } catch (\Throwable $t) {
+            $throw();
+        }
     }
 }

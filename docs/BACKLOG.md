@@ -3,15 +3,8 @@
 ## Product Backlog Items
 
 - [039] Publish to GitHub and add CI
-- [047] Add modifier `#[FailTo(mixed $fallbackValue=null, string|callable \$handler=null)]`,
-    allows graceful casting failure handling by `$handler` ? `$handler($exception, $fallback) : $fallback`.
-    Usage: This modifier would be declared *after* the caster(s) it covers.
-    `$handler` could be a class name, a method name (on dto) or a [class, method]
-    We should also have a `#[FailNextTo]` that only applies to the next caster.
 - [040] Add `#[MapFrom(string|array $fields)]`
 - [020] Add `#[MapTo(...)]` Attribute [See details](Mapping.md)
-- [031] ALWAYS STRICT: Update all casters to always throw if input value is invalid. Let failures be handled gracefuly by other modifiers (FailTo, FailNextTo, IfNull, ...).
-- [048] Add `#[CastTo\IfNull($output='')]`, `#[CastTo\NullIf(\$input='')]`
 - [043] Add support for scoping groups (cross-cutting concern) [See details](#PBI-043)
 - [046] Add modifier `#[SkipIfValIn(mixed $values, $return=null)]`, allows short-circuitting following caster(s) by returning \$return if input === \$values or input in $values.
 - [049] Add `#[Collect(count: N)]` and `#[CastTo\NoOp]`. Aggregate the result of the next N casts into an array.
@@ -57,6 +50,9 @@
 - [023] Add toOutputArray() for array output with application of outbound casting
 - [037] Add support for chaining multiple #[CastTo] attributes (Attribute::IS_REPEATABLE)
 - [019] Add support for #[PerItem(N)]: flag indicating that next N (default=1) cast attributes operate on items within array \$value
+- [047] Add modifier `#[FailTo(mixed $fallbackValue=null, string|callable \$handler=null)]`, `#[FailNextTo]`
+- [048] Add `#[CastTo\IfNull($output='')]`, `#[CastTo\NullIf(\$input='')]`, `#[CastTo\ReplaceIf(when, then)]`
+- [031] ALWAYS STRICT: Update all casters to always throw if input value is invalid.
 
 ---
 

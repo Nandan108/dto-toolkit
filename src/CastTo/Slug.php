@@ -6,11 +6,11 @@ use Nandan108\DtoToolkit\Core\CastBase;
 use Nandan108\DtoToolkit\Contracts\CasterInterface;
 use Nandan108\DtoToolkit\Exception\CastingException;
 
-#[\Attribute(\Attribute::TARGET_PROPERTY)]
+#[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class Slug extends CastBase implements CasterInterface
 {
-    public function __construct(string $separator = '-', bool $outbound = false) {
-
+    public function __construct(string $separator = '-', bool $outbound = false)
+    {
         parent::__construct($outbound, [$separator]);
     }
 
@@ -19,7 +19,7 @@ final class Slug extends CastBase implements CasterInterface
     {
         [$separator] = $args;
 
-        $value = (string) $value;
+        $value = $this->throwIfNotStringable($value);
 
         $this->checkIntlAvailable();
 

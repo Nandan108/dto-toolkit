@@ -2,6 +2,36 @@
 
 All notable changes to this project will be documented in this file.
 
+---
+
+## [UNRELEASED]
+
+### Added
+- New **caster modifiers**:
+  - `#[FailTo(fallback, handler)]` wraps upstream casters in try/catch
+  - `#[FailNextTo(fallback)]` wraps only the next caster in the chain
+  - Both support graceful fallback or custom exception handling
+- New **conditional casters**:
+  - `#[CastTo\IfNull($value)]` – replaces `null` with a default
+  - `#[CastTo\NullIf($match)]` – replaces a matched value with `null`
+  - `#[CastTo\ReplaceIf($when, $then)]` – replaces matched values with custom output
+- New **unified integer caster**:
+  - `#[CastTo\Integer(IntCastMode::*))]` supports `Ceil`, `Floor`, `Round`, `Trunc`
+  - Removed `CastTo\Ceil` and `CastTo\Floor` in favor of this consolidated approach
+  - Added `IntCastMode` enum to support integer casting strategies
+
+### Changed
+- Refactored `CasterChainBuilder` into its own support class
+- Updated `PerItem` modifier to use the new chain builder internally
+- All core casters now always throw on invalid input
+- Improved attribute resolution and chaining logic
+
+### Dev / DX
+- Added `nunomaduro/collision` for improved CLI error reporting
+- Minor `.gitignore` and `phpunit.xml.dist` updates
+
+---
+
 ## [v0.2.1] - 2025-04-19
 
 ### Added

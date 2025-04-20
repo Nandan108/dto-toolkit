@@ -12,7 +12,6 @@ This package provides a clean, declarative API for working with DTOs — includi
 - 🎯 Optional validation and normalization layers
 - 🔄 Easily transform between DTOs and entities/models
 - 🧩 Designed to work with pluggable framework adapters (Laravel, Symfony, etc.)
-- 🧪 100% test coverage and Psalm-clean
 
 ## 📦 Installation
 
@@ -27,7 +26,7 @@ use Nandan108\DtoToolkit\Core\{FullDto, CastTo};
 
 // FullDto includes all standard traits (CreatesFromArray, NormalizesFromAttributes, ExportsToEntity)
 class MyDto extends FullDto {
-    #[CastTo::trimmed()]
+    #[CastTo\Trimmed()]
     public ?string $name = null;
 }
 
@@ -71,10 +70,11 @@ Adapters will provide support for:
 ## 📚 Documentation
 
 - [DTO Fundamentals](docs/DtoFundamentals.md) – what DTOs are, why they matter, and how to use them in modern PHP
-- [Casters](docs/Casting.md) – how casting works and how to write your own
+- [Casting](docs/Casting.md) – how casting works and how to write your own
 - [Lifecycle](docs/DtoLifecycle.md) – Understanding the lifecycle of a DTO
 - [Lifecycle Hooks](docs/Hooks.md) – customize behavior with `postLoad()` and `preOutput()`
 - [Toolkit Comparison](docs/Comparison.md) – see how this toolkit compares to other PHP DTO/mapping libraries
+- Core casters and modifiers *(coming soon)*
 - Validation *(coming soon)*
 - Writing Adapters *(coming soon)*
 

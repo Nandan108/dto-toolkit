@@ -39,9 +39,12 @@ final class CastingException extends RuntimeException
     /** @psalm-suppress PossiblyUnusedMethod */
     public static function castingFailure(string $className, mixed $operand, ?string $methodName = null, array $args = [], ?string $messageOverride = null): self
     {
-        $type = is_a($className, CasterInterface::class, true)
-            ? 'Caster'
-            : (is_a($className, CastModifierInterface::class, true));
+        $type = match(true) {
+            is_a($className, CasterInterface::class, true) => 'Caster',
+            is_a($className, CastModifierInterface::class, true) => 'Cast modifier',
+            default => 'Class'
+        };
+
         $caster = $className;
         if ($methodName !== null && $methodName !== '') {
             $caster .= '::' . $methodName;
@@ -56,19 +59,19 @@ final class CastingException extends RuntimeException
         }
         $operandType = gettype($operand);
 
-        $message = "Caster {$caster} failed to cast $operandType";
+        $message = "$type {$caster} failed to cast $operandType";
         $message = ($messageOverride === null || $messageOverride === '')
             ? $message
             : rtrim($messageOverride, '.') . ': ' . $message;
 
-        $getJson  = function (mixed $operand): string|null {
+        $getJson = static function (mixed $operand): string|null {
             try {
                 return json_encode($operand, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: null;
             } catch (\JsonException $e) {
                 return '[not serializable: ' . $e->getMessage() . ']';
             }
         };
-        $addOpVal = function(?string $txt) use(&$message): void {
+        $addOpVal = static function(?string $txt) use(&$message): void {
             if ($txt === null || $txt === '') return;
             $message .= ", value: ";
             /** @psalm-suppress PossiblyNullArgument */

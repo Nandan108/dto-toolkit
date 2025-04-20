@@ -2,23 +2,51 @@
 
 namespace Nandan108\DtoToolkit\CastTo;
 
+use Nandan108\DtoToolkit\Enum\IntCastMode;
 use Nandan108\DtoToolkit\Core\CastBase;
 use Nandan108\DtoToolkit\Contracts\CasterInterface;
+use Nandan108\DtoToolkit\Exception\CastingException;
 
-#[\Attribute(\Attribute::TARGET_PROPERTY)]
+#[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class Integer extends CastBase implements CasterInterface
 {
-    public function __construct(bool $nullable = false, bool $outbound = false) {
-        parent::__construct($outbound, [$nullable]);
+    public function __construct(IntCastMode $mode = IntCastMode::Trunc, bool $outbound = false)
+    {
+        parent::__construct(outbound: $outbound, args: [$mode]);
     }
 
     #[\Override]
-    public function cast(mixed $value, array $args = []): ?int
+    public function cast(mixed $value, array $args = []): int
     {
-        [$nullable] = $args;
+        /** @var IntCastMode $mode */
+        $mode = $args[0];
 
-        if ($nullable && !is_numeric($value)) return null;
+        if (is_int($value)) return $value;
+        if (is_bool($value)) return $value ? 1 : 0;
 
-        return (int)$value;
+        if (is_numeric($value)) {
+            $floatVal = (float)$value;
+        } elseif (is_object($value) && method_exists($value, '__toString')) {
+            $string = (string)$value;
+            if (is_numeric($string)) {
+                $floatVal = (float)$string;
+            }
+        }
+
+        if (isset($floatVal)) {
+            return match ($mode) {
+                IntCastMode::Trunc => (int)$floatVal,
+                IntCastMode::Floor => (int)floor($floatVal),
+                IntCastMode::Ceil  => (int)ceil($floatVal),
+                IntCastMode::Round => (int)round($floatVal),
+            };
+        }
+
+        throw CastingException::castingFailure(
+            className: $this::class,
+            operand: $value,
+            messageOverride: 'Expected numeric, but got ' . gettype($value),
+        );
     }
+
 }

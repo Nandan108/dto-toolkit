@@ -74,7 +74,7 @@ final class ExportsToEntityTest extends TestCase
             public ?int $id = null;
             #[CastTo\Trimmed]
             public ?string $name = null;
-            #[CastTo\Integer(true)]
+            #[CastTo\Integer]
             public null|int|string $age = null;
             #[CastTo('trimmedString')]
             public ?string $email = null;

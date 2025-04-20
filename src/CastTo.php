@@ -13,20 +13,7 @@ use Nandan108\DtoToolkit\Exception\CastingException;
 use Nandan108\DtoToolkit\Support\CasterChainBuilder;
 
 /**
- * Defines a casting method for a DTO property during normalization.
- * Should be used through concrete Caster Attribute subclasses.
- * #[CastTo('SomeType')]
- *
- * Can also be used directly with a DTO caster method name or a CasterInterface class name.
- * Usage:
- *   #[CasterCore('SomeType')]
- *   public string|SomeType|null $property;
- *
- * This will call the method castToSomeType($value) on the DTO.
- *
- * - The provided value must match the suffix of a method named castTo{$value}()
- * - The optional `$outbound` flag specifies if the cast is applied during output
- * normalization, meaning before returning an entity or array.
+ * Base class for all caster attributes
  *
  * @psalm-api
  */

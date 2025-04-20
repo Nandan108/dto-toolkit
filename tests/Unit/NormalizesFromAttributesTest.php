@@ -4,6 +4,7 @@ namespace Nandan108\DtoToolkit\Tests\Unit;
 
 use DateTimeImmutable;
 use Mockery;
+use Nandan108\DtoToolkit\Attribute\CastModifier\FailNextTo;
 use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Cast;
 use Nandan108\DtoToolkit\Contracts\NormalizesOutboundInterface;
@@ -23,7 +24,8 @@ final class NormalizesFromAttributesTest extends TestCase
         $dto = new class extends BaseDto {
             use NormalizesFromAttributes;
 
-            #[CastTo\Integer(nullable: true)]
+            #[CastTo\IfNull(-1)]
+            #[CastTo\Integer]
             public null|string|int $age = null;
         };
 
@@ -33,19 +35,10 @@ final class NormalizesFromAttributesTest extends TestCase
         /** @psalm-suppress RedundantCondition */
         $this->assertSame("30", $dto->age);
 
-        // Case 2: Null input
-        $dto->fill(['age' => null])->normalizeInbound();
-        /** @psalm-suppress DocblockTypeContradiction */
-        $this->assertNull($dto->age);
-
-        // Case 3: Assert that properties that are "filled" are normalized
+        // Case 2: Assert that properties that are "filled" are normalized
         $dto->fill(['age' => "30"])->normalizeInbound();
         /** @psalm-suppress DocblockTypeContradiction */
         $this->assertSame(30, $dto->age);
-
-        // Case 4: Assert that invalid values are set to null
-        $dto->fill(['age' => "not-a-number"])->normalizeInbound();
-        $this->assertNull($dto->age);
     }
 
     public function test_normalize_outbound_applies_casts_to_tagged_properties(): void
@@ -60,14 +53,11 @@ final class NormalizesFromAttributesTest extends TestCase
             #[CastTo\Str(outbound: true)]
             public int|string|null $categoryId = null;
 
-            #[CastTo\Str(outbound: true, nullable: true)]
+            #[CastTo\Str(outbound: true)]
             public int|string|null $foo = null;
 
             #[CastTo\Str(outbound: true)]
             public int|string|null $emptyString = null;
-
-            #[CastTo\Str(outbound: true, nullable: true)]
-            public int|string|null $emptyStringNullable = null;
 
             #[CastTo\Str(outbound: true)]
             private int|string|null $privatePropWithSetter = null;
@@ -79,14 +69,20 @@ final class NormalizesFromAttributesTest extends TestCase
             public ?string $untouched = null;
         };
 
+        $fooPrinter = new Class {
+            public function __toString(): string
+            {
+                return 'foo';
+            }
+        };
+
         $normalized = $dto->normalizeOutbound([
             'title'                 => '  Hello  ',
             'categoryId'            => 42,
             'untouched'             => 'value',
             'privatePropWithSetter' => 'val',
-            'foo'                   => ['foo'],
+            'foo'                   => $fooPrinter,
             'emptyString'           => '',
-            'emptyStringNullable'   => '',
 
         ]);
 
@@ -95,9 +91,8 @@ final class NormalizesFromAttributesTest extends TestCase
             'categoryId'            => '42',
             'untouched'             => 'value',
             'privatePropWithSetter' => 'val',
-            'foo'                   => null,
+            'foo'                   => 'foo',
             'emptyString'           => '',
-            'emptyStringNullable'   => null,
         ]);
     }
 

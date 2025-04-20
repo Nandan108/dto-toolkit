@@ -13,7 +13,7 @@ use Nandan108\DtoToolkit\Exception\CastingException;
  * - if $nullable = true, will return null.
  * - if $nullable = false, will throw a CastingException.
  */
-#[\Attribute(\Attribute::TARGET_PROPERTY)]
+#[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class Rounded extends CastBase implements CasterInterface
 {
     public function __construct(int $precision = 0, bool $outbound = false)
