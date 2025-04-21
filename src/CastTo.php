@@ -45,7 +45,7 @@ class CastTo
         // Initialize the caster cache if it doesn't exist
         self::$globalMemoizedCasters ??= new \stdClass();
         /** @psalm-suppress RedundantPropertyInitializationCheck */
-        self::$onCastResolved ??= fn (): null => null;
+        self::$onCastResolved ??= static function (): void {};
     }
 
     /**q

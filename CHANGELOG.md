@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ---
 
-## [UNRELEASED]
+## [v0.2.2] - 2025-04-22
 
 ### Added
 - New **caster modifiers**:
@@ -30,9 +30,11 @@ All notable changes to this project will be documented in this file.
 - Improved `#[Injectable]` caster property injection mechanism
 
 ### Dev / DX
-- Added `nunomaduro/collision` for improved CLI error reporting
-- Minor `.gitignore` and `phpunit.xml.dist` updates
-
+- Added `nunomaduro/collision` for improved CLI error feedback
+- Added GitHub Actions CI (PHP 8.1–8.3, PHPUnit, Psalm)
+- Added `php-cs-fixer` with PSR-12 + Symfony rules + tweaks (composer cs-fix)
+- Added badges to `README.md` for CI status, coverage, and version
+- Minor updates to `.gitignore` and `phpunit.xml.dist`
 ---
 
 ## [v0.2.1] - 2025-04-19

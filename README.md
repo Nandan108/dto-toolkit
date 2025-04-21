@@ -1,9 +1,15 @@
 
 # DTO Toolkit Core
 
+
+![CI](https://github.com/nandan108/dto-toolkit/actions/workflows/ci.yml/badge.svg)
+![Coverage](https://codecov.io/gh/nandan108/dto-toolkit/branch/main/graph/badge.svg)
+![Style](https://img.shields.io/badge/style-php--cs--fixer-brightgreen)
+![Packagist](https://img.shields.io/packagist/v/nandan108/dto-toolkit)
+
 A lightweight, framework-agnostic toolkit for defining, transforming, and validating **Data Transfer Objects** (DTOs) in PHP.
 
-This package provides a clean, declarative API for working with DTOs — including input normalization, output transformation, and attribute-based type casting — all without coupling to a specific framework.
+This package provides a clean, declarative API for working with DTOs — including input normalization, output transformation, and attribute-based type casting — all without coupling to a specific framework (though framework adapters are coming soon).
 
 ## ✨ Features
 
