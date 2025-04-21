@@ -6,9 +6,13 @@ use Attribute;
 use Nandan108\DtoToolkit\Attribute\Injected;
 use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Contracts\CasterInterface;
+use Nandan108\DtoToolkit\Contracts\Injectable;
 use Nandan108\DtoToolkit\Exception\CastingException;
 
-abstract class CastBase extends CastTo implements CasterInterface
+/**
+ * Base class for all Caster classes.
+ */
+abstract class CastBase extends CastTo implements CasterInterface, Injectable
 {
     /**
      * Constructs an instance of a Caster class.
@@ -30,12 +34,14 @@ abstract class CastBase extends CastTo implements CasterInterface
      *
      * @throws \RuntimeException
      */
+    #[\Override]
     public function inject(): void
     {
-        foreach ((new \ReflectionClass($this))->getProperties() as $prop) {
-            if (!$prop->getAttributes(Injected::class)) {
-                continue;
-            }
+        $injectableProps = array_filter(
+            (new \ReflectionClass($this))->getProperties(),
+            static fn (\ReflectionProperty $prop) => $prop->getAttributes(Injected::class)
+        );
+        foreach ($injectableProps as $prop) {
             /** @psalm-suppress UndefinedMethod */
             $type = $prop->getType()?->getName();
             if (!$type) {
@@ -46,6 +52,9 @@ abstract class CastBase extends CastTo implements CasterInterface
         }
     }
 
+    /**
+     * Utility function: Check if the value is stringable.
+     */
     protected function is_stringable(mixed $val): bool
     {
         return is_string($val)
@@ -53,12 +62,23 @@ abstract class CastBase extends CastTo implements CasterInterface
             || is_object($val) && method_exists($val, '__toString');
     }
 
-    protected function throwIfNotStringable(mixed $value, string $expected = 'numeric, string or Stringable'): string
+    /**
+     * Utility function: Throw if the value is not stringable.
+     *
+     * @param string      $expected    the expected type
+     * @param string|null $ctorArgName the name of the constructor argument, if checking a caster contructor argument value
+     */
+    protected function throwIfNotStringable(mixed $value, string $expected = 'numeric, string or Stringable', ?string $ctorArgName = null): string
     {
-        $this->is_stringable($value)
-            or throw CastingException::castingFailure(className: $this::class, operand: $value, messageOverride: "Expected: $expected, but got ".gettype($value));
+        if ($this->is_stringable($value)) {
+            return (string) $value;
+        }
 
-        return (string) $value;
+        if (null === $ctorArgName) {
+            throw CastingException::castingFailure(className: $this::class, operand: $value, messageOverride: "Expected: $expected, but got ".gettype($value));
+        } else {
+            throw new \InvalidArgumentException("Constructor argument \$$ctorArgName expects $expected, but got ".gettype($value));
+        }
     }
 
     /**

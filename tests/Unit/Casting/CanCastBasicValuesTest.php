@@ -1,6 +1,6 @@
 <?php
 
-namespace Nandan108\DtoToolkit\Tests\Unit;
+namespace Tests\Unit\Casting;
 
 // use Nandan108\DtoToolkit\Core\CastTo;
 // use Nandan108\DtoToolkit\Traits\CanCastBasicValues;
@@ -105,9 +105,15 @@ final class CanCastBasicValuesTest extends TestCase
             'ArrayFromCsv:empty'              => [new CastTo\ArrayFromCsv(), '', ['']],
             'CsvFromArray'                    => [new CastTo\CsvFromArray(), ['a', 'b', 'c'], 'a,b,c'],
             'CsvFromArray:separator:"-"'      => [new CastTo\CsvFromArray(separator: '-'), ['a', 'b', 'c'], 'a-b-c'],
-            'Floating'                        => [new CastTo\Floating(), '3.14', 3.14],
+            'CsvFromArray:not-an-array'       => [new CastTo\CsvFromArray(separator: '-'), 'not-an-array', CastingException::class],
+            'Floating:bool'                   => [new CastTo\Floating(), false, CastingException::class],
+            'Floating:numeric-int'            => [new CastTo\Floating(), 3, 3.0],
+            'Floating:numeric-float'          => [new CastTo\Floating(), 3.14, 3.14],
+            'Floating:numeric-string'         => [new CastTo\Floating(), '3.14', 3.14],
+            'Floating:stringable'             => [new CastTo\Floating(), new $stringable('123.4'), 123.4],
             'Integer:not-a-number'            => [new CastTo\Integer(), 'not-a-number', CastingException::class],
             'Integer:numeric-stringable'      => [new CastTo\Integer(), new $stringable('123.4'), 123],
+            'Integer:bool'                    => [new CastTo\Integer(), false, 0],
             'Integer:Ceil'                    => [new CastTo\Integer(IntCastMode::Ceil), '123.532', 124],
             'Integer:Ceil_neg'                => [new CastTo\Integer(IntCastMode::Ceil), '-123.532', -123],
             'Integer:Floor'                   => [new CastTo\Integer(IntCastMode::Floor), '123.532', 123],
@@ -119,6 +125,7 @@ final class CanCastBasicValuesTest extends TestCase
             'Lowercase'                       => [new CastTo\Lowercase(), 'HELLo!', 'hello!'],
             'Rounded(2)'                      => [new CastTo\Rounded(2), 0.991, 0.99],
             'Rounded(1)'                      => [new CastTo\Rounded(1), 0.991, 1.0],
+            'Rounded(stringable obj)'         => [new CastTo\Rounded(2), new $stringable('0.991'), 0.99],
             'JsonEncode(valid)'               => [new CastTo\JsonEncode(), [1, 'a', null, true], '[1,"a",null,true]'],
             'JsonEncode(invalid)'             => [new CastTo\JsonEncode(), $circular, CastingException::class, [], 'Failed to cast value to JSON'],
             // Valid string-backed enum
@@ -135,11 +142,30 @@ final class CanCastBasicValuesTest extends TestCase
             'Enum(Code):404'                  => [new CastTo\Enum(Code::class), 404, Code::NotFound],
             // Invalid integer
             'Enum(Code):500'                  => [new CastTo\Enum(Code::class), 500, CastingException::class, [], 'Invalid enum backing value: 500'],
-            // Invalid Enum Class
-            'Enum(Invalid):500'               => [new CastTo\Enum('Invalid'), 'any-val', \InvalidArgumentException::class, [], 'Enum caster: \'Invalid\' is not a valid enum'],
-            // Invalid Enum Class
-            'Enum(NotBacked):500'             => [new CastTo\Enum(NotBacked::class), 'any-val', \InvalidArgumentException::class, [], 'Enum caster: \''.NotBacked::class.'\' is not a backed enum'],
+            // ReplaceIf
+            'ReplaceIf:string-match'          => [new CastTo\ReplaceIf('foo', 'bar'), 'foo', 'bar'],
+            'ReplaceIf:string-mismatch'       => [new CastTo\ReplaceIf('foo', 'bar'), 'qux', 'qux'],
+            'ReplaceIf:string-strict-match'   => [new CastTo\ReplaceIf('1', 'bar', strict: true), 1, 1],
+            'ReplaceIf:string-lose-match'     => [new CastTo\ReplaceIf('1', 'bar', strict: false), 1, 'bar'],
+            'ReplaceIf:array-match'           => [new CastTo\ReplaceIf(['a', 'b'], 'R'), 'b', 'R'],
+            'ReplaceIf:match-mismatch'        => [new CastTo\ReplaceIf(['a', 'b'], 'R'), 'q', 'q'],
+            'ReplaceIf:array-strict-match'    => [new CastTo\ReplaceIf(['1', '3'], 'foo', strict: true), 3, 3],
+            'ReplaceIf:array-lose-match'      => [new CastTo\ReplaceIf(['1', '3'], 'foo', strict: false), 3, 'foo'],
         ];
+    }
+
+    public function testInstantiationWithInvalidEnum(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Enum caster: \'Invalid\' is not a valid enum.');
+        new CastTo\Enum('Invalid');
+    }
+
+    public function testInstantiationWithInvalidEnumClass(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Enum caster: \''.NotBacked::class.'\' is not a backed enum.');
+        new CastTo\Enum(NotBacked::class);
     }
 }
 

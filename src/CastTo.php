@@ -2,7 +2,6 @@
 
 namespace Nandan108\DtoToolkit;
 
-use Attribute;
 use Nandan108\DtoToolkit\Contracts\Bootable;
 use Nandan108\DtoToolkit\Contracts\CasterInterface;
 use Nandan108\DtoToolkit\Contracts\CasterResolverInterface;
@@ -23,6 +22,7 @@ class CastTo
     protected static string $methodPrefix = 'castTo';
     public static ?CasterResolverInterface $customCasterResolver = null;
     protected static ?\stdClass $globalMemoizedCasters = null;
+    protected static array $injectables = [];
 
     /**
      * @internal a hook closure that is called when a cast is resolved
@@ -38,6 +38,10 @@ class CastTo
         public array $args = [],
         public ?array $constructorArgs = null,
     ) {
+        if (!($this instanceof CasterInterface) && ($methodOrClass ?? '') === '') {
+            throw new \LogicException('No casting method name or class provided.');
+        }
+
         // Initialize the caster cache if it doesn't exist
         self::$globalMemoizedCasters ??= new \stdClass();
         /** @psalm-suppress RedundantPropertyInitializationCheck */
@@ -89,7 +93,19 @@ class CastTo
         };
         $memoizeInstance = function (CasterInterface $casterInstance) use ($cache, $cacheKey, &$instance): void {
             $this->methodOrClass = $casterInstance::class;
-            $instance = $cache->$cacheKey['instance'] ??= $casterInstance;
+            $instance = $cache->$cacheKey['instance'] ?? null;
+            // if this is a cache miss (we don't yet have an instance of that class)
+            if (null === $instance) {
+                // put the instance in the cache
+                $cache->$cacheKey['instance'] = $instance = $casterInstance;
+                // Then prepare it by injecting and booting
+                if ($instance instanceof Injectable) {
+                    $instance->inject();
+                }
+                if ($instance instanceof Bootable) {
+                    $instance->boot();
+                }
+            }
         };
 
         // Check if we're using an Attribute Caster
@@ -97,11 +113,6 @@ class CastTo
             $memoizeInstance($this);
 
             return $memoizeCaster();
-        }
-
-        // Throw if no method or class name was provided
-        if ('' === $this->methodOrClass) {
-            throw new \LogicException('No casting method name or class provided.');
         }
 
         // A class name was provided? Resolve and use it.
@@ -113,7 +124,7 @@ class CastTo
         }
 
         // A DTO 'CastTo'+method-name was provided? Use it.
-        $methodName = static::$methodPrefix.ucfirst($this->methodOrClass);
+        $methodName = static::$methodPrefix.ucfirst(string: $this->methodOrClass);
         if (method_exists($dto, $methodName)) {
             return $memoizeCaster(
                 caster: fn (mixed $value): mixed => $dto->{$methodName}($value, ...$args),
@@ -199,32 +210,14 @@ class CastTo
         // If constructor args are provided, instantiate the class using them.
         if (null !== $this->constructorArgs) {
             // This will throw in case of signature mismatch.
-            $instance = new $className(...$this->constructorArgs);
-
-            if ($instance instanceof Injectable) {
-                $instance->inject();
-            }
-            if ($instance instanceof Bootable) {
-                $instance->boot();
-            }
-
-            return $instance;
+            return new $className(...$this->constructorArgs);
         }
 
         $ref = new \ReflectionClass($className);
         $ctor = $ref->getConstructor();
         // If no args are required, instantiate!
         if (!$ctor || 0 === $ctor->getNumberOfRequiredParameters()) {
-            $instance = $ref->newInstance();
-
-            if ($instance instanceof Injectable) {
-                $instance->inject();
-            }
-            if ($instance instanceof Bootable) {
-                $instance->boot();
-            }
-
-            return $instance;
+            return $ref->newInstance();
         }
 
         // ctorArgs needed but not provided: let DI container resolve it

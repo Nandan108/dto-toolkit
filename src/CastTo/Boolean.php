@@ -22,9 +22,9 @@ final class Boolean extends CastBase implements CasterInterface
 
         // strings, we convert to bool: ("1", "yes", "on") => true, ("0", "no", "off") => false, etc...
         if (is_string($value)) {
-            $value = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
-            if (is_bool($value)) {
-                return $value;
+            $filteredVal = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+            if (is_bool($filteredVal)) {
+                return $filteredVal;
             }
         }
 

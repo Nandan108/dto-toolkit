@@ -57,12 +57,16 @@ abstract class BaseDto
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
-    public function toOutboundArray(): array
+    public function toOutboundArray(bool $runPreOutputHook = true): array
     {
         $outbound = $this->toArray();
 
         if ($this instanceof NormalizesOutboundInterface) {
             return $this->normalizeOutbound($outbound);
+        }
+
+        if ($runPreOutputHook) {
+            $this->preOutput($outbound);
         }
 
         return $outbound;

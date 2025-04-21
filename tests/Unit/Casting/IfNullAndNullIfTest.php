@@ -1,6 +1,6 @@
 <?php
 
-namespace Nandan108\DtoToolkit\Tests\Unit;
+namespace Tests\Unit\Casting;
 
 use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Core\BaseDto;

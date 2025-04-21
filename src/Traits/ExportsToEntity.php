@@ -27,7 +27,7 @@ trait ExportsToEntity
 
         // Get properties already cast, ready to to be set on entity
         /** @psalm-suppress UndefinedMethod */
-        $normalizedProps = $this->toOutboundArray();
+        $normalizedProps = $this->toOutboundArray(runPreOutputHook: false);
 
         /** @psalm-suppress InvalidOperand */
         $propsToSet = [...$normalizedProps, ...$context];

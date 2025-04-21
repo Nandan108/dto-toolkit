@@ -15,10 +15,26 @@ use Nandan108\DtoToolkit\Support\CasterChainBuilder;
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 class FailNextTo extends FailTo
 {
+    public function __construct(
+        public readonly mixed $fallback = null,
+        public readonly string|array|null $handler = null,
+        public readonly int $count = 1,
+        public readonly bool $outbound = false,
+    ) {
+        if ($this->count < 1) {
+            throw new \InvalidArgumentException('FailNextTo: $count must be greater than or equal to 1.');
+        }
+    }
+
     #[\Override]
     public function modify(\ArrayIterator $queue, \Closure $chain, BaseDto $dto): \Closure
     {
-        $subchain = CasterChainBuilder::buildCasterSubchain(1, $queue, $dto);
+        $subchain = CasterChainBuilder::buildCasterSubchain(
+            length: $this->count,
+            queue: $queue,
+            dto: $dto,
+            modifier: 'FailNextTo', // for error messages
+        );
         // ToDo, if subchain is empty, throw a CastingException
         $handler = $this->getHandler($dto);
 

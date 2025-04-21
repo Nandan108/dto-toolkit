@@ -8,9 +8,13 @@ use Nandan108\DtoToolkit\Core\BaseDto;
 
 final class CasterChainBuilder
 {
-    public static function buildCasterSubchain(int $length, \ArrayIterator $queue, BaseDto $dto): \Closure
+    public static function buildCasterSubchain(int $length, \ArrayIterator $queue, BaseDto $dto, string $modifier): \Closure
     {
         $subAttrs = self::sliceNextAttributes($queue, $length);
+        $count = count($subAttrs);
+        if ($length > $count) {
+            throw new \InvalidArgumentException("$modifier requested a subchain of {$length} casters but only got {$count}.");
+        }
         $subchain = self::buildCasterChain($subAttrs, $dto);
 
         return $subchain;

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Nandan108\DtoToolkit\Tests\Unit;
+namespace Tests\Unit\Casting;
 
 use Nandan108\DtoToolkit\Exception\CastingException;
 use PHPUnit\Framework\TestCase;

@@ -1,6 +1,6 @@
 <?php
 
-namespace Nandan108\DtoToolkit\Tests\Unit;
+namespace Tests\Unit\Casting;
 
 use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Contracts\CasterInterface;
@@ -220,6 +220,7 @@ final class CasterInterfaceTest extends TestCase
         };
 
         /** @psalm-suppress InvalidReturnType, InvalidNullableReturnType, InvalidReturnStatement, NullableReturnStatement */
+        /** @psalm-suppress InternalMethod */
         $getMeta = fn (): \stdClass => CastTo::_getCasterMetadata();
 
         // whipe out memoized caster data
@@ -246,7 +247,9 @@ final class CasterInterfaceTest extends TestCase
         $attr->getCaster($dto);
         // this time, we use getCasterMetadata() with an argument (different code path)
         /** @var array $casterMeta */
+        /** @psalm-suppress InternalMethod */
         $casterMeta = $attr::_getCasterMetadata($fakeClassCacheKey);
+        /** @psalm-suppress PossiblyInvalidArgument */
         $this->assertArrayHasKey('casters', $casterMeta);
     }
 }

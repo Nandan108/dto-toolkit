@@ -1,6 +1,6 @@
 <?php
 
-namespace Nandan108\DtoToolkit\Tests\Unit;
+namespace Tests\Unit\Casting;
 
 use Nandan108\DtoToolkit\Attribute\CastModifier\PerItem;
 use Nandan108\DtoToolkit\Cast;
@@ -77,6 +77,31 @@ final class CastingChainTest extends TestCase
         } catch (CastingException $e) {
             $this->assertStringStartsWith('PerItem modifier expected an array value, received string', $e->getMessage());
             $this->assertSame(3, $e->args['count']);
+        }
+    }
+
+    public function testThrowsIfModifierCountArgIsGreaterThanFollowingCasterCount(): void
+    {
+        /** @psalm-suppress ExtensionRequirementViolation */
+        $dto = new class extends BaseDto implements NormalizesOutboundInterface {
+            use NormalizesFromAttributes;
+            #[CastTo\Trimmed('-')] // trim dashes
+            #[CastTo\ArrayFromCsv('/')] // split into an array
+            #[PerItem(3)] // Apply next 3 casters on the value's array elements instead of whole value
+            #[CastTo\Trimmed('X ')] // trim whitespace
+            #[CastTo\Rounded(2)] // round to 2 decimals
+            // #[Prefix('$')] // add prefix (implicit cast to string)
+            // #[CastTo\CsvFromArray(', ')] // (default separator is ',')
+            public string|array|null $prices = null; // default value provided for the example
+        };
+
+        $dto->fill(['prices' => '---  X 6.196/  0.99/X2.00001/XX 3.5  /XX4.57   --']);
+        try {
+            $dto->normalizeInbound();
+            dump($dto);
+            $this->fail('Expected CastingException not thrown');
+        } catch (\InvalidArgumentException $e) {
+            $this->assertStringStartsWith('PerItem requested a subchain of 3 casters but only got 2', $e->getMessage());
         }
     }
 }

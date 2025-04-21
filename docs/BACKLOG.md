@@ -16,6 +16,17 @@
 - [036] Add support for `#[AlwaysCast(fromVal:..., groups:...)]`. Forces casting unfilled props by providing a default value to cast when unfilled.
 - [028] Add nested DTO support with `CastTo\Dto(class, groups: 'api')` (from array or object), recursive normalization and validation
 - [045] Add support for validation [See details](#PBI-045)
+- [051] Add modifier `#[ApplyIf(check, count=1, negate=false)]` (and suggar `#[ApplyIfNot]` )
+  - E.g.: `#[ApplyIf('isAdmin', count(2))]` (or `#[ApplyIf]`?) would result in applying the next 2 casters only if one of the following returns truthy:
+    - `$dto->isAdmin()` (if available), or
+    - `$dto->isAdmin` (if property exists), or
+    - `$context['isAdmin']` (would require fromArray() to take an aditional `$context` arg).
+- [052] Add `CastTo\ArrayFromJson`
+- [053] Add `CastTo\JsonPath($path)`
+- [054] Add `CastTo\RegexReplace($needle, $haystack)`
+- [055] Add `#[MapFromInternal(string|array $fields)]` to allow mapping from one or more internal properties rather than external input.
+- [056] Add `#[DtoLifecycle($inboundGroups, $validate, $normalizeSeq, $outboundGroups)]` to allow static default lifecycle configuration, to be applied during one-liners like `$dto->fromRequest($req)->toEntity()`, and `static BaseDto::amendDefaultLifecycleGroups($inbound, $validate, $normalizeSeq, $outbound) to allow runtime config modification`;
+`$normalizeSeq` should allow an array of string|array $groups, defining step(s) in a normalization sequence scoped to said groups.
 ---
 
 ## Completed PBIs

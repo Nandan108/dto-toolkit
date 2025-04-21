@@ -11,14 +11,6 @@ final class Enum extends CastBase implements CasterInterface
 {
     public function __construct(string $enumClass, bool $outbound = false)
     {
-        parent::__construct($outbound, [$enumClass]);
-    }
-
-    #[\Override]
-    public function cast(mixed $value, array $args = []): \BackedEnum
-    {
-        $enumClass = (string) ($args[0] ?? '');
-
         if (!enum_exists($enumClass)) {
             throw new \InvalidArgumentException("Enum caster: '{$enumClass}' is not a valid enum.");
         }
@@ -27,7 +19,17 @@ final class Enum extends CastBase implements CasterInterface
             throw new \InvalidArgumentException("Enum caster: '{$enumClass}' is not a backed enum.");
         }
 
+        parent::__construct($outbound, [$enumClass]);
+    }
+
+    #[\Override]
+    public function cast(mixed $value, array $args = []): \BackedEnum
+    {
+        /** @var string $enumClass */
+        [$enumClass] = $args;
+
         try {
+            /** @psalm-suppress InvalidStringClass */
             return $enumClass::tryFrom($value);
         } catch (\Throwable $t) {
             $value = json_encode($value);

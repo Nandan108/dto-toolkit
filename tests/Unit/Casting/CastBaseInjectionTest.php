@@ -2,11 +2,19 @@
 
 declare(strict_types=1);
 
-namespace Tests\Cast;
+namespace Tests\Unit\Casting;
 
 use Nandan108\DtoToolkit\Attribute\Injected;
 use Nandan108\DtoToolkit\Bridge\ContainerBridge;
+use Nandan108\DtoToolkit\CastTo;
+use Nandan108\DtoToolkit\Contracts\Bootable;
+use Nandan108\DtoToolkit\Contracts\CasterInterface;
+use Nandan108\DtoToolkit\Contracts\Injectable;
+use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Core\CastBase;
+use Nandan108\DtoToolkit\Core\FullDto;
+use Nandan108\DtoToolkit\Traits\CreatesFromArray;
+use Nandan108\DtoToolkit\Traits\NormalizesFromAttributes;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -14,22 +22,32 @@ use Psr\Container\ContainerInterface;
 // Dummy service to inject
 final class DummySlugger
 {
-    public function slugify(string $text): string
+    public function slugify(string $text, string $separator = '-'): string
     {
-        return strtolower(str_replace(' ', '-', trim($text)));
+        return strtolower(str_replace(' ', $separator, trim($text)));
     }
 }
 
 // Caster using #[Injected]
 #[\Attribute(\Attribute::TARGET_PROPERTY)]
-final class SlugifyCaster extends CastBase
+final class InjectedSlugifyCasterResolvesWithContainer extends CastBase implements CasterInterface, Injectable, Bootable
 {
+    public string $separator = '-';
+
+    #[\Override]
+    public function boot(): void
+    {
+        $this->separator = '*';
+    }
+
     /** @psalm-suppress PropertyNotSetInConstructor */
-    #[Injected] private DummySlugger $slugger;
+    #[Injected]
+    private DummySlugger $slugger;
+
     #[\Override]
     public function cast(mixed $value, array $args = []): string
     {
-        return $this->slugger->slugify((string) $value);
+        return $this->slugger->slugify((string) $value, $this->separator);
     }
 
     #[\Override]
@@ -65,11 +83,17 @@ final class CastBaseInjectionTest extends TestCase
 {
     public function testInjectionAndCasting(): void
     {
-        $caster = new SlugifyCaster();
-        $caster->inject();
+        $dtoClass = new class extends FullDto {
+            use CreatesFromArray;
+            use NormalizesFromAttributes;
 
-        $result = $caster->cast(' Hello World ');
-        $this->assertEquals('hello-world', $result);
+            #[CastTo(InjectedSlugifyCasterResolvesWithContainer::class)]
+            public mixed $value = null;
+        };
+
+        $dto = $dtoClass::fromArray(['value' => ' Hello World ']);
+
+        $this->assertEquals('hello*world', $dto->value);
     }
 
     public function testBridgeBasedInjection(): void
@@ -113,5 +137,40 @@ final class CastBaseInjectionTest extends TestCase
         $this->expectExceptionMessage('No container resolver defined in Core');
 
         $caster->inject();
+    }
+
+    public function testThrowsOnMethodCastingWithEmptyMethodName(): void
+    {
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage('No casting method name or class provided');
+
+        $dto = new class extends BaseDto {
+            use NormalizesFromAttributes;
+            #[CastTo('')]
+            public mixed $value = null;
+        };
+
+        $dto->fill(['value' => 'foo']);
+        $dto->normalizeInbound();
+    }
+
+    public function testInstantiatesWithConstructorArgs(): void
+    {
+        $casterClass = new class('X') extends CastBase implements CasterInterface {
+            public function __construct(public string $prefix)
+            {
+            }
+
+            #[\Override]
+            public function cast(mixed $value, array $args = []): mixed
+            {
+                return $this->prefix.$value;
+            }
+        };
+
+        $attr = new CastTo(get_class($casterClass), args: [], constructorArgs: ['X']);
+        $dto = new class extends BaseDto {};
+        $caster = $attr->getCaster($dto);
+        $this->assertSame('Xfoo', $caster('foo'));
     }
 }

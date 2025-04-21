@@ -22,7 +22,7 @@ final class DateTime extends CastBase
 
         $result = \DateTimeImmutable::createFromFormat($format, $value);
 
-        if (!$result) {
+        if (false === $result) {
             throw CastingException::castingFailure(className: $this::class, operand: $value, messageOverride: "Unable to parse date with format '{$format}' from '$value'");
         }
 

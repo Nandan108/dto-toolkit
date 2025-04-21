@@ -26,6 +26,19 @@ final class Rounded extends CastBase implements CasterInterface
     {
         [$precision] = $args;
 
-        return round((float) $value, $precision);
+        if (is_numeric($value)) {
+            $floatValue = (float) $value;
+        } elseif (is_object($value) && method_exists($value, '__toString')) {
+            $string = (string) $value;
+            if (is_numeric($string)) {
+                $floatValue = (float) $string;
+            }
+        }
+
+        if (!isset($floatValue)) {
+            throw CastingException::castingFailure(className: $this::class, operand: $value, messageOverride: 'Expected numeric, but got '.gettype($value));
+        }
+
+        return round($floatValue, $precision);
     }
 }

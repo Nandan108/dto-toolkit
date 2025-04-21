@@ -17,14 +17,17 @@ All notable changes to this project will be documented in this file.
   - `#[CastTo\ReplaceIf($when, $then)]` – replaces matched values with custom output
 - New **unified integer caster**:
   - `#[CastTo\Integer(IntCastMode::*))]` supports `Ceil`, `Floor`, `Round`, `Trunc`
-  - Removed `CastTo\Ceil` and `CastTo\Floor` in favor of this consolidated approach
-  - Added `IntCastMode` enum to support integer casting strategies
+  - Replaces legacy `CastTo\Ceil` and `CastTo\Floor`
+  - `IntCastMode` enum introduced to configure casting behavior
 
 ### Changed
 - Refactored `CasterChainBuilder` into its own support class
 - Updated `PerItem` modifier to use the new chain builder internally
-- All core casters now always throw on invalid input
-- Improved attribute resolution and chaining logic
+- Core casters now **always throw** on invalid input (strict by default)
+- Improved attribute resolution and modifier chaining logic
+- Updated docs/DtoLifecycle.md
+- Core\BaseDto: added `bool $runPreOutputHook=true` to `toOutboundArray()`, so `ExportsToEntity::toEntity()` can run `preOutput()` hook after entity hydration
+- Improved `#[Injectable]` caster property injection mechanism
 
 ### Dev / DX
 - Added `nunomaduro/collision` for improved CLI error reporting

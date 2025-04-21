@@ -23,6 +23,21 @@ final class FailNextToTest extends TestCase
         $this->assertSame('fallback', $dto->value);
     }
 
+    public function testThrowsIfFailNextToCountIsLessThanOne(): void
+    {
+        $dto = new class extends FullDto {
+            #[FailNextTo('fallback', count: 0)]
+            #[CastTo\Str]
+            public mixed $value = null;
+        };
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('FailNextTo: $count must be greater than or equal to 1.');
+
+        $dto->fill(['value' => new \stdClass()]);
+        $dto->normalizeInbound();
+    }
+
     public function testMethodHandlerOnDtoIsCalled(): void
     {
         $dto = new class extends FullDto {

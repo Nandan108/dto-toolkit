@@ -19,13 +19,16 @@ trait CreatesFromArray
      * @param bool         $ignoreUnknownProps If true, unknown properties will be ignored
      *
      * @throws \LogicException
+     *
+     * @psalm-suppress MethodSignatureMismatch
+     * @psalm-suppress MoreSpecificReturnType
      */
     public static function fromArray(
         array $input,
         array $validationArgs = [],
         ?BaseDto $dto = null,
         bool $ignoreUnknownProps = false,
-    ): BaseDto {
+    ): static {
         if (!$dto) {
             /** @psalm-suppress UnsafeInstantiation */
             $dto = new static();
@@ -75,8 +78,10 @@ trait CreatesFromArray
      * @param BaseDto|null $dto            The DTO to use. If null, a new instance will be created.
      *
      * @throws \LogicException
+     *
+     * @psalm-suppress MethodSignatureMismatch
      */
-    public static function fromArrayLoose(array $input, array $validationArgs = [], ?BaseDto $dto = null): BaseDto
+    public static function fromArrayLoose(array $input, array $validationArgs = [], ?BaseDto $dto = null): static
     {
         /** @psalm-suppress NoValue */
         return static::fromArray($input, $validationArgs, $dto, ignoreUnknownProps: true);

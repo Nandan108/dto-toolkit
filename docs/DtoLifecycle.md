@@ -2,11 +2,12 @@
 
 Understanding the lifecycle of a DTO helps clarify when casting, validation, hooks, and transformations are applied.
 
-This section outlines the phases your DTO goes through, from input to output.
+This section outlines the phases your DTO goes through, from input to output, separated in two distinct phases: _inbound_ then _outbound_.
 
 ---
+### Inbound Phase
 
-### 1. 🏗️ DTO Creation (from Input)
+#### 1. 🏗️ DTO Creation (from Input)
 
 The DTO is created using `fromArray()` or (via adapter) `fromRequest()`:
 
@@ -17,7 +18,7 @@ This happens *before* any casting or transformation is applied.
 
 ---
 
-### 2. ✅ Validation (on Raw Input)
+#### 2. ✅ Validation (on Raw Input)
 
 Validation — when enabled via an adapter — is performed **before normalization**, directly on the raw values assigned from input.
 
@@ -31,7 +32,7 @@ This ensures:
 
 ---
 
-### 3. 🔄 Inbound Normalization
+#### 3. 🔄 Normalization
 
 If the DTO implements `NormalizesInboundInterface`, all `#[CastTo(...)]` attributes without `outbound: true` are applied.
 
@@ -43,7 +44,7 @@ Only properties marked as filled will be normalized unless future features (e.g.
 
 ---
 
-### 4. 🧩 Post-Processing (`postLoad()` Hook)
+#### 4. 🧩 Post-Processing (`postLoad()` Hook)
 
 If the DTO class defines a `postLoad()` method, it will be invoked **after normalization**.
 
@@ -54,38 +55,62 @@ Use this to:
 
 ---
 
-### 5. 📤 Outbound Transformation
+### Outbound Phase
 
-When calling:
-- `toEntity()`
-- `toOutboundArray()`
-- Or a custom `toResponse()` (via adapter)
+This second phase concerns exporting the DTO data to another form for use by the application.
 
-The following occurs:
-- The DTO is turned into an array or object
-- Outbound `#[CastTo(..., outbound: true)]` attributes are applied
-- If `preOutput($entity)` exists, it is called before returning the result
+This is done by calling:
+- `toOutboundArray()` - returns outbound-cast DTO content as an array
+- `toEntity()` - internally calls `toOutboundArray()` then hydrates the result into an object via public props or setters.
+- `toDto()` - for DTO-to-DTO transformations *(coming soon)*
+- `toResponse()` or `toModel()` *(coming soon via adapters)*
+
+**Steps:**
+- Array produced from DTO data
+- Outbound transformations applied (casting attributes)
+- Entity hydration
+- `PreOutput($entity)` hook called
+- result returned
 
 This phase ensures clean, typed, or enriched output — e.g., transforming strings into DateTime objects or enums.
 
 ---
 
-### Summary Timeline
+#### Summary Timeline
 
 ```text
-fromArray() or fromRequest()
-   ↓
-Raw values assigned
-   ↓
-Validation (on raw input)
-   ↓
-Normalization (inbound casting)
-   ↓
-postLoad() hook
-   ↓
-(toEntity() / toArray())
-   ↓
-Outbound casting
-   ↓
-preOutput() hook
+
+Inbound :
+   $dto = MyDto::fromArray() or ::fromRequest()
+      ↓
+      Raw values assigned
+      ↓
+      Validation (on raw input)
+      ↓
+      Normalization (inbound casting)
+      ↓
+      postLoad() hook
+      ↓
+      returns hydrated $dto instance, ready for business logic.
+
+Outbound :
+   $dto->toOutboundArray()
+      ↓
+      Outbound casting
+      ↓
+      preOutput() hook
+      ↓
+      returns entity
+or:
+   $dto->toEntity() / toResponse() / ...
+      ↓
+      toOutboundArray()
+            ↓
+            Outbound casting
+      ↓
+      hydrate output object
+      ↓
+      preOutput() hook
+      ↓
+      returns entity/response/...
 ```

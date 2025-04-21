@@ -11,6 +11,7 @@ final class Slug extends CastBase implements CasterInterface
 {
     public function __construct(string $separator = '-', bool $outbound = false)
     {
+        $this->checkIntlAvailable();
         parent::__construct($outbound, [$separator]);
     }
 
@@ -20,8 +21,6 @@ final class Slug extends CastBase implements CasterInterface
         [$separator] = $args;
 
         $value = $this->throwIfNotStringable($value);
-
-        $this->checkIntlAvailable();
 
         /** @psalm-suppress PossiblyNullReference */
         $value = \Transliterator::create('Any-Latin; Latin-ASCII; [\u0100-\u7fff] remove')->transliterate($value);

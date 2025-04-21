@@ -74,7 +74,7 @@ Adapters will provide support for:
 - [Lifecycle](docs/DtoLifecycle.md) – Understanding the lifecycle of a DTO
 - [Lifecycle Hooks](docs/Hooks.md) – customize behavior with `postLoad()` and `preOutput()`
 - [Toolkit Comparison](docs/Comparison.md) – see how this toolkit compares to other PHP DTO/mapping libraries
-- Core casters and modifiers *(coming soon)*
+- [Core Casters & Modifiers](docs/BuiltInAttributes.md) - see the list of built-in caster and modifier attributes
 - Validation *(coming soon)*
 - Writing Adapters *(coming soon)*
 
