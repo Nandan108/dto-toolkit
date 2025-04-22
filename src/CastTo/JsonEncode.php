@@ -10,9 +10,9 @@ use Nandan108\DtoToolkit\Exception\CastingException;
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class JsonEncode extends CastBase implements CasterInterface
 {
-    public function __construct(int $flags = 0, int $depth = 512, bool $outbound = false)
+    public function __construct(int $flags = 0, int $depth = 512)
     {
-        parent::__construct($outbound, [$flags, $depth]);
+        parent::__construct([$flags, $depth]);
     }
 
     #[\Override]

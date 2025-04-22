@@ -10,9 +10,9 @@ use Nandan108\DtoToolkit\Exception\CastingException;
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class Integer extends CastBase implements CasterInterface
 {
-    public function __construct(IntCastMode $mode = IntCastMode::Trunc, bool $outbound = false)
+    public function __construct(IntCastMode $mode = IntCastMode::Trunc)
     {
-        parent::__construct(outbound: $outbound, args: [$mode]);
+        parent::__construct(args: [$mode]);
     }
 
     #[\Override]

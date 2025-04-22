@@ -9,10 +9,10 @@ use Nandan108\DtoToolkit\Exception\CastingException;
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class Slug extends CastBase implements CasterInterface
 {
-    public function __construct(string $separator = '-', bool $outbound = false)
+    public function __construct(string $separator = '-')
     {
         $this->checkIntlAvailable();
-        parent::__construct($outbound, [$separator]);
+        parent::__construct([$separator]);
     }
 
     #[\Override]

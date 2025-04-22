@@ -17,16 +17,8 @@ use Nandan108\DtoToolkit\Support\CasterChainBuilder;
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 class PerItem implements CastModifierInterface
 {
-    public function __construct(
-        public readonly int $count = 1,
-        public readonly bool $outbound = false,
-    ) {
-    }
-
-    #[\Override]
-    public function isOutbound(): bool
+    public function __construct(public readonly int $count = 1)
     {
-        return $this->outbound;
     }
 
     /**

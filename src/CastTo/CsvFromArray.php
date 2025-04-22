@@ -8,9 +8,9 @@ use Nandan108\DtoToolkit\Exception\CastingException;
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class CsvFromArray extends CastBase
 {
-    public function __construct(string $separator = ',', bool $outbound = false)
+    public function __construct(string $separator = ',')
     {
-        parent::__construct($outbound, [$separator]);
+        parent::__construct([$separator]);
     }
 
     #[\Override]

@@ -8,8 +8,8 @@ use Nandan108\DtoToolkit\Contracts\CasterInterface;
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 class NullIf extends ReplaceIf implements CasterInterface
 {
-    public function __construct(mixed $when, bool $strict = true, bool $outbound = false)
+    public function __construct(mixed $when, bool $strict = true)
     {
-        parent::__construct($when, null, $strict, $outbound);
+        parent::__construct($when, null, $strict);
     }
 }

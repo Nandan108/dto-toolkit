@@ -19,7 +19,6 @@ class FailNextTo extends FailTo
         public readonly mixed $fallback = null,
         public readonly string|array|null $handler = null,
         public readonly int $count = 1,
-        public readonly bool $outbound = false,
     ) {
         if ($this->count < 1) {
             throw new \InvalidArgumentException('FailNextTo: $count must be greater than or equal to 1.');

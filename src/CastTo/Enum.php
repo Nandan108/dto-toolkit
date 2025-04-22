@@ -9,7 +9,7 @@ use Nandan108\DtoToolkit\Exception\CastingException;
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class Enum extends CastBase implements CasterInterface
 {
-    public function __construct(string $enumClass, bool $outbound = false)
+    public function __construct(string $enumClass)
     {
         if (!enum_exists($enumClass)) {
             throw new \InvalidArgumentException("Enum caster: '{$enumClass}' is not a valid enum.");
@@ -19,7 +19,7 @@ final class Enum extends CastBase implements CasterInterface
             throw new \InvalidArgumentException("Enum caster: '{$enumClass}' is not a backed enum.");
         }
 
-        parent::__construct($outbound, [$enumClass]);
+        parent::__construct([$enumClass]);
     }
 
     #[\Override]

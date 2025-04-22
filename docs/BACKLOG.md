@@ -2,7 +2,6 @@
 
 ## Product Backlog Items
 
-- [039] Publish to GitHub and add CI
 - [040] Add `#[MapFrom(string|array $fields)]`
 - [020] Add `#[MapTo(...)]` Attribute [See details](Mapping.md)
 - [043] Add support for scoping groups (cross-cutting concern) [See details](#PBI-043)
@@ -25,7 +24,7 @@
 - [053] Add `CastTo\JsonPath($path)`
 - [054] Add `CastTo\RegexReplace($needle, $haystack)`
 - [055] Add `#[MapFromInternal(string|array $fields)]` to allow mapping from one or more internal properties rather than external input.
-- [056] Add `#[DtoLifecycle($inboundGroups, $validate, $normalizeSeq, $outboundGroups)]` to allow static default lifecycle configuration, to be applied during one-liners like `$dto->fromRequest($req)->toEntity()`, and `static BaseDto::amendDefaultLifecycleGroups($inbound, $validate, $normalizeSeq, $outbound) to allow runtime config modification`;
+- [056] Add `#[DtoLifecycleConfig($configName, $inboundGroups, $validate, $normalizeSeq, $outboundGroups)]` to allow static default lifecycle configuration, to be auto-applied during one-liners like `$dto->fromRequest($req)->toEntity()`, and `static BaseDto::amendDefaultLifecycleGroups($inbound, $validate, $normalizeSeq, $outbound) to allow runtime config modification`;
 `$normalizeSeq` should allow an array of string|array $groups, defining step(s) in a normalization sequence scoped to said groups.
 ---
 
@@ -64,7 +63,8 @@
 - [047] Add modifier `#[FailTo(mixed $fallbackValue=null, string|callable \$handler=null)]`, `#[FailNextTo]`
 - [048] Add `#[CastTo\IfNull($output='')]`, `#[CastTo\NullIf(\$input='')]`, `#[CastTo\ReplaceIf(when, then)]`
 - [031] ALWAYS STRICT: Update all casters to always throw if input value is invalid.
-
+- [039] Publish to GitHub and add CI
+- [057] Replace per-Caster $outbound ctor param with #[Outbound]: marks subsequent attributes as belonging to outbound phase
 ---
 
 ### <a id="PBI-043"></a>**🔧 PBI 43: Add support for scoping groups (cross-cutting concern)**
@@ -77,7 +77,7 @@
     - `BaseDto::toArray(array $props = [], array $groups = [])` should filter properties based on group matching
     - Downstream consumers (`fromArray`, `fromDto`, `toOutboundArray`, `toEntity`) must accept and pass `?array $groups` to `toArray`
 - **Casting**
-    - `CastTo::getCastingClosureMap(BaseDto $dto, bool $outbound = false, array $groups = [])` should filter out caster attributes that declare `groups` not intersecting with the active group set
+    - `CastTo::getCastingClosureMap(BaseDto $dto, array $groups = [])` should filter out caster attributes that declare `groups` not intersecting with the active group set
     - `NormalizesFromAttributes` must pass `groups` into casting closure map resolution
 - **Caster syntax**: Caster attributes should allow optional `groups: string|array`
     - `#[CastTo\Slug(groups: ['public', 'seo'])]`

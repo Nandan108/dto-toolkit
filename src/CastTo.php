@@ -2,6 +2,7 @@
 
 namespace Nandan108\DtoToolkit;
 
+use Nandan108\DtoToolkit\Attribute\Outbound;
 use Nandan108\DtoToolkit\Contracts\Bootable;
 use Nandan108\DtoToolkit\Contracts\CasterInterface;
 use Nandan108\DtoToolkit\Contracts\CasterResolverInterface;
@@ -34,7 +35,6 @@ class CastTo
     public function __construct(
         public ?string $methodOrClass = null,
         /** @psalm-suppress PossiblyUnusedProperty */
-        public bool $outbound = false,
         public array $args = [],
         public ?array $constructorArgs = null,
     ) {
@@ -156,14 +156,6 @@ class CastTo
     }
 
     /**
-     * @return bool true if the modifier applies to outbound casting, false otherwise
-     */
-    public function isOutbound(): bool
-    {
-        return $this->outbound;
-    }
-
-    /**
      * 🐞 Debugging utility: retrieve internal memoized caster data.
      *
      * @param string|null $methodKey The method key to retrieve
@@ -259,11 +251,16 @@ class CastTo
                 // instantiate the attributes
                 $attrInstances = array_map(fn ($attr) => $attr->newInstance(), $attributes);
                 // filter out the ones that are not CastTo or CastModifier
-                $attrInstances = array_filter($attrInstances, fn ($attr) => $attr instanceof CastTo || $attr instanceof CastModifierInterface);
+                $attrInstances = array_filter($attrInstances, fn ($attr) => $attr instanceof CastTo || $attr instanceof CastModifierInterface || $attr instanceof Outbound);
 
                 // separate into inbound and outbound chains
+                $isOutbound = false;
                 foreach ($attrInstances as $attrInstance) {
-                    $casterAttrByPhase[(int) $attrInstance->isOutbound()][] = $attrInstance;
+                    if ($attrInstance instanceof Outbound) {
+                        $isOutbound = true;
+                        continue;
+                    }
+                    $casterAttrByPhase[(int) $isOutbound][] = $attrInstance;
                 }
 
                 // build the chain for each phase

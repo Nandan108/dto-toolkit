@@ -111,10 +111,10 @@ final class Prefix extends CastBase
 {
     public static int $counter = 0;
 
-    public function __construct(public ?string $prefix = null, bool $outbound = false)
+    public function __construct(public ?string $prefix = null)
     {
         $this->prefix ??= (string) static::$counter++;
-        parent::__construct($outbound, [$prefix]);
+        parent::__construct([$prefix]);
     }
 
     #[\Override]

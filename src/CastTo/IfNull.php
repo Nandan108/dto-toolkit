@@ -9,9 +9,9 @@ use Nandan108\DtoToolkit\Core\CastBase;
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class IfNull extends CastBase implements CasterInterface
 {
-    public function __construct(mixed $fallback = false, bool $outbound = false)
+    public function __construct(mixed $fallback = false)
     {
-        parent::__construct($outbound, [$fallback]);
+        parent::__construct([$fallback]);
     }
 
     #[\Override]

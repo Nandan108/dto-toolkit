@@ -10,9 +10,8 @@ final class Trimmed extends CastBase
     public function __construct(
         string $characters = " \n\r\t\v\x00",
         string $where = 'both',
-        bool $outbound = false,
     ) {
-        parent::__construct($outbound, [$characters, $where]);
+        parent::__construct([$characters, $where]);
     }
 
     #[\Override]

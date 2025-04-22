@@ -8,9 +8,9 @@ use Nandan108\DtoToolkit\Exception\CastingException;
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class DateTime extends CastBase
 {
-    public function __construct(string $format = 'Y-m-d H:i:s', bool $outbound = false)
+    public function __construct(string $format = 'Y-m-d H:i:s')
     {
-        parent::__construct($outbound, [$format]);
+        parent::__construct([$format]);
     }
 
     #[\Override]

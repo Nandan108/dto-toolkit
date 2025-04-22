@@ -53,23 +53,23 @@ abstract class BaseDto
     /**
      * Get the DTO data content as an array.
      * If the DTO implements NormalizesOutboundInterface, the casters (CastTo Attributes)
-     * declared with $outbound = true will be called to transform the data before returning it.
+     * declared after #[Outbound] will be called to transform the data before returning it.
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
     public function toOutboundArray(bool $runPreOutputHook = true): array
     {
-        $outbound = $this->toArray();
+        $data = $this->toArray();
 
         if ($this instanceof NormalizesOutboundInterface) {
-            return $this->normalizeOutbound($outbound);
+            $data = $this->normalizeOutbound($data);
         }
 
         if ($runPreOutputHook) {
-            $this->preOutput($outbound);
+            $this->preOutput($data);
         }
 
-        return $outbound;
+        return $data;
     }
 
     /**
@@ -162,7 +162,7 @@ abstract class BaseDto
      * @psalm-suppress PossiblyUnusedMethod
      * @psalm-suppress PossiblyUnusedParam
      */
-    public function preOutput(array|object $output)
+    public function preOutput(array|object &$output)
     {
         // no-op - to be implemented in subclasses
     }

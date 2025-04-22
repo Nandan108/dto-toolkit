@@ -10,7 +10,7 @@ These attributes perform direct value transformations.
 
 ### CastTo\ArrayFromCsv
 
-**Arguments:** `string $separator = ',', bool $outbound = false`
+**Arguments:** `string $separator = ','
 
 Splits a CSV string into an array.
 Throws a `CastingException` on input that can't be cast to string.
@@ -28,21 +28,21 @@ Throws a `CastingException` on input that's not stringable'.
 
 ### CastTo\CsvFromArray
 
-**Arguments:** `string $separator = '', bool $outbound = false`
+**Arguments:** `string $separator = ''
 
 Converts an array of strings into a comma-separated string.
 Throws a `CastingException` on input that's not an array.
 
 ### CastTo\DateTime
 
-**Arguments:** `string $format = 'Y-m-d H:i:s', bool $outbound = false`
+**Arguments:** `string $format = 'Y-m-d H:i:s'
 
 Parses a datetime string into a `\DateTimeImmutable` instance.
 Throws a `CastingException` if parsing fails (createFromFormat() returns false);
 
 ### CastTo\Enum
 
-**Arguments:** `string $enumClass, bool $outbound = false`
+**Arguments:** `string $enumClass
 
 Casts a scalar value to a PHP backed enum instance.
 Throws an `InvalidArgumentException` if `$enumClass` doesn't exist or is not a backed enum.
@@ -55,19 +55,19 @@ Throws a `CastingException` on invalid input.
 
 ### CastTo\IfNull
 
-**Arguments:** `mixed $fallback = false, bool $outbound = false`
+**Arguments:** `mixed $fallback = false
 
 Replaces `null` with the given default value.
 
 ### CastTo\Integer
 
-**Arguments:** `IntCastMode $mode = IntCastMode::Trunc, bool $outbound = false`
+**Arguments:** `IntCastMode $mode = IntCastMode::Trunc
 
 Casts the value to an integer using a given `IntCastMode` strategy: `Ceil`, `Floor`, `Round`, or `Trunc`.
 
 ### CastTo\JsonEncode
 
-**Arguments:** `int $flags = 0, int $depth = 512, bool $outbound = false`
+**Arguments:** `int $flags = 0, int $depth = 512
 
 Converts the value to a JSON string using `json_encode()`.
 Throws a `CastingException` on failure.
@@ -79,26 +79,26 @@ Throws a `CastingException` on input that's not stringable'.
 
 ### CastTo\NullIf
 
-**Arguments:** `mixed $when, bool $outbound = false`
+**Arguments:** `mixed $when
 
 Replaces a given value (or any of several) with `null`.
 
 ### CastTo\ReplaceIf
 
-**Arguments:** `mixed $when, mixed $then = null, bool $outbound = false`
+**Arguments:** `mixed $when, mixed $then = null
 
 If the input equals (or is in) `$when`, replaces it with `$then`.
 
 ### CastTo\Rounded
 
-**Arguments:** `int $precision = 0, bool $outbound = false`
+**Arguments:** `int $precision = 0
 
 Rounds a float rounded to specified precision.
 Throws a CastingException on non-numeric input.
 
 ### CastTo\Slug
 
-**Arguments:** `string $separator = '-', bool $outbound = false`
+**Arguments:** `string $separator = '-'
 
 Converts a string into a URL-friendly slug.
 ⚠️ Requires php's Intl extension, which is used to strip diacritics and normalize special  latin characters into basic ones (Latin-ASCII). Throws a CastingException if the Transliterator doesn't exist (Intl extension not loaded).
@@ -110,7 +110,7 @@ Casts the value to a string using `(string)`.
 
 ### CastTo\Trimmed
 
-**Arguments:** `string $characters = " \n\r\t\v\x00", string $where = 'both', bool $outbound = false`
+**Arguments:** `string $characters = " \n\r\t\v\x00", string $where = 'both'
 
 Trims whitespace from both ends of a string.
 Throws a CastingException on non-stringable input.

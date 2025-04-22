@@ -16,9 +16,9 @@ use Nandan108\DtoToolkit\Exception\CastingException;
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class Rounded extends CastBase implements CasterInterface
 {
-    public function __construct(int $precision = 0, bool $outbound = false)
+    public function __construct(int $precision = 0)
     {
-        parent::__construct($outbound, [$precision]);
+        parent::__construct([$precision]);
     }
 
     #[\Override]

@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Casting;
 
+use Nandan108\DtoToolkit\Attribute\Outbound;
 use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Contracts\NormalizesOutboundInterface;
 // use Nandan108\DtoToolkit\Traits\CanCastBasicValues;
@@ -41,19 +42,19 @@ final class NormalizesFromAttributesTest extends TestCase
         $dto = new class extends BaseDto implements NormalizesOutboundInterface {
             use NormalizesFromAttributes;
 
-            #[CastTo\Trimmed(outbound: true)]
+            #[Outbound, CastTo\Trimmed]
             public ?string $title = null;
 
-            #[CastTo\Str(outbound: true)]
+            #[Outbound, CastTo\Str]
             public int|string|null $categoryId = null;
 
-            #[CastTo\Str(outbound: true)]
+            #[Outbound, CastTo\Str]
             public int|string|null $foo = null;
 
-            #[CastTo\Str(outbound: true)]
+            #[Outbound, CastTo\Str]
             public int|string|null $emptyString = null;
 
-            #[CastTo\Str(outbound: true)]
+            #[Outbound, CastTo\Str]
             private int|string|null $privatePropWithSetter = null;
 
             public function setPrivatePropWithSetter(string $value): void

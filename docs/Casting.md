@@ -24,7 +24,7 @@ This separation allows for clean and flexible data flows:
 ### ✅ Example: Outbound Casting Only
 
 ```php
-#[CastTo\DateTime(outbound: true)]
+#[CastTo\DateTime(format: 'Y-m-d H:i:s')]
 public ?string $createdAt = null;
 ```
 
@@ -60,11 +60,18 @@ class MyDto extends FullDto {
 This syntax mimics Symfony Validator or Serializer attributes.
 
 #### Argument Syntax
-For casters that take one argument that affects casting logic in a clear way, it is permissible to provide a value using the positional syntax (see Slug and Rounded examples above). In other situations (more arguments or outbound: true) using the named argument syntax is advised for clarity.
+
+For casters that take arguments and more particularely multiple ones, it advised to use the named argument syntax for clarity.
+
 ```php
-   #[CastTo\Rounded(2, outbound:true)]
+   #[CastTo\Rounded(precision: 2)]
    public float|string|null $price;
+
+   #[CastTo\ReplaceIf(when: ['foo','bar'], then: 'baz')]
+   public ?string $price;
 ```
+
+Note that that Attribute parameters may only contain scalars, arrays, constants, and constant expressions. Anything else will not be concidered valid.
 
 ---
 
@@ -143,13 +150,14 @@ public string $prices = '10,12.45533,0';
 ```
 
 This:
+
 1. Parses the CSV into an array
 2. Applies float conversion + rounding to each item
 3. Implodes the array back to CSV with `;`
 
 ---
 
-#### 🧯 Example: `#[FailTo]` *(post-modifier)*
+#### 🧯 Example: `#[FailTo]` _(post-modifier)_
 
 Catch any exceptions thrown by previous casters and return a fallback value:
 
@@ -164,7 +172,7 @@ If an error occurs, `handleDtoFailure(Throwable $e, mixed $fallback)` is called 
 
 ---
 
-#### 🧷 Example: `#[FailNextTo]` *(pre-modifier)*
+#### 🧷 Example: `#[FailNextTo]` _(pre-modifier)_
 
 Wraps only the **next** caster in a try/catch:
 
@@ -186,6 +194,7 @@ interface CastModifier {
 ```
 
 Modifiers can:
+
 - Slice the next N attributes using `$attr = CastTo::sliceNextAttributes($queue, $N)`
 - Build a subchain with `CastTo::buildCasterChain($attr, $dto);`
 - Wrap or conditionally apply transformations
@@ -196,40 +205,40 @@ Modifiers can:
 
 Core, adapter and project casters can't share the same namespace, which forces differing prefixes. I propose these conventions:
 
-- For **core** attributes: **CastTo**\\*
-    E.g. `#[CastTo\Trimmed]`, `#[CastTo\Floating]`, etc.
+- For **core** attributes: **CastTo**\\\*
+  E.g. `#[CastTo\Trimmed]`, `#[CastTo\Floating]`, etc.
 - For **adapter**-specific casters: **Casts**\\To\*
-    E.g. `#[Casts\ToCarbon]`, `#[Casts\ToModel(User::class)]`, etc.
+  E.g. `#[Casts\ToCarbon]`, `#[Casts\ToModel(User::class)]`, etc.
 - For **project**-specific casters: **Cast**\\To\*
-    E.g. `#[Cast\ToFoo]`, `#[Cast\ToPostalCode]`, etc.
+  E.g. `#[Cast\ToFoo]`, `#[Cast\ToPostalCode]`, etc.
 
 ---
 
 ## ✅ Summary Table
 
-| Method                          | Discoverability | Type Safety | DI Support | Recommended For               |
-|---------------------------------|-----------------|-------------|------------|-------------------------------|
-| `#[CastTo\SomeType]`           | ✅              | ✅          | ✅         | Most expressive and readable |
-| `#[CastTo(Class::class)]`       | ✅              | ✅          | ✅         | Reusable custom logic         |
-| `#[CastTo('slug')]`             | ❌              | ❌          | ❌         | One-off transformations       |
+| Method                    | Discoverability | Type Safety | DI Support | Recommended For              |
+| ------------------------- | --------------- | ----------- | ---------- | ---------------------------- |
+| `#[CastTo\SomeType]`      | ✅              | ✅          | ✅         | Most expressive and readable |
+| `#[CastTo(Class::class)]` | ✅              | ✅          | ✅         | Reusable custom logic        |
+| `#[CastTo('slug')]`       | ❌              | ❌          | ❌         | One-off transformations      |
 
 ---
 
 ## `args` vs `constructorArgs`
 
-| Parameter         | Purpose                                | Applies To           |
-|------------------|----------------------------------------|----------------------|
-| `args`           | Passed to the `cast()` method           | All casters          |
-| `constructorArgs`| Passed to the class constructor         | Class-based casters  |
+| Parameter         | Purpose                         | Applies To          |
+| ----------------- | ------------------------------- | ------------------- |
+| `args`            | Passed to the `cast()` method   | All casters         |
+| `constructorArgs` | Passed to the class constructor | Class-based casters |
 
 ---
 
 ## 🧠 Order of Caster Resolution
 
 1. If `class_exists($methodOrClass)`:
-    - If `constructorArgs` provided: instantiate
-    - If not: instantiate with no arguments
-    - If required args missing: attempt container resolution (adapter-defined)
+   - If `constructorArgs` provided: instantiate
+   - If not: instantiate with no arguments
+   - If required args missing: attempt container resolution (adapter-defined)
 2. Method on the DTO class
 3. Method on the `CastTo` class
 4. Delegate to `CastTo::$customCasterResolver->resolve(...)` (if defined)

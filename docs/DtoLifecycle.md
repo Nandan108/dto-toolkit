@@ -34,7 +34,7 @@ This ensures:
 
 #### 3. 🔄 Normalization
 
-If the DTO implements `NormalizesInboundInterface`, all `#[CastTo(...)]` attributes without `outbound: true` are applied.
+If the DTO implements `NormalizesInboundInterface`, all `#[CastTo(...)]` attributes before #[Outbound] are applied.
 
 This phase:
 - Transforms raw values into the appropriate internal types
@@ -59,7 +59,7 @@ Use this to:
 
 This second phase concerns exporting the DTO data to another form for use by the application.
 
-This is done by calling:
+This is done by calling one of:
 - `toOutboundArray()` - returns outbound-cast DTO content as an array
 - `toEntity()` - internally calls `toOutboundArray()` then hydrates the result into an object via public props or setters.
 - `toDto()` - for DTO-to-DTO transformations *(coming soon)*
@@ -67,7 +67,7 @@ This is done by calling:
 
 **Steps:**
 - Array produced from DTO data
-- Outbound transformations applied (casting attributes)
+- Outbound transformations applied (casting attributes that come after #[Outbound])
 - Entity hydration
 - `PreOutput($entity)` hook called
 - result returned

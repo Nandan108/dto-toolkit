@@ -17,14 +17,12 @@ abstract class CastBase extends CastTo implements CasterInterface, Injectable
     /**
      * Constructs an instance of a Caster class.
      *
-     * @param array $args     should contain any argument values used to parameterize caster behavior
-     * @param bool  $outbound indicates whether this casting should be done after validation (inbound) or before outputting
+     * @param array $args should contain any argument values used to parameterize caster behavior
      */
-    public function __construct(bool $outbound = false, array $args = [])
+    public function __construct(array $args = [])
     {
         parent::__construct(
             methodOrClass: static::class,
-            outbound: $outbound,
             args: $args,
         );
     }

@@ -20,14 +20,7 @@ class FailTo implements CastModifierInterface
     public function __construct(
         public readonly mixed $fallback = null,
         public readonly string|array|null $handler = null,
-        public readonly bool $outbound = false,
     ) {
-    }
-
-    #[\Override]
-    public function isOutbound(): bool
-    {
-        return $this->outbound;
     }
 
     #[\Override]

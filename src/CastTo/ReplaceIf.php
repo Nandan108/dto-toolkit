@@ -9,9 +9,9 @@ use Nandan108\DtoToolkit\Core\CastBase;
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 class ReplaceIf extends CastBase implements CasterInterface
 {
-    public function __construct(mixed $when, mixed $then = null, bool $strict = true, bool $outbound = false)
+    public function __construct(mixed $when, mixed $then = null, bool $strict = true)
     {
-        parent::__construct($outbound, [$when, $then, $strict]);
+        parent::__construct([$when, $then, $strict]);
     }
 
     #[\Override]
