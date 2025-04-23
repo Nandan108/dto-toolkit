@@ -62,12 +62,13 @@ final class ToOutboundArrayTest extends TestCase
 
             public ?string $staysUnfilled = 'yes';
 
-            public function preOutput(mixed &$data): void
+            #[\Override]
+            public function preOutput(mixed &$outputData): void
             {
-                if (is_array($data)) {
+                if (is_array($outputData)) {
                     // make some changes to the data before output
-                    $data['num'] *= $data['multiplier'];
-                    $data['setByHook'] = 'foo-Bar!';
+                    $outputData['num'] *= $outputData['multiplier'];
+                    $outputData['setByHook'] = 'foo-Bar!';
                 }
             }
         };
@@ -75,7 +76,7 @@ final class ToOutboundArrayTest extends TestCase
         /** @psalm-suppress NoValue, UnusedVariable */
         $dto->fill([ // GET
             'multiplier' => $multiplier = '2', // will be auto-cast to int due to target prop type
-            'num' => $rawItemId = '-5.7-',
+            'num'        => $rawItemId = '-5.7-',
         ]);
 
         // still raw
@@ -98,9 +99,9 @@ final class ToOutboundArrayTest extends TestCase
         // now check $output value after outbound casting and hook
         $this->assertSame(
             [
-                'num'       => (int)trim($rawItemId, '-') * $multiplier,
+                'num'        => (int) trim($rawItemId, '-') * $multiplier,
                 'multiplier' => 2,
-                'setByHook' => 'foo-Bar!',
+                'setByHook'  => 'foo-Bar!',
             ],
             $output,
         );

@@ -31,7 +31,7 @@ final class Slug extends CastBase implements CasterInterface
 
     protected function checkIntlAvailable(): void
     {
-        if (!class_exists(\Transliterator::class)) {
+        if (!extension_loaded('intl')) {
             throw new CastingException('Slug caster requires the intl extension for transliteration.');
         }
     }

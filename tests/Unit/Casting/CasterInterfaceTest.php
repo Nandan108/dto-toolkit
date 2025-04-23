@@ -224,8 +224,8 @@ final class CasterInterfaceTest extends TestCase
         $getMeta = fn (): \stdClass => CastTo::_getCasterMetadata();
 
         // whipe out memoized caster data
-        // FakeClass:a:1:{i:0;s:3:\"bar\";}
-        $fakeClassCacheKey = $className.':'.serialize($fakeClassCtorArgs);
+        // FakeClass:["bar"]
+        $fakeClassCacheKey = $className.':'.json_encode($fakeClassCtorArgs);
         $this->assertObjectHasProperty($fakeClassCacheKey, $getMeta());
         $attr::_clearCasterMetadata();
         $this->assertObjectNotHasProperty($className, $getMeta());

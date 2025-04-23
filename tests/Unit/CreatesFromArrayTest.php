@@ -145,7 +145,7 @@ final class CreatesFromArrayTest extends TestCase
     }
 
     // test that if dto is an instance of NormalizesInboundInterface, normalizeInbound() is called
-    public function testFromArrayCallsNormalizeInboundOnDTOsImplementingNormalizesInboundInterface(): void
+    public function testFromArrayCallsNormalizeInboundOnDtosImplementingNormalizesInboundInterface(): void
     {
         /** @psalm-suppress ExtensionRequirementViolation */
         $dtoClass = new class extends BaseDto implements NormalizesInboundInterface {

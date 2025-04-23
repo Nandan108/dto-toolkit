@@ -104,7 +104,7 @@ final class CastingExceptionTest extends TestCase
             args: [],
         );
 
-        $this->assertStringContainsString('not serializable', $exception->getMessage());
+        $this->assertStringContainsString('not json-serializable', $exception->getMessage());
     }
 
     public function testCastingFailureMessageTruncatesOperand(): void
@@ -117,6 +117,9 @@ final class CastingExceptionTest extends TestCase
             operand: $longString,
             args: [],
         );
+
+        // reset to original value after test
+        CastingException::$maxOperandTextLength = 100;
 
         $this->assertStringContainsString(substr($longString, 0, 15), $exception->getMessage());
         $this->assertStringContainsString('...', $exception->getMessage());

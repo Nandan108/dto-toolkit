@@ -55,7 +55,7 @@ abstract class BaseDto
      * If the DTO implements NormalizesOutboundInterface, the casters (CastTo Attributes)
      * declared after #[Outbound] will be called to transform the data before returning it.
      *
-     * @psalm-suppress PossiblyUnusedMethod
+     * @psalm-suppress PossiblyUnusedMethod, UnusedParam, InvalidReturnType
      */
     public function toOutboundArray(bool $runPreOutputHook = true): array
     {
@@ -69,6 +69,7 @@ abstract class BaseDto
             $this->preOutput($data);
         }
 
+        /** @psalm-suppress InvalidReturnStatement */
         return $data;
     }
 
@@ -155,14 +156,12 @@ abstract class BaseDto
      * This method is a hook for subclasses to implement any additional
      * logic before an Entity, array, Model, or other output is returned.
      *
-     * @param array|object $output The output data to be processed
-     *
      * @return void
      *
      * @psalm-suppress PossiblyUnusedMethod
      * @psalm-suppress PossiblyUnusedParam
      */
-    public function preOutput(array|object &$output)
+    public function preOutput(array|object &$outputData)
     {
         // no-op - to be implemented in subclasses
     }

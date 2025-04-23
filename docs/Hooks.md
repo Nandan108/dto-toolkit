@@ -27,7 +27,7 @@ Called automatically after hydration from an input source:
 ## 🪝 `preOutput($raw): array|object`
 
 ```php
-protected function preOutput(array|object $raw): array|object
+protected function preOutput(array|object $outputData): array|object
 ```
 
 Called just before returning from:
@@ -67,7 +67,7 @@ class UserDto extends FullDto
         }
     }
 
-    protected function preOutput(array|object $raw): array|object
+    protected function preOutput(array|object $outputData): array|object
     {
         if (is_array($raw)) {
             unset($raw['last_name']); // Only expose first name + display

@@ -41,6 +41,7 @@ trait ExportsToEntity
         /** @psalm-suppress UndefinedMethod */
         $this->preOutput($entity);
 
+        /** @var object $entity */
         return $entity;
     }
 

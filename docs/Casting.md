@@ -240,17 +240,60 @@ Core, adapter and project casters can't share the same namespace, which forces d
    - If not: instantiate with no arguments
    - If required args missing: attempt container resolution (adapter-defined)
 2. Method on the DTO class
-3. Method on the `CastTo` class
-4. Delegate to `CastTo::$customCasterResolver->resolve(...)` (if defined)
-5. Throw `CastingException`
+3. Delegate to `CastTo::$customCasterResolver->resolve(...)` (if defined)
+4. Throw `CastingException`
 
 ---
 
-## 🔁 Caster Caching
+## 🔁 Caster Caching and Instance Lifecycle
 
-Each `CastTo` attribute is resolved to a closure and cached.
+Each `#[CastTo(...)]` attribute is resolved to a closure and **internally cached** for optimal performance.
 
-- Class-based casters are memoized by class name + `serialize(constructorArgs)`
-- Method-based casters are cached by method + `serialize(args)`
-- `CastTo::getCasterMetadata()` lets you inspect cached casters
-- `CastTo::clearCasterMetadata()` resets the cache
+- **Class-based casters** (those implementing `CasterInterface`) are memoized by:
+  - Class name + `json_encode(constructorArgs)`
+- **Method-based casters** (e.g. `#[CastTo('slug')]`) are cached by:
+  - Method name + `json_encode(args)`
+
+Caching allows repeated transformations across DTO instances without repeated instantiations or resolution overhead.
+
+---
+
+### 🧠 Stateless by Default
+
+The system is optimized around the idea that **caster classes are stateless**, or only rely on **injected services**. This means:
+
+- A single instance per caster class can be safely reused
+- No duplicated setup or configuration cost per transformation
+- Casters remain lightweight and performant by design
+
+---
+
+### 🧪 When Statefulness Is Needed
+
+If a caster truly needs internal state (e.g. holding temporary config, registering with another service), you still have options:
+
+- Delegate state to an **injected service**, and inject it via `#[Injected]`
+- Implement the optional `Bootable` interface and use the `boot()` method for additional setup after service injection
+- For quick-and-dirty one-offs, define a caster via a DTO method and use a `static` variable for state:
+  ```php
+  #[CastTo('someCustom')]
+  public string $field;
+
+  public static function castToSomeCustom($value) {
+      static $cache = [];
+      ...
+  }
+  ```
+
+These paths are opt-in and fully compatible with the core memoization logic.
+
+---
+
+### 🧰 Tools for Debugging
+
+- Use `CastTo::getCasterMetadata()` to inspect resolved and cached caster instances
+- Use `CastTo::clearCasterMetadata()` to reset all cached instances
+
+---
+
+Let me know if you'd like this dropped into the current `docs/Casting.md`, or saved for a future “Writing Custom Casters” doc.

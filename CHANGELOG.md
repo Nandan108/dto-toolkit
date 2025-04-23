@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [v0.2.3] - 2025-04-23
+
+### 🚀 Added
+- `#[Outbound]` attribute to mark subsequent attributes as outbound-only, replacing repetitive `outbound: true` flags in `#[CastTo]`
+- `#[DtoLifecycleConfig(...)]` attribute to declare default lifecycle group sequences for one-liner transforms like `$dto = MyDto::fromRequest($request)->toEntity()`
+- `BaseDto::amendDefaultLifecycleGroups(...)` method to override lifecycle config at runtime
+
+### 🔧 Changed
+- Refactored `CastTo::getCaster()` to unify resolution and memoization for all caster types
+- Moved injection and boot logic into `memoizeCaster()` to ensure consistent setup for class and method casters
+- Refactored all tests to support the new `#[Outbound]` mechanism and improved group handling
+
+### 🧪 Coverage
+- Code coverage now at **98.25%**
+  - Remaining uncovered lines are Xdebug edge cases and an `extension_loaded('intl')` fallback
+
 ## [v0.2.2] - 2025-04-22
 
 ### Added

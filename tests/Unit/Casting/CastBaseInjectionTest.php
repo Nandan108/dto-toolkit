@@ -139,6 +139,24 @@ final class CastBaseInjectionTest extends TestCase
         $caster->inject();
     }
 
+    public function testThrowsIfInjectedPropHasNoType(): void
+    {
+        $caster = new class extends CastBase {
+            /** @psalm-suppress MissingPropertyType */
+            #[Injected] private $prop;
+            #[\Override]
+            public function cast(mixed $value, array $args = []): mixed
+            {
+                return $value;
+            }
+        };
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Cannot inject untyped property prop');
+
+        $caster->inject();
+    }
+
     public function testThrowsOnMethodCastingWithEmptyMethodName(): void
     {
         $this->expectException(\LogicException::class);

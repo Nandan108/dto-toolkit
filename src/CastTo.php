@@ -48,7 +48,7 @@ class CastTo
         self::$onCastResolved ??= static function (): void {};
     }
 
-    /**q
+    /**
      * Create a caster closure for the given method.
      *
      * @param mixed $dto The DTO instance
@@ -59,75 +59,92 @@ class CastTo
      */
     public function getCaster(BaseDto $dto): \Closure
     {
-        $serialize = fn (mixed $data, string $prefix = ''): string => $data ? $prefix.serialize($data) : 'null';
         $cache = static::$globalMemoizedCasters;
         $args = $this->args;
-        $serializedArgs = $serialize($args);
         $this->methodOrClass ??= $this::class;
-        $cacheKey = $this->methodOrClass.$serialize($this->constructorArgs, ':');
+        $serializedArgs = json_encode($args);
 
-        // early return on cache hit
-        $casterMeta = $cache->$cacheKey['casters'][$serializedArgs] ?? null;
-        if (null !== $casterMeta) {
-            (static::$onCastResolved)($casterMeta, true);
+        /** @psalm-suppress RiskyTruthyFalsyComparison, PossiblyNullArgument */
+        $getMemoizeKey = fn (string $keyType, BaseDto $dto): string => match ($keyType) {
+            'class'      => ($this->methodOrClass ?? '').':'.($this->constructorArgs ? json_encode($this->constructorArgs) : 'null'),
+            'dto-method' => get_class($dto).'::'.static::$methodPrefix.ucfirst($this->methodOrClass),
+        };
 
-            return $casterMeta['caster'];
+        // Check if we have a memoized caster for the given method
+        foreach (['class', 'dto-method'] as $keyType) {
+            $memoKey = $getMemoizeKey($keyType, $dto);
+            $casterMeta = $cache->$memoKey['casters'][$serializedArgs] ?? [];
+            if (count($casterMeta)) {
+                (static::$onCastResolved)($casterMeta, true);
+
+                return $casterMeta['caster'];
+            }
         }
 
-        /** @var ?CasterInterface $instance */
-        $instance = null;
-
         // Helper function to memoize the caster
-        $memoizeCaster = function (?\Closure $caster = null, ?string $object = null, ?string $method = null) use (&$cache, &$cacheKey, $serializedArgs, &$instance, $args): \Closure {
-            $caster ??= fn (mixed $value): mixed => $instance?->cast($value, $args);
-            $object ??= $this->methodOrClass;
-            $method ??= static::$methodPrefix.ucfirst($this->methodOrClass ?? '');
-            $cache->$cacheKey['casters'][$serializedArgs] = $casterMeta = [
+        $memoizeCaster = function (string $keyType, ?\Closure $caster = null, ?string $object = null, ?string $method = null, ?object $instance = null) use (&$cache, $serializedArgs, $args, $dto, $getMemoizeKey): \Closure {
+            $memoKey = $getMemoizeKey($keyType, $dto);
+
+            // CastInterface instances are memoized by class name, so we only keep one instance of each
+            // if we're given an instance
+            if ($instance) {
+                $this->methodOrClass ??= $instance::class;
+                // check if we've already got a memoized one, in which case use that one instead.
+                $cachedInstance = $cache->$memoKey['instance'] ?? null;
+                // if this is a cache miss (we don't yet have an instance of that class)
+                if (null === $cachedInstance) {
+                    // put the instance in the cache
+                    $cache->$memoKey['instance'] = $instance;
+                    // Then prepare it by injecting and booting
+                    if ($instance instanceof Injectable) {
+                        $instance->inject();
+                    }
+                    if ($instance instanceof Bootable) {
+                        $instance->boot();
+                    }
+                }
+            }
+
+            $caster ??= match ($keyType) {
+                'class'      => fn (mixed $value): mixed => $instance?->cast($value, $args),
+                'dto-method' => fn (mixed $value): mixed => $dto->{$method}($value, ...$args),
+            };
+            $cache->$memoKey['casters'][$serializedArgs] = $casterMeta = [
                 'caster' => $caster,
-                'object' => $object,
+                // object and method are only useful for debugging
+                'object' => $object ?? $this->methodOrClass,
                 'method' => $method,
             ];
+            // echo "\nMemoizing caster: {$memoKey}";
             (static::$onCastResolved)($casterMeta, false);
 
             return $caster;
         };
-        $memoizeInstance = function (CasterInterface $casterInstance) use ($cache, $cacheKey, &$instance): void {
-            $this->methodOrClass = $casterInstance::class;
-            $instance = $cache->$cacheKey['instance'] ?? null;
-            // if this is a cache miss (we don't yet have an instance of that class)
-            if (null === $instance) {
-                // put the instance in the cache
-                $cache->$cacheKey['instance'] = $instance = $casterInstance;
-                // Then prepare it by injecting and booting
-                if ($instance instanceof Injectable) {
-                    $instance->inject();
-                }
-                if ($instance instanceof Bootable) {
-                    $instance->boot();
-                }
-            }
-        };
 
         // Check if we're using an Attribute Caster
         if ($this instanceof CasterInterface) {
-            $memoizeInstance($this);
-
-            return $memoizeCaster();
+            return $memoizeCaster(
+                keyType: 'class',
+                instance: $this,
+            );
         }
 
         // A class name was provided? Resolve and use it.
         if (class_exists($this->methodOrClass)) {
             // if a class name is provided, we need to resolve it
-            $memoizeInstance($this->resolveFromClass($this->methodOrClass));
-
-            return $memoizeCaster();
+            return $memoizeCaster(
+                keyType: 'class',
+                instance: $this->resolveFromClass($this->methodOrClass),
+                object: $this->methodOrClass,
+            );
         }
 
-        // A DTO 'CastTo'+method-name was provided? Use it.
-        $methodName = static::$methodPrefix.ucfirst(string: $this->methodOrClass);
+        // A DTO ?CastTo?+method-name was provided? Use it.
+        $methodName = static::$methodPrefix.ucfirst($this->methodOrClass);
         if (method_exists($dto, $methodName)) {
+            /** @psalm-suppress UnusedVariable */
             return $memoizeCaster(
-                caster: fn (mixed $value): mixed => $dto->{$methodName}($value, ...$args),
+                keyType: 'dto-method',
                 object: $dto::class,
                 method: $methodName,
             );
@@ -137,15 +154,16 @@ class CastTo
         if (static::$customCasterResolver) {
             $caster = static::$customCasterResolver
                 ->resolve($this->methodOrClass, $this->constructorArgs);
-            if ($caster instanceof CasterInterface) {
-                // If the resolver returns a CasterInterface instance, wrap it in a closure
-                $memoizeInstance($caster);
-                $caster = fn (mixed $value): mixed => $caster->cast($value, $args);
-            } else {
-                // If the resolver returns a closure, use it directly
-            }
 
+            /** @var ?CasterInterface $instance */
+            $instance = $caster instanceof CasterInterface ? $caster : null;
+            /** @var ?\Closure $caster */
+            $caster = $caster instanceof CasterInterface ? null : $caster;
+
+            // If the resolver returns a CasterInterface instance, wrap it in a closure
             return $memoizeCaster(
+                keyType: 'class',
+                instance: $instance,
                 caster: $caster,
                 object: static::$customCasterResolver::class,
                 method: $this->methodOrClass,
@@ -244,6 +262,10 @@ class CastTo
 
             foreach ($reflection->getProperties() as $property) {
                 $propName = $property->getName();
+                if (!$property->isPublic()) {
+                    // skip private and protected properties
+                    continue;
+                }
                 $attributes = $property->getAttributes();
 
                 $casterAttrByPhase = [0 => [], 1 => []];

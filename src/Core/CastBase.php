@@ -63,20 +63,15 @@ abstract class CastBase extends CastTo implements CasterInterface, Injectable
     /**
      * Utility function: Throw if the value is not stringable.
      *
-     * @param string      $expected    the expected type
-     * @param string|null $ctorArgName the name of the constructor argument, if checking a caster contructor argument value
+     * @param string $expected the expected type
      */
-    protected function throwIfNotStringable(mixed $value, string $expected = 'numeric, string or Stringable', ?string $ctorArgName = null): string
+    protected function throwIfNotStringable(mixed $value, string $expected = 'numeric, string or Stringable'): string
     {
         if ($this->is_stringable($value)) {
             return (string) $value;
         }
 
-        if (null === $ctorArgName) {
-            throw CastingException::castingFailure(className: $this::class, operand: $value, messageOverride: "Expected: $expected, but got ".gettype($value));
-        } else {
-            throw new \InvalidArgumentException("Constructor argument \$$ctorArgName expects $expected, but got ".gettype($value));
-        }
+        throw CastingException::castingFailure(className: $this::class, operand: $value, messageOverride: "Expected: $expected, but got ".gettype($value));
     }
 
     /**
