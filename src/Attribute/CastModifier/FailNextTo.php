@@ -28,7 +28,7 @@ class FailNextTo extends FailTo
     #[\Override]
     public function modify(\ArrayIterator $queue, \Closure $chain, BaseDto $dto): \Closure
     {
-        $subchain = CasterChainBuilder::buildCasterSubchain(
+        $subchain = CasterChainBuilder::buildNextSubchain(
             length: $this->count,
             queue: $queue,
             dto: $dto,

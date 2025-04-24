@@ -8,20 +8,37 @@ use Nandan108\DtoToolkit\Core\BaseDto;
 
 final class CasterChainBuilder
 {
-    public static function buildCasterSubchain(int $length, \ArrayIterator $queue, BaseDto $dto, string $modifier): \Closure
-    {
-        $subAttrs = self::sliceNextAttributes($queue, $length);
-        $count = count($subAttrs);
-        if ($length > $count) {
-            throw new \InvalidArgumentException("$modifier requested a subchain of {$length} casters but only got {$count}.");
-        }
-        $subchain = self::buildCasterChain($subAttrs, $dto);
+    /**
+     * Build a subchain of casters from the given attributes.
+     *
+     * @param int      $length  The number of casters to build
+     * @param \ArrayIterator $queue   The queue of attributes to process
+     * @param BaseDto  $dto     The DTO instance
+     * @param string   $modifier The name of the modifier for error messages
+     *
+     * @return \Closure a closure that takes a value to cast and returns the result
+     */
+    public static function buildNextSubchain(int $length, \ArrayIterator $queue, BaseDto $dto, string $modifier = 'unknown' ):\Closure {
+        $subs = [];
 
-        return $subchain;
+        // gather the next $length subchains
+        for ($i = 0; $i < $length; $i++) {
+            if (!$queue->valid()) {
+                throw new \InvalidArgumentException(sprintf(
+                    '%s requested %d casters, but only found %d.',
+                    $modifier, $length, $i
+                ));
+            }
+
+            $subs[] = self::buildChainRecursive($queue, $dto, count: 1);
+        }
+
+        return self::composeChain($subs);
     }
 
     /**
      * Build a chain of casters from the given attributes.
+     * Entry point to chain building, called by CastTo::getCastingClosureMap()
      *
      * @param array   $attributes The attributes to process
      * @param BaseDto $dto        The DTO instance
@@ -31,9 +48,14 @@ final class CasterChainBuilder
     public static function buildCasterChain(array $attributes, BaseDto $dto): \Closure
     {
         $queue = new \ArrayIterator($attributes);
+        return self::buildChainRecursive($queue, $dto);
+    }
+
+    private static function buildChainRecursive(\ArrayIterator $queue, BaseDto $dto, ?int $count = -1): \Closure
+    {
         $chain = fn (mixed $value): mixed => $value;
 
-        while ($queue->valid()) {
+        while ($queue->valid() && $count--) {
             $attr = $queue->current();
             $queue->next();
 
@@ -51,29 +73,12 @@ final class CasterChainBuilder
         return $chain;
     }
 
-    /**
-     * Slice the next $count attributes from the queue.
-     * Any encountered CastModifier attributes are included in the slice, but do not count towards the $count.
-     *
-     * @param \ArrayIterator $queue The queue of attributes to be processed
-     * @param int            $count The number of attributes to slice
-     *
-     * @return array The sliced attributes
-     */
-    public static function sliceNextAttributes(\ArrayIterator $queue, int $count): array
+
+    public static function composeChain(array $subchains): \Closure
     {
-        $subset = [];
-
-        for ($i = 0; $i < $count && $queue->valid(); $queue->next()) {
-            $next = $queue->current();
-            $nextIsACast = $next instanceof CastTo;
-
-            if ($nextIsACast || $next instanceof CastModifierInterface) {
-                $subset[] = $next;
-                $i += (int) $nextIsACast;
-            }
-        }
-
-        return $subset;
+        return array_reduce($subchains, fn($carry, $next) =>
+            fn(mixed $value): mixed => $next($carry($value)),
+            fn(mixed $value): mixed => $value
+        );
     }
 }

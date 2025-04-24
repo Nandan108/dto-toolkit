@@ -32,7 +32,7 @@ class PerItem implements CastModifierInterface
     public function modify(\ArrayIterator $queue, \Closure $chain, BaseDto $dto): \Closure
     {
         // Grab a subchain made of the next $this->count CastTo attributes from the queue
-        $subchain = CasterChainBuilder::buildCasterSubchain($this->count, $queue, $dto, 'PerItem');
+        $subchain = CasterChainBuilder::buildNextSubchain($this->count, $queue, $dto, 'PerItem');
 
         // Into the chain, we now insert our logic, which is to:
         // apply the composed caster ($subchain) on each element of the array value we

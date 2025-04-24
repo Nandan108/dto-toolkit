@@ -141,7 +141,7 @@ class CastTo
 
         // A DTO ?CastTo?+method-name was provided? Use it.
         $methodName = static::$methodPrefix.ucfirst($this->methodOrClass);
-        if (method_exists($dto, $methodName)) {
+        if (method_exists($dto, method: $methodName)) {
             /** @psalm-suppress UnusedVariable */
             return $memoizeCaster(
                 keyType: 'dto-method',
