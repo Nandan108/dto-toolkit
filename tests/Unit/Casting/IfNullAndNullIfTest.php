@@ -20,7 +20,7 @@ final class IfNullAndNullIfTest extends TestCase
             public string|int|null $foo = null;
 
             #[CastTo\NullIf([-1, '', 'null', 'no', 0])]
-            #[CastTo\JsonEncode]
+            #[CastTo\ToJson]
             public string|int|null $bar = null;
 
             #[CastTo\ReplaceIf([1, 2], 'A')]

@@ -86,7 +86,7 @@ public string $value;
 
 ```php
 class MyCustomCaster implements CasterInterface {
-    public function cast(mixed $value, array $args = []): mixed {
+    public function cast(mixed $value, array $args, BaseDto $dto): mixed {
         // custom logic here
     }
 }
@@ -143,9 +143,9 @@ You can place modifiers before or after casters depending on their function:
 Apply the next N casters to each item in an array.
 
 ```php
-#[CastTo\ArrayFromCsv]
+#[CastTo\Split]
 #[PerItem(2), CastTo\Floating, CastTo\Rounded(2)]
-#[CastTo\CsvFromArray(';')]
+#[CastTo\Join(';')]
 public string $prices = '10,12.45533,0';
 ```
 

@@ -65,7 +65,8 @@ final class FailNextToTest extends TestCase
         $dto->fill([
             'value_1' => new \stdClass(),
             'value_2' => new \stdClass(),
-        ])->normalizeInbound();
+        ]);
+        $dto->normalizeInbound();
 
         $this->assertSame('RECOVERED TO FALLBACK', $dto->value_1);
         $this->assertSame('UNCOVERED TO BACKFALL', $dto->value_2);

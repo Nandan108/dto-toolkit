@@ -13,7 +13,6 @@ use Nandan108\DtoToolkit\Contracts\Injectable;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Core\CastBase;
 use Nandan108\DtoToolkit\Core\FullDto;
-use Nandan108\DtoToolkit\Traits\CreatesFromArray;
 use Nandan108\DtoToolkit\Traits\NormalizesFromAttributes;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -45,7 +44,7 @@ final class InjectedSlugifyCasterResolvesWithContainer extends CastBase implemen
     private DummySlugger $slugger;
 
     #[\Override]
-    public function cast(mixed $value, array $args = []): string
+    public function cast(mixed $value, array $args, BaseDto $dto): string
     {
         return $this->slugger->slugify((string) $value, $this->separator);
     }
@@ -67,7 +66,7 @@ final class BridgeBasedSlugifyCaster extends CastBase
     /** @psalm-suppress PropertyNotSetInConstructor */
     #[Injected] private DummySlugger $slugger;
     #[\Override]
-    public function cast(mixed $value, array $args = []): string
+    public function cast(mixed $value, array $args, BaseDto $dto): string
     {
         return $this->slugger->slugify((string) $value);
     }
@@ -79,19 +78,19 @@ final class BridgeBasedSlugifyCaster extends CastBase
     }
 }
 
+class FooBarDto extends FullDto
+{
+    #[CastTo(InjectedSlugifyCasterResolvesWithContainer::class)]
+    public mixed $value = null;
+}
+
 final class CastBaseInjectionTest extends TestCase
 {
     public function testInjectionAndCasting(): void
     {
-        $dtoClass = new class extends FullDto {
-            use CreatesFromArray;
-            use NormalizesFromAttributes;
+        $dto = FooBarDto::fromArray(['value' => ' Hello World ']);
 
-            #[CastTo(InjectedSlugifyCasterResolvesWithContainer::class)]
-            public mixed $value = null;
-        };
-
-        $dto = $dtoClass::fromArray(['value' => ' Hello World ']);
+        $dto->fromArray(['value' => ' Hello World ']);
 
         $this->assertEquals('hello*world', $dto->value);
     }
@@ -114,7 +113,7 @@ final class CastBaseInjectionTest extends TestCase
         $caster = new BridgeBasedSlugifyCaster();
         $caster->inject();
 
-        $result = $caster->cast(' More DI Magic ');
+        $result = $caster->cast(' More DI Magic ', args: [], dto: new FooBarDto());
         $this->assertEquals('more-di-magic', $result);
     }
 
@@ -127,7 +126,7 @@ final class CastBaseInjectionTest extends TestCase
              * Dummy cast() method that's never called in this test.
              */
             #[\Override]
-            public function cast(mixed $value, array $args = []): mixed
+            public function cast(mixed $value, array $args, BaseDto $dto): mixed
             {
                 return $this->slugger->slugify((string) $value);
             }
@@ -145,7 +144,7 @@ final class CastBaseInjectionTest extends TestCase
             /** @psalm-suppress MissingPropertyType */
             #[Injected] private $prop;
             #[\Override]
-            public function cast(mixed $value, array $args = []): mixed
+            public function cast(mixed $value, array $args, BaseDto $dto): mixed
             {
                 return $value;
             }
@@ -180,7 +179,7 @@ final class CastBaseInjectionTest extends TestCase
             }
 
             #[\Override]
-            public function cast(mixed $value, array $args = []): mixed
+            public function cast(mixed $value, array $args, BaseDto $dto): mixed
             {
                 return $this->prefix.$value;
             }

@@ -9,7 +9,7 @@ trait NormalizesFromAttributes
 {
     public function normalizeInbound(): void
     {
-        $casters = CastTo::getCastingClosureMap(dto: $this);
+        $casters = CastTo::getCastingClosureMap(dto: $this, outbound: false);
 
         foreach ($casters as $prop => $method) {
             if (!empty($this->_filled[$prop])) {

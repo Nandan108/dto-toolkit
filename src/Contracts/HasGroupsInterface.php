@@ -1,0 +1,15 @@
+<?php
+
+namespace Nandan108\DtoToolkit\Contracts;
+
+use Nandan108\DtoToolkit\Enum\Phase;
+
+interface HasGroupsInterface
+{
+    /** @psalm-suppress PossiblyUnusedMethod */
+    public function _withGroups(array|string $all = [], array|string $inbound = [], array|string $inboundCast = [], array|string $outbound = [], array|string $outboundCast = [], array|string $validation = []): static;
+
+    public function groupsAreInScope(Phase $phase, array $groups): bool;
+
+    public function getActiveGroups(Phase $phase): array;
+}

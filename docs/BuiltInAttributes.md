@@ -8,7 +8,7 @@ This document lists all built-in attributes available in the DTO Toolkit, includ
 
 These attributes perform direct value transformations.
 
-### CastTo\ArrayFromCsv
+### CastTo\Split
 
 **Arguments:** `string $separator = ','
 
@@ -26,7 +26,7 @@ Throws a `CastingException` on input that can't be cast to bool.
 Capitalizes the first letter of a string.
 Throws a `CastingException` on input that's not stringable'.
 
-### CastTo\CsvFromArray
+### CastTo\Join
 
 **Arguments:** `string $separator = ''
 

@@ -2,6 +2,7 @@
 
 namespace Nandan108\DtoToolkit\CastTo;
 
+use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Core\CastBase;
 use Nandan108\DtoToolkit\Exception\CastingException;
 
@@ -9,7 +10,7 @@ use Nandan108\DtoToolkit\Exception\CastingException;
 final class Floating extends CastBase
 {
     #[\Override]
-    public function cast(mixed $value, array $args = []): ?float
+    public function cast(mixed $value, array $args, BaseDto $dto): ?float
     {
         if (is_numeric($value)) {
             return (float) $value;

@@ -3,10 +3,19 @@
 namespace Nandan108\DtoToolkit\Traits;
 
 use Nandan108\DtoToolkit\Contracts\NormalizesInboundInterface;
+use Nandan108\DtoToolkit\Contracts\ScopedPropertyAccessInterface;
+// use Nandan108\DtoToolkit\Contracts\CreatesFromArrayInterface;
 use Nandan108\DtoToolkit\Contracts\ValidatesInputInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
+use Nandan108\DtoToolkit\Enum\Phase;
 
 /**
+ * @method static static fromArray(array $input, bool $ignoreUnknownProps = false)
+ * @method static static fromArrayLoose(array $input, bool $ignoreUnknownProps = false)
+ *
+ * These methods are dynamically routed via __call() and __callStatic() to their corresponding instance methods.
+ * Static analyzers require the above annotations to avoid false positives.
+ *
  * @psalm-require-extends BaseDto
  **/
 trait CreatesFromArray
@@ -14,36 +23,19 @@ trait CreatesFromArray
     /**
      * Create a new instance of the DTO from a request.
      *
-     * @param array        $validationArgs     Array of arguments to pass to the validator
-     * @param BaseDto|null $dto                The DTO to use. If null, a new instance will be created.
-     * @param bool         $ignoreUnknownProps If true, unknown properties will be ignored
+     * @param bool $ignoreUnknownProps If true, unknown properties will be ignored
      *
      * @throws \LogicException
      *
-     * @psalm-suppress MethodSignatureMismatch
-     * @psalm-suppress MoreSpecificReturnType
+     * @psalm-suppress MethodSignatureMismatch, MoreSpecificReturnType
      */
-    public static function fromArray(
+    public function _fromArray(
         array $input,
-        array $validationArgs = [],
-        ?BaseDto $dto = null,
         bool $ignoreUnknownProps = false,
-    ): static {
-        if (!$dto) {
-            /** @psalm-suppress UnsafeInstantiation */
-            $dto = new static();
-
-            /** @psalm-suppress TypeDoesNotContainType, RedundantCondition */
-            if (!$dto instanceof BaseDto) {
-                throw new \LogicException(static::class.' must extend BaseDto to use CreatesFromArray.');
-            }
-        }
-
+    ) {
         // fill the DTO with the input values
         /** @psalm-suppress InaccessibleMethod */
-        $fillables = $dto->getFillable();
-        $fillableInput = array_intersect_key($input, array_flip($fillables));
-        $dto->fill($fillableInput);
+        $toBeFilled = $fillables = $this->getFillable();
 
         if (!$ignoreUnknownProps) {
             $unknownProperties = array_diff(array_keys($input), $fillables);
@@ -52,38 +44,42 @@ trait CreatesFromArray
             }
         }
 
-        // validate raw input values and throw appropriately in case of violations
-        if ($dto instanceof ValidatesInputInterface) {
-            $dto->validate($validationArgs);
-        } elseif ($validationArgs) {
-            throw new \LogicException('To support $args, the DTO must implement ValidatesInput.');
+        if ($this instanceof ScopedPropertyAccessInterface) {
+            $propsInScope = $this->getPropertiesInScope(Phase::InboundLoad);
+            $toBeFilled = array_intersect($fillables, $propsInScope);
+        }
+
+        $inputToBeFilled = array_intersect_key($input, array_flip($toBeFilled));
+        $this->fill($inputToBeFilled);
+
+        // validate raw input values
+        if ($this instanceof ValidatesInputInterface) {
+            // args not passed directly, let validator pull from groups or context
+            $this->validate();
         }
 
         // cast the values to their respective types and return the DTO
-        if ($dto instanceof NormalizesInboundInterface) {
-            $dto->normalizeInbound();
+        if ($this instanceof NormalizesInboundInterface) {
+            $this->normalizeInbound();
         }
 
         // call post-load hook
         /** @psalm-suppress UndefinedMethod */
-        $dto->postLoad();
+        $this->postLoad();
 
-        return $dto;
+        return $this;
     }
 
     /**
      * Create a new instance of the DTO from a request, ignoring unknown properties.
      *
-     * @param array        $validationArgs Array of arguments to pass to the validator
-     * @param BaseDto|null $dto            The DTO to use. If null, a new instance will be created.
-     *
      * @throws \LogicException
      *
      * @psalm-suppress MethodSignatureMismatch
      */
-    public static function fromArrayLoose(array $input, array $validationArgs = [], ?BaseDto $dto = null): static
+    public function _fromArrayLoose(array $input): static
     {
         /** @psalm-suppress NoValue */
-        return static::fromArray($input, $validationArgs, $dto, ignoreUnknownProps: true);
+        return $this->_fromArray($input, ignoreUnknownProps: true);
     }
 }

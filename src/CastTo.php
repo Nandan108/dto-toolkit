@@ -2,13 +2,14 @@
 
 namespace Nandan108\DtoToolkit;
 
-use Nandan108\DtoToolkit\Attribute\Outbound;
 use Nandan108\DtoToolkit\Contracts\Bootable;
 use Nandan108\DtoToolkit\Contracts\CasterInterface;
 use Nandan108\DtoToolkit\Contracts\CasterResolverInterface;
-use Nandan108\DtoToolkit\Contracts\CastModifierInterface;
+use Nandan108\DtoToolkit\Contracts\HasGroupsInterface;
 use Nandan108\DtoToolkit\Contracts\Injectable;
+use Nandan108\DtoToolkit\Contracts\PhaseAwareInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
+use Nandan108\DtoToolkit\Enum\Phase;
 use Nandan108\DtoToolkit\Exception\CastingException;
 use Nandan108\DtoToolkit\Support\CasterChainBuilder;
 
@@ -18,8 +19,10 @@ use Nandan108\DtoToolkit\Support\CasterChainBuilder;
  * @psalm-api
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
-class CastTo
+class CastTo implements PhaseAwareInterface
 {
+    use Traits\HasPhase;
+
     protected static string $methodPrefix = 'castTo';
     public static ?CasterResolverInterface $customCasterResolver = null;
     protected static ?\stdClass $globalMemoizedCasters = null;
@@ -66,7 +69,7 @@ class CastTo
 
         /** @psalm-suppress RiskyTruthyFalsyComparison, PossiblyNullArgument */
         $getMemoizeKey = fn (string $keyType, BaseDto $dto): string => match ($keyType) {
-            'class'      => ($this->methodOrClass ?? '').':'.($this->constructorArgs ? json_encode($this->constructorArgs) : 'null'),
+            'class'      => ($this->methodOrClass ?? '').':'.($this->constructorArgs ? json_encode($this->constructorArgs) : '[]'),
             'dto-method' => get_class($dto).'::'.static::$methodPrefix.ucfirst($this->methodOrClass),
         };
 
@@ -106,7 +109,7 @@ class CastTo
             }
 
             $caster ??= match ($keyType) {
-                'class'      => fn (mixed $value): mixed => $instance?->cast($value, $args),
+                'class'      => fn (mixed $value): mixed => $instance?->cast($value, $args, $dto),
                 'dto-method' => fn (mixed $value): mixed => $dto->{$method}($value, ...$args),
             };
             $cache->$memoKey['casters'][$serializedArgs] = $casterMeta = [
@@ -256,45 +259,29 @@ class CastTo
         $dtoClass = $reflection->getName();
         $casts = &$cache[$dtoClass];
 
+        $phase = Phase::fromComponents($outbound, false);
+
+        $phaseKey = (int) $outbound;
+        if ($dto instanceof HasGroupsInterface) {
+            $activeGroups = $dto->getActiveGroups($phase);
+            sort($activeGroups);
+            $phaseKey .= ':'.json_encode($activeGroups);
+        }
+
         // Populate the caster cache with per-phase-per-property composed casters
-        if (!isset($casts)) {
+        if (!isset($casts[$phaseKey])) {
             $casts = [];
 
-            foreach ($reflection->getProperties() as $property) {
-                $propName = $property->getName();
-                if (!$property->isPublic()) {
-                    // skip private and protected properties
-                    continue;
-                }
-                $attributes = $property->getAttributes();
+            $attrInstancesByProp = ($dto::class)::loadPropertyMetadata($phase, 'attr');
 
-                $casterAttrByPhase = [0 => [], 1 => []];
-
-                // instantiate the attributes
-                $attrInstances = array_map(fn ($attr) => $attr->newInstance(), $attributes);
-                // filter out the ones that are not CastTo or CastModifier
-                $attrInstances = array_filter($attrInstances, fn ($attr) => $attr instanceof CastTo || $attr instanceof CastModifierInterface || $attr instanceof Outbound);
-
-                // separate into inbound and outbound chains
-                $isOutbound = false;
-                foreach ($attrInstances as $attrInstance) {
-                    if ($attrInstance instanceof Outbound) {
-                        $isOutbound = true;
-                        continue;
-                    }
-                    $casterAttrByPhase[(int) $isOutbound][] = $attrInstance;
-                }
-
-                // build the chain for each phase
-                foreach ($casterAttrByPhase as $phase => $attrInstances) {
-                    if ($attrInstances) {
-                        $casts[$phase][$propName] = CasterChainBuilder::buildCasterChain($attrInstances, $dto);
-                    }
-                }
+            foreach (array_filter($attrInstancesByProp) as $propName => $attrInstances) {
+                $chain = CasterChainBuilder::buildCasterChain($attrInstances, $dto);
+                $casts[$phaseKey][$propName] = $chain;
             }
         }
 
-        // return the casters for the requested phase
-        return $casts[$outbound] ?? [];
+        // return the cast/ers for the requested phase
+
+        return $casts[$phaseKey] ?? [];
     }
 }

@@ -11,25 +11,29 @@ final class CasterChainBuilder
     /**
      * Build a subchain of casters from the given attributes.
      *
-     * @param int      $length  The number of casters to build
-     * @param \ArrayIterator $queue   The queue of attributes to process
-     * @param BaseDto  $dto     The DTO instance
-     * @param string   $modifier The name of the modifier for error messages
+     * @param int            $length   The number of casters to build
+     * @param \ArrayIterator $queue    The queue of attributes to process
+     * @param BaseDto        $dto      The DTO instance
+     * @param string         $modifier The name of the modifier for error messages
      *
      * @return \Closure a closure that takes a value to cast and returns the result
      */
-    public static function buildNextSubchain(int $length, \ArrayIterator $queue, BaseDto $dto, string $modifier = 'unknown' ):\Closure {
+    public static function buildNextSubchain(int $length, \ArrayIterator $queue, BaseDto $dto, string $modifier = 'unknown'): \Closure
+    {
         $subs = [];
+        $attrsInSubchain = [];
 
-        // gather the next $length subchains
-        for ($i = 0; $i < $length; $i++) {
+        for ($i = 0; $i < $length; ++$i) {
             if (!$queue->valid()) {
-                throw new \InvalidArgumentException(sprintf(
-                    '%s requested %d casters, but only found %d.',
-                    $modifier, $length, $i
-                ));
+                $label = fn ($a) => (new \ReflectionClass($a))->getShortName();
+                $messageTpl = '%s requested %d castable elements, but only found %d: [%s]';
+                $subCount = count($subs);
+                $items = implode(', ', array_map($label, $attrsInSubchain));
+                throw new \InvalidArgumentException(sprintf($messageTpl, $modifier, $length, $subCount, $items));
             }
 
+            $attr = $queue->current();
+            $attrsInSubchain[] = $attr;
             $subs[] = self::buildChainRecursive($queue, $dto, count: 1);
         }
 
@@ -38,16 +42,18 @@ final class CasterChainBuilder
 
     /**
      * Build a chain of casters from the given attributes.
-     * Entry point to chain building, called by CastTo::getCastingClosureMap()
+     * Entry point to chain building, called by CastTo::getCastingClosureMap().
      *
      * @param array   $attributes The attributes to process
      * @param BaseDto $dto        The DTO instance
      *
      * @return \Closure a closure that takes a value to cast and returns the result
+     * @psalm-suppress PossiblyUnusedMethod, PossiblyUnusedParam     *
      */
     public static function buildCasterChain(array $attributes, BaseDto $dto): \Closure
     {
         $queue = new \ArrayIterator($attributes);
+
         return self::buildChainRecursive($queue, $dto);
     }
 
@@ -73,12 +79,10 @@ final class CasterChainBuilder
         return $chain;
     }
 
-
     public static function composeChain(array $subchains): \Closure
     {
-        return array_reduce($subchains, fn($carry, $next) =>
-            fn(mixed $value): mixed => $next($carry($value)),
-            fn(mixed $value): mixed => $value
+        return array_reduce($subchains, fn ($carry, $next) => fn (mixed $value): mixed => $next($carry($value)),
+            fn (mixed $value): mixed => $value
         );
     }
 }

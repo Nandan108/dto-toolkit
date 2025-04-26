@@ -26,7 +26,7 @@ final class CreatesFromArrayTest extends TestCase
         };
 
         /** @psalm-suppress NoValue, UnusedVariable */
-        $dto = $dtoClass::fromArray([ // GET
+        $dto = $dtoClass->fromArray([ // GET
             'item_id' => $rawItemId = '5',
             'age'     => $rawAge = '30',
             'email'   => $rawEmail = 'john@example.com',
@@ -70,7 +70,7 @@ final class CreatesFromArrayTest extends TestCase
         };
 
         try {
-            $dtoClass::fromArray([
+            (new $dtoClass())->fromArray([
                 'item_id' => '5',
                 'age'     => '30',
                 'email'   => 'invalid-email',
@@ -80,20 +80,6 @@ final class CreatesFromArrayTest extends TestCase
             // Assert that the exception message is as expected
             $this->assertSame('Validation failed', $e->getMessage());
         }
-    }
-
-    // Test the the DTO is validateda after being filled if it implements ValidatesInputInterface
-    public function testValidationFailsIfArgsAreGivenButDtoDoesntImplementValidatesInputInterface(): void
-    {
-        $dtoClass = new class extends BaseDto {
-            use CreatesFromArray;
-            public ?string $email = null;
-        };
-
-        $this->expectException(\LogicException::class);
-        $this->expectExceptionMessage('To support $args, the DTO must implement ValidatesInput.');
-
-        $dtoClass::fromArray(['email' => 'invalid-email'], ['some-args-for-validation']);
     }
 
     // Test that the fromArray method throws an exception if unknown properties are passed
@@ -121,27 +107,13 @@ final class CreatesFromArrayTest extends TestCase
 
         /** @psalm-suppress NoValue, UnusedVariable */
         $dtoClass::fromArray(
-            ignoreUnknownProps: false,
             input: [ // GET
                 'anUnknownProp' => 'foo',
                 'andAnother'    => 'bar',
                 'email'         => $rawEmail = 'john@example.com',
             ],
+            ignoreUnknownProps: false,
         );
-    }
-
-    // that that a dto must extend BaseDto to use CreatesFromArray
-    public function testThrowsExceptionIfDtoClassDoesNotExtendBaseDto(): void
-    {
-        $this->expectException(\LogicException::class);
-        $this->expectExceptionMessage('must extend BaseDto to use CreatesFromArray');
-
-        /** @psalm-suppress ExtensionRequirementViolation */
-        $dtoClass = new class {
-            use CreatesFromArray;
-        };
-
-        $dtoClass::fromArray([]);
     }
 
     // test that if dto is an instance of NormalizesInboundInterface, normalizeInbound() is called

@@ -3,12 +3,13 @@
 namespace Nandan108\DtoToolkit\CastTo;
 
 use Nandan108\DtoToolkit\Contracts\CasterInterface;
+use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Core\CastBase;
 use Nandan108\DtoToolkit\Exception\CastingException;
 
 /** @psalm-api */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
-final class JsonEncode extends CastBase implements CasterInterface
+final class ToJson extends CastBase implements CasterInterface
 {
     public function __construct(int $flags = 0, int $depth = 512)
     {
@@ -16,7 +17,7 @@ final class JsonEncode extends CastBase implements CasterInterface
     }
 
     #[\Override]
-    public function cast(mixed $value, array $args = []): string
+    public function cast(mixed $value, array $args, BaseDto $dto): string
     {
         /** @var int $flags */
         [$flags, $depth] = $args;

@@ -2,7 +2,11 @@
 
 namespace Nandan108\DtoToolkit\Core;
 
+use Nandan108\DtoToolkit\Attribute\Outbound;
 use Nandan108\DtoToolkit\Contracts\NormalizesOutboundInterface;
+use Nandan108\DtoToolkit\Contracts\PhaseAwareInterface;
+use Nandan108\DtoToolkit\Contracts\ScopedPropertyAccessInterface;
+use Nandan108\DtoToolkit\Enum\Phase;
 
 abstract class BaseDto
 {
@@ -31,14 +35,74 @@ abstract class BaseDto
      **/
     protected static ?string $entityClass;
 
+    // full metadata cache per class (static)
+    private static array $_propertyMetadataCache = [];
+
+    public static function loadPropertyMetadata(?Phase $phase = null, ?string $metaDataName = null): array
+    {
+        if (!isset(self::$_propertyMetadataCache[static::class])) {
+            $cache = [];
+            $reflection = new \ReflectionClass(static::class);
+            $props = $reflection->getProperties(\ReflectionProperty::IS_PUBLIC);
+
+            foreach ($props as $prop) {
+                $isOutbound = false;
+                $propName = $prop->getName();
+                if ('_' === $propName[0]) {
+                    continue; // skip internal properties
+                }
+                $attributes = $prop->getAttributes();
+
+                foreach (Phase::cases() as $phaseCase) {
+                    $cache[$phaseCase->value][$propName] = [];
+                }
+
+                foreach ($attributes as $attribute) {
+                    $attrInstance = $attribute->newInstance();
+
+                    if ($attrInstance instanceof Outbound) {
+                        $isOutbound = true;
+                        continue;
+                    }
+
+                    if ($attrInstance instanceof PhaseAwareInterface) {
+                        $attrInstance->setOutbound($isOutbound);
+
+                        $attrPhase = Phase::fromComponents($isOutbound, $attrInstance->isIoBound());
+
+                        $cache[$attrPhase->value][$propName]['attr'][] = $attrInstance;
+                    }
+                }
+            }
+
+            self::$_propertyMetadataCache[static::class] = $cache;
+        }
+
+        if (!$phase) {
+            return self::$_propertyMetadataCache[static::class];
+        }
+
+        $meta = self::$_propertyMetadataCache[static::class][$phase->value] ?? [];
+        if (null === $metaDataName) {
+            return $meta;
+        }
+
+        return array_map(
+            static function (array $propMeta) use ($metaDataName) {
+                return $propMeta[$metaDataName] ?? null;
+            },
+            $meta,
+        );
+    }
+
     /**
      * Get the names of the public properties of an object.
      *
      * @param object|class-string|null $objectOrClass defaults to the current instance
      */
-    protected function getPublicPropNames(object|string|null $objectOrClass = null): array
+    protected function getPublicPropNames(object|string|null $objectOrClass = null, ?\ReflectionClass $reflectionClass = null): array
     {
-        $reflectionClass = new \ReflectionClass($objectOrClass ?? $this);
+        $reflectionClass ??= new \ReflectionClass($objectOrClass ?? $this);
 
         $props = [];
         foreach ($reflectionClass->getProperties(\ReflectionProperty::IS_PUBLIC) as $prop) {
@@ -59,7 +123,11 @@ abstract class BaseDto
      */
     public function toOutboundArray(bool $runPreOutputHook = true): array
     {
-        $data = $this->toArray();
+        $propsInScope = $this instanceof ScopedPropertyAccessInterface
+            ? array_intersect($this->getPropertiesInScope(Phase::OutboundExport), array_keys($this->_filled))
+            : null; // all properties
+
+        $data = $this->toArray($propsInScope);
 
         if ($this instanceof NormalizesOutboundInterface) {
             $data = $this->normalizeOutbound($data);
@@ -78,7 +146,7 @@ abstract class BaseDto
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
-    protected function getFillable(): array
+    public function getFillable(): array
     {
         return $this->_fillable ??= $this->getPublicPropNames($this);
     }
@@ -164,5 +232,47 @@ abstract class BaseDto
     public function preOutput(array|object &$outputData)
     {
         // no-op - to be implemented in subclasses
+    }
+
+    /**
+     * @psalm-suppress PossiblyUnusedMethod, PossiblyUnusedParam
+     * @psalm-mutation-free
+     **/
+    public static function __callStatic(string $method, array $arguments): static
+    {
+        if (in_array(substr($method, 0, 4), ['from', 'with'])) {
+            // if the static method doesn't exist, create a new instance and call the method on it
+            $instance = new static();
+            $forwarded = "_$method";
+            if (method_exists($instance, $forwarded)) {
+                return $instance->$forwarded(...$arguments);
+            }
+        } elseif (method_exists(static::class, $method)) {
+            $refMethod = new \ReflectionMethod(static::class, $method);
+
+            if (!$refMethod->isPublic()) {
+                throw new \BadMethodCallException("Cannot access non-public static method ".static::class."::{$method}()");
+            }
+
+            return forward_static_call_array([static::class, $method], $arguments);
+        }
+
+        throw new \BadMethodCallException("Method {$method} does not exist on ".static::class.'.');
+    }
+
+    /**
+     * @psalm-suppress PossiblyUnusedMethod, PossiblyUnusedParam
+     * @psalm-mutation-free
+     **/
+    public function __call(string $method, array $parameters): static
+    {
+        if (in_array(substr($method, 0, 4), ['from', 'with'])) {
+            $forwarded = '_'.$method;
+            if (method_exists($this, $forwarded)) {
+                return $this->$forwarded(...$parameters);
+            }
+        }
+
+        throw new \BadMethodCallException("Method {$method} does not exist on ".static::class.'.');
     }
 }

@@ -2,8 +2,6 @@
 
 namespace Nandan108\DtoToolkit\Attribute\CastModifier;
 
-use Nandan108\DtoToolkit\CastTo;
-use Nandan108\DtoToolkit\Contracts\CastModifierInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Exception\CastingException;
 use Nandan108\DtoToolkit\Support\CasterChainBuilder;
@@ -15,7 +13,7 @@ use Nandan108\DtoToolkit\Support\CasterChainBuilder;
  * @psalm-api
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
-class PerItem implements CastModifierInterface
+class PerItem extends CastModifierBase
 {
     public function __construct(public readonly int $count = 1)
     {
