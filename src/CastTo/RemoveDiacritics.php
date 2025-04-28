@@ -9,26 +9,24 @@ use Nandan108\DtoToolkit\Traits\UsesDiacriticSanitizer;
 
 /**
  * Converts string into $separator separated groups of lowercase letters.
+ *
+ * @psalm-api
  **/
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
-final class Slug extends CastBase implements CasterInterface
+final class RemoveDiacritics extends CastBase implements CasterInterface
 {
     use UsesDiacriticSanitizer;
 
-    public function __construct(string $separator = '-')
+    public function __construct(?bool $useIntlExtension = null)
     {
-        parent::__construct([$separator]);
+        parent::__construct([$useIntlExtension]);
     }
 
     #[\Override]
     public function cast(mixed $value, array $args, BaseDto $dto): string
     {
-        [$separator] = $args;
+        [$useIntlExtension] = $args;
 
-        $value = $this->throwIfNotStringable($value);
-        $value = static::removeDiacritics($value);
-        $value = preg_replace('/[^A-Za-z0-9]+/', $separator, $value) ?? '';
-
-        return strtolower(trim($value, $separator));
+        return static::removeDiacritics($this->throwIfNotStringable($value), $useIntlExtension);
     }
 }

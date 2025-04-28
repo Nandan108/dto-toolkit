@@ -38,7 +38,7 @@ abstract class BaseDto
     // full metadata cache per class (static)
     private static array $_propertyMetadataCache = [];
 
-    public static function loadPropertyMetadata(?Phase $phase = null, ?string $metaDataName = null): array
+    public static function loadPropertyMetadata(Phase $phase, ?string $metaDataName = null): array
     {
         if (!isset(self::$_propertyMetadataCache[static::class])) {
             $cache = [];
@@ -68,9 +68,7 @@ abstract class BaseDto
                     if ($attrInstance instanceof PhaseAwareInterface) {
                         $attrInstance->setOutbound($isOutbound);
 
-                        $attrPhase = Phase::fromComponents($isOutbound, $attrInstance->isIoBound());
-
-                        $cache[$attrPhase->value][$propName]['attr'][] = $attrInstance;
+                        $cache[$attrInstance->getPhase()->value][$propName]['attr'][] = $attrInstance;
                     }
                 }
             }
@@ -78,11 +76,9 @@ abstract class BaseDto
             self::$_propertyMetadataCache[static::class] = $cache;
         }
 
-        if (!$phase) {
-            return self::$_propertyMetadataCache[static::class];
-        }
-
+        /** @var array $meta */
         $meta = self::$_propertyMetadataCache[static::class][$phase->value] ?? [];
+
         if (null === $metaDataName) {
             return $meta;
         }
@@ -236,32 +232,31 @@ abstract class BaseDto
 
     /**
      * @psalm-suppress PossiblyUnusedMethod, PossiblyUnusedParam
+     *
      * @psalm-mutation-free
      **/
     public static function __callStatic(string $method, array $arguments): static
     {
         if (in_array(substr($method, 0, 4), ['from', 'with'])) {
             // if the static method doesn't exist, create a new instance and call the method on it
+            /** @psalm-suppress UnsafeInstantiation */
             $instance = new static();
             $forwarded = "_$method";
             if (method_exists($instance, $forwarded)) {
                 return $instance->$forwarded(...$arguments);
             }
         } elseif (method_exists(static::class, $method)) {
-            $refMethod = new \ReflectionMethod(static::class, $method);
-
-            if (!$refMethod->isPublic()) {
-                throw new \BadMethodCallException("Cannot access non-public static method ".static::class."::{$method}()");
-            }
-
-            return forward_static_call_array([static::class, $method], $arguments);
+            // if the method was public, or visible from context, the call would not have been caught
+            // by __callStatic(), therefore this must be a call to a protected or private method.
+            throw new \BadMethodCallException('Cannot access non-public static method '.static::class."::{$method}()");
         }
 
-        throw new \BadMethodCallException("Method {$method} does not exist on ".static::class.'.');
+        throw new \BadMethodCallException("Method {$method}() does not exist on ".static::class.'.');
     }
 
     /**
      * @psalm-suppress PossiblyUnusedMethod, PossiblyUnusedParam
+     *
      * @psalm-mutation-free
      **/
     public function __call(string $method, array $parameters): static
@@ -273,6 +268,6 @@ abstract class BaseDto
             }
         }
 
-        throw new \BadMethodCallException("Method {$method} does not exist on ".static::class.'.');
+        throw new \BadMethodCallException("Method {$method}() does not exist on ".static::class.'.');
     }
 }

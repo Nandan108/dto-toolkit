@@ -6,7 +6,7 @@ use Nandan108\DtoToolkit\Attribute\PropGroups;
 use Nandan108\DtoToolkit\Enum\Phase;
 
 /**
- * @method static static withGroups(array|string $all = [], array|string $inbound = [], array|string $inboundCast = [], array|string $outbound = [], array|string $outboundCast = [], array|string $validation = []): static
+ * @method static static withGroups(array|string $all = [], array|string $inbound = [], array|string $inboundCast = [], array|string $outbound = [], array|string $outboundCast = [], array|string $validation = [])
  */
 trait UsesGroups // user must implement HasGroupsInterface, ScopedPropertyAccessInterface
 {
@@ -29,7 +29,7 @@ trait UsesGroups // user must implement HasGroupsInterface, ScopedPropertyAccess
             }
         }
 
-        return $this->withContext([
+        return $this->_withContext([
             'groups.inbound.io'    => $inbound ?: $all,
             'groups.inbound.valid' => $validation ?: $all,
             'groups.inbound.cast'  => $inboundCast ?: $inbound ?: $all,
@@ -78,12 +78,14 @@ trait UsesGroups // user must implement HasGroupsInterface, ScopedPropertyAccess
         return !$groups || array_intersect($this->getActiveGroups($phase), $groups);
     }
 
+    /** @psalm-suppress LessSpecificImplementedReturnType */
     #[\Override] // ScopedPropertyAccessInterface
     public function getPropertiesInScope(Phase $phase): array
     {
         $propGroupsForPhase = $this->getPropGroups($phase);
         $activeGroups = (array) $this->getContext('groups.'.$phase->value, []);
 
+        /** @var string[] $inScope */
         $inScope = [];
 
         foreach ($propGroupsForPhase as $propName => $groups) {

@@ -65,18 +65,19 @@ class CastTo implements PhaseAwareInterface
         $cache = static::$globalMemoizedCasters;
         $args = $this->args;
         $this->methodOrClass ??= $this::class;
-        $serializedArgs = json_encode($args);
+        /** @psalm-suppress RiskyTruthyFalsyComparison */
+        $serialize = fn (mixed $args): string => json_encode($args) ?: '[]';
 
         /** @psalm-suppress RiskyTruthyFalsyComparison, PossiblyNullArgument */
         $getMemoizeKey = fn (string $keyType, BaseDto $dto): string => match ($keyType) {
-            'class'      => ($this->methodOrClass ?? '').':'.($this->constructorArgs ? json_encode($this->constructorArgs) : '[]'),
+            'class'      => ($this->methodOrClass ?? '').':'.$serialize($this->constructorArgs),
             'dto-method' => get_class($dto).'::'.static::$methodPrefix.ucfirst($this->methodOrClass),
         };
 
         // Check if we have a memoized caster for the given method
         foreach (['class', 'dto-method'] as $keyType) {
             $memoKey = $getMemoizeKey($keyType, $dto);
-            $casterMeta = $cache->$memoKey['casters'][$serializedArgs] ?? [];
+            $casterMeta = $cache->$memoKey['casters'][$serialize($args)] ?? [];
             if (count($casterMeta)) {
                 (static::$onCastResolved)($casterMeta, true);
 
@@ -85,7 +86,7 @@ class CastTo implements PhaseAwareInterface
         }
 
         // Helper function to memoize the caster
-        $memoizeCaster = function (string $keyType, ?\Closure $caster = null, ?string $object = null, ?string $method = null, ?object $instance = null) use (&$cache, $serializedArgs, $args, $dto, $getMemoizeKey): \Closure {
+        $memoizeCaster = function (string $keyType, ?\Closure $caster = null, ?string $object = null, ?string $method = null, ?object $instance = null) use (&$cache, $serialize, $args, $dto, $getMemoizeKey): \Closure {
             $memoKey = $getMemoizeKey($keyType, $dto);
 
             // CastInterface instances are memoized by class name, so we only keep one instance of each
@@ -112,7 +113,7 @@ class CastTo implements PhaseAwareInterface
                 'class'      => fn (mixed $value): mixed => $instance?->cast($value, $args, $dto),
                 'dto-method' => fn (mixed $value): mixed => $dto->{$method}($value, ...$args),
             };
-            $cache->$memoKey['casters'][$serializedArgs] = $casterMeta = [
+            $cache->$memoKey['casters'][$serialize($args)] = $casterMeta = [
                 'caster' => $caster,
                 // object and method are only useful for debugging
                 'object' => $object ?? $this->methodOrClass,
@@ -265,7 +266,8 @@ class CastTo implements PhaseAwareInterface
         if ($dto instanceof HasGroupsInterface) {
             $activeGroups = $dto->getActiveGroups($phase);
             sort($activeGroups);
-            $phaseKey .= ':'.json_encode($activeGroups);
+            /** @psalm-suppress RiskyTruthyFalsyComparison */
+            $phaseKey .= ':'.(json_encode($activeGroups) ?: '');
         }
 
         // Populate the caster cache with per-phase-per-property composed casters

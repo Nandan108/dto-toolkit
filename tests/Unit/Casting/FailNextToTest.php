@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Unit\Casting;
+namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
 use Nandan108\DtoToolkit\Attribute\CastModifier\FailNextTo;
 use Nandan108\DtoToolkit\CastTo;

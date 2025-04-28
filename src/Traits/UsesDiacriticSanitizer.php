@@ -2,14 +2,38 @@
 
 namespace Nandan108\DtoToolkit\Traits;
 
+use Nandan108\DtoToolkit\Exception\CastingException;
+
+/**
+ * To be used by casters that need to remove diacritics (i.e. accents and other marks) from a string's characters.
+ */
 trait UsesDiacriticSanitizer
 {
-    protected static function removeDiacritics(string $value): string
+    public static bool $useIntlExtension = true;
+    protected static string $transliterateParams = 'Any-Latin; Latin-ASCII; [\u0100-\u7fff] remove';
+    protected static array $_transliterators = [];
+
+    protected static function removeDiacritics(string $value, ?bool $useIntlExtension = null): string
     {
-        if (extension_loaded('intl')) {
-            $transliterator = \Transliterator::create('Any-Latin; Latin-ASCII; [\u0100-\u7fff] remove');
-            if ($transliterator) {
-                return $transliterator->transliterate($value) ?? $value;
+        $useIntlExtension ??= static::$useIntlExtension;
+
+        if ($useIntlExtension && extension_loaded('intl')) {
+            $params = static::$transliterateParams;
+            $transliterator = static::$_transliterators[$params] ??= \Transliterator::create($params);
+
+            // Could fail in a subclass that tries to use invalid $transliterateParams
+            if (null === $transliterator) {
+                throw CastingException::castingFailure(static::class, $value, "Transliterator::create('$params') failed");
+            }
+
+            set_error_handler(function ($errno, $errstr) use ($value) {
+                throw CastingException::castingFailure(static::class, $value, 'Transliterator failed to remove diacritics: '.$errstr);
+            });
+
+            try {
+                return $transliterator->transliterate($value);
+            } finally {
+                restore_error_handler();
             }
         }
 

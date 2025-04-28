@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Unit\Casting;
+namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
 use Nandan108\DtoToolkit\Attribute\CastModifier\FailTo;
 use Nandan108\DtoToolkit\CastTo;
@@ -47,6 +47,7 @@ final class FailToTest extends TestCase
         };
 
         // use a \stdClass since casting it to a string will throw
+        /** @psalm-suppress UnusedMethodCall */
         $dto->fill([
             'value_1' => new \stdClass(),
             'value_2' => new \stdClass(),

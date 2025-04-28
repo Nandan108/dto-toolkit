@@ -201,8 +201,9 @@ Modifiers can:
 
 ---
 
-## 🧭 Caster Naming Conventions
+## 🧭 Naming Conventions
 
+#### Casters
 Core, adapter and project casters can't share the same namespace, which forces differing prefixes. I propose these conventions:
 
 - For **core** attributes: **CastTo**\\\*
@@ -211,6 +212,22 @@ Core, adapter and project casters can't share the same namespace, which forces d
   E.g. `#[Casts\ToCarbon]`, `#[Casts\ToModel(User::class)]`, etc.
 - For **project**-specific casters: **Cast**\\To\*
   E.g. `#[Cast\ToFoo]`, `#[Cast\ToPostalCode]`, etc.
+
+#### Modifiers
+
+Modifiers on the other hand, are like flow control primitives that can be generally considered a complete set. Thus, there won't be adapter-specific ones, and there should be no need of developping your own. Importing them individually is fine, but Importing their namespace as Mod makes their usage clearer.
+
+```php
+use Nandan108\DtoToolkit\Core\BaseDto;
+use Nandan108\DtoToolkit\Attribute\CastModifier as Mod;
+use Nandan108\DtoToolkit\CastTo;
+
+class MyDto extends BaseDto {
+    #[CastTo\Integer(IntCastMode::Ceil)]
+    #[Mod\Failto(null)]
+    public int|string|null $myProp;
+}
+```
 
 ---
 

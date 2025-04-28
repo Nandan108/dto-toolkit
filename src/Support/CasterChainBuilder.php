@@ -25,7 +25,7 @@ final class CasterChainBuilder
 
         for ($i = 0; $i < $length; ++$i) {
             if (!$queue->valid()) {
-                $label = fn ($a) => (new \ReflectionClass($a))->getShortName();
+                $label = fn (object $a): string => (new \ReflectionClass($a))->getShortName();
                 $messageTpl = '%s requested %d castable elements, but only found %d: [%s]';
                 $subCount = count($subs);
                 $items = implode(', ', array_map($label, $attrsInSubchain));
@@ -48,6 +48,7 @@ final class CasterChainBuilder
      * @param BaseDto $dto        The DTO instance
      *
      * @return \Closure a closure that takes a value to cast and returns the result
+     *
      * @psalm-suppress PossiblyUnusedMethod, PossiblyUnusedParam     *
      */
     public static function buildCasterChain(array $attributes, BaseDto $dto): \Closure
@@ -57,7 +58,7 @@ final class CasterChainBuilder
         return self::buildChainRecursive($queue, $dto);
     }
 
-    private static function buildChainRecursive(\ArrayIterator $queue, BaseDto $dto, ?int $count = -1): \Closure
+    private static function buildChainRecursive(\ArrayIterator $queue, BaseDto $dto, int $count = -1): \Closure
     {
         $chain = fn (mixed $value): mixed => $value;
 

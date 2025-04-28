@@ -15,7 +15,12 @@ final class CreatesFromArrayTest extends TestCase
 {
     public function testInstantiatesDtoFromArray(): void
     {
-        /** @psalm-suppress ExtensionRequirementViolation */
+        /**
+         * @method static static fromArray(array $input, bool $ignoreUnknownProps = false)
+         * @method static static fromArrayLoose(array $input, bool $ignoreUnknownProps = false)
+         *
+         * @psalm-suppress ExtensionRequirementViolation
+         */
         $dtoClass = new class extends BaseDto {
             use CreatesFromArray;
             use NormalizesFromAttributes;
@@ -25,7 +30,7 @@ final class CreatesFromArrayTest extends TestCase
             public string|int|null $age = null;
         };
 
-        /** @psalm-suppress NoValue, UnusedVariable */
+        /** @psalm-suppress NoValue, UnusedVariable, UndefinedMagicMethod */
         $dto = $dtoClass->fromArray([ // GET
             'item_id' => $rawItemId = '5',
             'age'     => $rawAge = '30',
@@ -70,6 +75,7 @@ final class CreatesFromArrayTest extends TestCase
         };
 
         try {
+            /** @psalm-suppress UndefinedMagicMethod */
             (new $dtoClass())->fromArray([
                 'item_id' => '5',
                 'age'     => '30',
@@ -132,7 +138,7 @@ final class CreatesFromArrayTest extends TestCase
             public ?string $name = null;
         };
 
-        /** @psalm-suppress NoValue, UnusedVariable */
+        /** @psalm-suppress NoValue, UnusedVariable, UndefinedMagicMethod */
         $dto = $dtoClass->fromArray([
             'age'  => '30',
             'name' => '  sam   ',

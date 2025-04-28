@@ -2,30 +2,33 @@
 
 ## Product Backlog Items
 
-- [040] Add `#[MapFrom(string|array $fields)]`
-- [020] Add `#[MapTo(...)]` Attribute [See details](Mapping.md)
-- [043] Add support for scoping groups (cross-cutting concern) [See details](#PBI-043)
-- [046] Add modifier `#[SkipIfValIn(mixed $values, $return=null)]`, allows short-circuitting following caster(s) by returning \$return if input === \$values or input in $values.
-- [049] Add `#[Collect(count: N)]` and `#[CastTo\NoOp]`. Aggregate the result of the next N casts into an array.
-  E.g.: `#[Collect(3), CastTo\NoOp, CastTo\Floating, CastTo\Rounded(2), CastTo\CurrencyVal('USD')]` => Returns: `[string, float, rounded float, CurrencyVal object]`
-- [044] Add support for DTO transforms (`\$dto->toDto($otherDtoClass)`) [See details](#PBI-044)
-- [034] Add support for logging failed casts in FailTo/FailNextTo. `CastTo::$castSoftFailureLogger = function (CastingException $e, $returnedVal)`
-- [048] Add debug mode setting. When enabled, add casting stack tracking (push/pop) to enable logging full context when failing within a chain.
-- [050] Add `#[LogCast($debugOnly = true)]` to also allow logging non-failing chains.
-- [036] Add support for `#[AlwaysCast(fromVal:..., groups:...)]`. Forces casting unfilled props by providing a default value to cast when unfilled.
-- [028] Add nested DTO support with `CastTo\Dto(class, groups: 'api')` (from array or object), recursive normalization and validation
-- [045] Add support for validation [See details](#PBI-045)
-- [051] Add modifier `#[ApplyIf(check, count=1, negate=false)]` (and suggar `#[ApplyIfNot]` )
+- **[052]** Add Casters fromJson, JsonExtract, NumericString, Base64Encode/Decode, RegexSplit
+- **[053]** Add Caster LocaleAwareNumericString, with trait UsesLocaleResolver. See if we can share resolution/injection logic with CastTo
+- **[060]** Extract inject() functionality from caster to IsInjectable trait, rename #[Injected] to #[Inject]
+- **[061]** let DtoBase use IsInjectable, make sure $dto->inject() is called after new instanciation
+- **[046]** Add modifier `#[SkipIfMatch(mixed $values, $return=null)]`, allows short-circuitting following caster(s) by returning \$return if input === \$values or input in $values.
+- **[049]** Add `#[Collect(count: N)]` and #[Wrap(N)] (`#[NoOp]` = sugar for #[Wrap(0)]). Aggregate the result of the next N subchains into an array.
+  E.g.: `#[Collect(3), NoOp, Wrap(2), CastTo\Rounded(1), CastTo\NumericString(2,','), CastTo\CurrencyVal('USD')]` => cast("2.42") Returns: `["2.42", "2,40", CurrencyVal object]`
+- **[059]** Add #[Wrap(N)] chain modifier that does nothing but wraps a subchain. Could be useful with #[Collect(N)]
+- **[051]** Add modifier `#[ApplyIfTruthy(check, count=1, negate=false)]` (and suggar `#[ApplyIfNot]` )
   - E.g.: `#[ApplyIf('isAdmin', count(2))]` (or `#[ApplyIf]`?) would result in applying the next 2 casters only if one of the following returns truthy:
     - `$dto->isAdmin()` (if available), or
     - `$dto->isAdmin` (if property exists), or
-    - `$context['isAdmin']` (would require fromArray() to take an aditional `$context` arg).
-- [052] Add `CastTo\ArrayFromJson`
-- [053] Add `CastTo\JsonPath($path)`
-- [054] Add `CastTo\RegexReplace($needle, $haystack)`
-- [055] Add `#[MapFromInternal(string|array $fields)]` to allow mapping from one or more internal properties rather than external input.
-- [056] Add `#[DtoLifecycleConfig($configName, $inboundGroups, $validate, $normalizeSeq, $outboundGroups)]` to allow static default lifecycle configuration, to be auto-applied during one-liners like `$dto->fromRequest($req)->toEntity()`, and `static BaseDto::amendDefaultLifecycleGroups($inbound, $validate, $normalizeSeq, $outbound) to allow runtime config modification`;
-`$normalizeSeq` should allow an array of string|array $groups, defining step(s) in a normalization sequence scoped to said groups.
+    - `$context['isAdmin']` (would requires $dto instanceof HasContextInterface).
+- **[040]** Add `#[MapFrom(string|array $fields)]`
+- **[020]** Add `#[MapTo(...)]` Attribute [See details](Mapping.md)
+- **[055]** Add `#[MapFromInternal(string|array $fields)]` to allow mapping from one or more internal properties or values already cast in a previous step, rather than external input.
+- **[044]** Add support for DTO transforms (`\$dto->toDto($otherDtoClass)`) [See details](#PBI-044)
+- **[034]** Add support for logging failed casts in FailTo/FailNextTo. `CastTo::$castSoftFailureLogger = function (CastingException $e, $returnedVal)`
+- **[048]** Add debug mode setting. When enabled, add casting stack tracking (push/pop) to enable logging full context when failing within a chain.
+- **[050]** Add `#[LogCast($debugOnly = true)]` to also allow logging non-failing chains.
+- **[036]** Add support for `#[AlwaysCast(fromVal:..., groups:...)]`. Forces casting unfilled props by providing a default value to cast when unfilled.
+- **[028]** Add nested DTO support with `CastTo\Dto(class, groups: 'api')` (from array or object), recursive normalization and validation
+- **[045]** Add support for validation [See details](#PBI-045)
+  The mapping source will be different for inbound and outbound casting, this needs reflexion.
+- **[056]** Support multi-step casting by making withGroups(inboundCast: ...) take a sequence of group(s)
+  Then apply each step in sequence. Same with outboundCast.
+  **[058]** Add a doc about FullDto and making one's own slimmed-down version if not all features are needed
 ---
 
 ## Completed PBIs
@@ -65,6 +68,7 @@
 - [031] ALWAYS STRICT: Update all casters to always throw if input value is invalid.
 - [039] Publish to GitHub and add CI
 - [057] Replace per-Caster $outbound ctor param with #[Outbound]: marks subsequent attributes as belonging to outbound phase
+- [054] Add `CastTo\RegexReplace($needle, $haystack)`
 ---
 
 ### <a id="PBI-043"></a>**🔧 PBI 43: Add support for scoping groups (cross-cutting concern)**

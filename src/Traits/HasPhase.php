@@ -2,28 +2,22 @@
 
 namespace Nandan108\DtoToolkit\Traits;
 
-trait HasPhase // implments PhaseAwareInterface
+use Nandan108\DtoToolkit\Enum\Phase;
+
+trait HasPhase // implements PhaseAwareInterface
 {
-    protected $ioBound = false;
-    protected $outbound = false;
-
-    // PhaseAwareInterface methods
-
-    #[\Override]
-    public function isIoBound(): bool
-    {
-        return $this->ioBound;
-    }
-
-    #[\Override]
-    public function isOutbound(): bool
-    {
-        return $this->outbound;
-    }
+    protected bool $isIoBound = false;
+    protected bool $isOutbound = false;
 
     #[\Override]
     public function setOutbound(bool $isOutbound): void
     {
-        $this->outbound = $isOutbound;
+        $this->isOutbound = $isOutbound;
+    }
+
+    #[\Override]
+    public function getPhase(): Phase
+    {
+        return Phase::fromComponents($this->isOutbound, $this->isIoBound);
     }
 }

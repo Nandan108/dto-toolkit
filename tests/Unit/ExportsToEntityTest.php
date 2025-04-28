@@ -23,9 +23,11 @@ final class ExportsToEntityTest extends TestCase
         };
 
         $entity1 = $dto->fill(['someProp' => 'someVal'])->toEntity();
+        /** @psalm-suppress TypeDoesNotContainType */
         $this->assertInstanceOf(EntityClassToInstanciateFromName::class, $entity1);
 
         $entity2 = $dto->fill(['someProp' => 'someOtherVal'])->toEntity();
+        /** @psalm-suppress TypeDoesNotContainType */
         $this->assertInstanceOf(EntityClassToInstanciateFromName::class, $entity2);
 
         $this->assertNotSame($entity1, $entity2, 'Each call to toEntity() should instanciate and return a new entity');
@@ -163,6 +165,7 @@ final class ExportsToEntityTest extends TestCase
         $this->expectException(\LogicException::class);
         $this->expectExceptionMessage('No public setter or property found');
 
+        /** @psalm-suppress UnusedMethodCall */
         $dto->fill(['someProp' => 'someVal', 'email' => 'foo@bar.baz'])->toEntity();
     }
 }

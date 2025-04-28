@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Unit\Casting;
+namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
 use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Contracts\CasterInterface;
@@ -225,6 +225,7 @@ final class CasterInterfaceTest extends TestCase
 
         // whipe out memoized caster data
         // FakeClass:["bar"]
+        /** @psalm-suppress PossiblyFalseOperand */
         $fakeClassCacheKey = $className.':'.json_encode($fakeClassCtorArgs);
         $this->assertObjectHasProperty($fakeClassCacheKey, $getMeta());
         $attr::_clearCasterMetadata();

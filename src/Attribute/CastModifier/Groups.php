@@ -4,12 +4,12 @@ namespace Nandan108\DtoToolkit\Attribute\CastModifier;
 
 use Nandan108\DtoToolkit\Contracts\HasGroupsInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
-use Nandan108\DtoToolkit\Enum\Phase;
 use Nandan108\DtoToolkit\Support\CasterChainBuilder;
 
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class Groups extends CastModifierBase
 {
+    /** @psalm-suppress PossiblyUnusedProperty */
     public function __construct(
         public array|string $groups,
         public int $count = 1,
@@ -20,7 +20,7 @@ final class Groups extends CastModifierBase
     public function modify(\ArrayIterator $queue, \Closure $chain, BaseDto $dto): \Closure
     {
         if (!$dto instanceof HasGroupsInterface) {
-            throw new \LogicException('DTO must use UsesGroups trait for Groups modifier to work.');
+            throw new \LogicException('To use #[Groups], DTO must use UsesGroups trait or implement HasGroupsInterface');
         }
 
         // consume the subchain, whether it'll be applied or not
@@ -31,11 +31,8 @@ final class Groups extends CastModifierBase
             modifier: 'Groups'
         );
 
-        $phase = Phase::fromComponents($this->isOutbound(), false);
-        $groups = is_array($this->groups) ? $this->groups : [$this->groups];
-
         // apply the subchain only if the groups are in scope
-        if ($dto->groupsAreInScope($phase, $groups)) {
+        if ($dto->groupsAreInScope($this->getPhase(), (array) $this->groups)) {
             return fn (mixed $value): mixed => $subchain($chain($value));
         }
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Unit\Casting;
+namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
 use Nandan108\DtoToolkit\Attribute\Outbound;
 use Nandan108\DtoToolkit\CastTo;
@@ -31,6 +31,7 @@ final class NormalizesFromAttributesTest extends TestCase
         $this->assertSame('30', $dto->age);
 
         // Case 2: Assert that properties that are "filled" are normalized
+        /** @psalm-suppress UnusedMethodCall */
         $dto->fill(['age' => '30'])->normalizeInbound();
         /** @psalm-suppress DocblockTypeContradiction */
         $this->assertSame(30, $dto->age);

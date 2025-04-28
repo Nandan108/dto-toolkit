@@ -1,57 +1,25 @@
 <?php
 
-namespace Tests\Unit\Casting;
+namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
 // use Nandan108\DtoToolkit\Core\CastTo;
 // use Nandan108\DtoToolkit\Traits\CanCastBasicValues;
+
 use Nandan108\DtoToolkit\CastTo;
-use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Enum\IntCastMode;
 use Nandan108\DtoToolkit\Exception\CastingException;
-use Nandan108\DtoToolkit\Traits\NormalizesFromAttributes;
+use Nandan108\DtoToolkit\Tests\Traits\CanTestCasterClassesAndMethods;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class CanCastBasicValuesTest extends TestCase
 {
+    use CanTestCasterClassesAndMethods;
+
     #[DataProvider('builtinCastProvider')]
     public function testBuiltinCastMethods(mixed $method, mixed $input, mixed $expected, array $args = [], ?string $exceptionMessage = null): void
     {
-        // /** @psalm-suppress ExtensionRequirementViolation */
-        $dto = new class extends BaseDto {
-            use NormalizesFromAttributes;
-        };
-
-        // create caster Attribute using static helper method, and from it get the caster Closure
-        if (is_string($method)) {
-            $casterAttribute = new CastTo($method, args: $args);
-            $caster = $casterAttribute->getCaster($dto);
-        } elseif ($method instanceof CastTo) {
-            $caster = $method->getCaster($dto);
-        } else {
-            $this->fail('Invalid method type: '.gettype($method));
-        }
-
-        // Call the caster closure with the input value and get the result
-        try {
-            $result = $caster($input);
-
-            if (is_object($expected)) {
-                $this->assertInstanceOf(get_class($expected), $result);
-                $this->assertEquals($expected, $result); // compares datetime value
-            } else {
-                $this->assertSame($expected, $result);
-            }
-        } catch (\Exception $e) {
-            if (is_string($expected) && class_exists($expected) && is_a($e, $expected)) {
-                $this->assertInstanceOf($expected, $e);
-                if (null !== $exceptionMessage && $exceptionMessage > '') {
-                    $this->assertStringContainsString($exceptionMessage, $e->getMessage());
-                }
-            } else {
-                throw $e;
-            }
-        }
+        $this->casterTest($method, $input, $expected, $args, $exceptionMessage);
     }
 
     public static function builtinCastProvider(): array
@@ -88,17 +56,10 @@ final class CanCastBasicValuesTest extends TestCase
             'Trimmed'                         => [new CastTo\Trimmed(), '  hello ', 'hello'],
             'Trimmed:left'                    => [new CastTo\Trimmed('to', 'left'), 'othello', 'hello'],
             'Trimmed:right'                   => [new CastTo\Trimmed('to', 'right'), 'hotelot', 'hotel'],
-            'Slug'                            => [new CastTo\Slug(separator: '.'), 'Let\'s go for Smörgåsbord', 'let.s.go.for.smorgasbord'],
             'Capitalized'                     => [new CastTo\Capitalized(), 'hello', 'Hello'],
             'Uppercase'                       => [new CastTo\Uppercase(), 'hello', 'HELLO'],
             'DateTime'                        => [new CastTo\DateTime(format: 'Y-m-d H:i:s'), $dateTime, $dateTimeObj],
-            'DateTime:invalid date'           => [
-                new CastTo\DateTime(format: 'Y-m-d H:i:s'), // caster
-                'invalid date', // input
-                CastingException::class, // expected
-                [], // caster args
-                'Unable to parse date with format \'Y-m-d H:i:s\' from \'invalid date\'', // expected message
-            ],
+            'DateTime:invalid date'           => [new CastTo\DateTime(format: 'Y-m-d H:i:s'), 'invalid date', CastingException::class, [], 'Unable to parse date with format \'Y-m-d H:i:s\' from \'invalid date\''],
             'DateTime:\stdClass'              => [new CastTo\DateTime(format: 'Y-m-d H:i:s'), new \stdClass(), CastingException::class],
             'Split'                           => [new CastTo\Split(), 'a,b,c', ['a', 'b', 'c']],
             'Split:sep:"-"'                   => [new CastTo\Split(separator: '-'), 'a-b-c', ['a', 'b', 'c']],
@@ -126,22 +87,9 @@ final class CanCastBasicValuesTest extends TestCase
             'Rounded(2)'                      => [new CastTo\Rounded(2), 0.991, 0.99],
             'Rounded(1)'                      => [new CastTo\Rounded(1), 0.991, 1.0],
             'Rounded(stringable obj)'         => [new CastTo\Rounded(2), new $stringable('0.991'), 0.99],
+            'Rounded:not-a-number'            => [new CastTo\Rounded(1), 'not-a-number', CastingException::class],
             'JsonEncode(valid)'               => [new CastTo\ToJson(), [1, 'a', null, true], '[1,"a",null,true]'],
             'JsonEncode(invalid)'             => [new CastTo\ToJson(), $circular, CastingException::class, [], 'Failed to cast value to JSON'],
-            // Valid string-backed enum
-            'Enum(Status):circular-ref'       => [new CastTo\Enum(Status::class), $circular, CastingException::class, [], 'Invalid enum backing value'],
-            'Enum(Status):[] (array)'         => [new CastTo\Enum(Status::class), [], CastingException::class],
-            'Enum(Status):draft'              => [new CastTo\Enum(Status::class), 'draft', Status::Draft],
-            'Enum(Status):Published'          => [new CastTo\Enum(Status::class), 'published', Status::Published],
-            // Invalid value (non-existent key)
-            'Enum(Status):invalid'            => [new CastTo\Enum(Status::class), 'archived', CastingException::class, [], 'Invalid enum backing value: "archived"'],
-            // Nullable enum
-            'Enum(Status):null'               => [new CastTo\Enum(Status::class), null, CastingException::class, [], 'Invalid enum backing value: null'],
-            // Integer-backed enum
-            'Enum(Code):200'                  => [new CastTo\Enum(Code::class), 200, Code::OK],
-            'Enum(Code):404'                  => [new CastTo\Enum(Code::class), 404, Code::NotFound],
-            // Invalid integer
-            'Enum(Code):500'                  => [new CastTo\Enum(Code::class), 500, CastingException::class, [], 'Invalid enum backing value: 500'],
             // ReplaceIf
             'ReplaceIf:string-match'          => [new CastTo\ReplaceIf('foo', 'bar'), 'foo', 'bar'],
             'ReplaceIf:string-mismatch'       => [new CastTo\ReplaceIf('foo', 'bar'), 'qux', 'qux'],
@@ -154,35 +102,10 @@ final class CanCastBasicValuesTest extends TestCase
         ];
     }
 
-    public function testInstantiationWithInvalidEnum(): void
+    public function testSomeMoreCasters(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Enum caster: \'Invalid\' is not a valid enum.');
-        new CastTo\Enum('Invalid');
+        // parent-constructor call line in caster constructor is not covered
+        // if constructor is instanciated within the DataProvider method, for some reason. So test them separately.
+        $this->casterTest(new CastTo\Slug('.'), 'Let\'s go for Smörgåsbord', 'let.s.go.for.smorgasbord');
     }
-
-    public function testInstantiationWithInvalidEnumClass(): void
-    {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Enum caster: \''.NotBacked::class.'\' is not a backed enum.');
-        new CastTo\Enum(NotBacked::class);
-    }
-}
-
-enum Status: string
-{
-    case Draft = 'draft';
-    case Published = 'published';
-}
-
-enum Code: int
-{
-    case OK = 200;
-    case NotFound = 404;
-}
-
-enum NotBacked
-{
-    case FOO;
-    case BAR;
 }

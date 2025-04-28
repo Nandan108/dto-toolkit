@@ -3,31 +3,22 @@
 namespace Nandan108\DtoToolkit\Attribute;
 
 use Nandan108\DtoToolkit\Contracts\PhaseAwareInterface;
+use Nandan108\DtoToolkit\Traits\HasPhase;
 
+/**
+ * This attribute is used to specify the scoping groups for a property.
+ * If it is positioned after a #[Outbound] attribute, the groups will be set for the outbound phase.
+ *
+ * @psalm-api
+ */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 class PropGroups implements PhaseAwareInterface
 {
-    private bool $isOutbound = false;
+    use HasPhase;
 
     public function __construct(
         public array|string $groups,
-    ) {}
-
-    #[\Override]
-    public function setOutbound(bool $isOutbound): void
-    {
-        $this->isOutbound = $isOutbound;
-    }
-
-    #[\Override]
-    public function isOutbound(): bool
-    {
-        return $this->isOutbound;
-    }
-
-    #[\Override]
-    public function isIoBound(): bool
-    {
-        return true;
+    ) {
+        $this->isIoBound = true;
     }
 }

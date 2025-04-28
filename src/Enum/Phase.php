@@ -22,4 +22,10 @@ enum Phase: string
     {
         return $this->value === self::OutboundCast->value || $this->value === self::OutboundExport->value;
     }
+
+    /** @psalm-suppress PossiblyUnusedMethod */
+    public function isIOBound(): bool
+    {
+        return $this->value === self::InboundLoad->value || $this->value === self::OutboundExport->value;
+    }
 }

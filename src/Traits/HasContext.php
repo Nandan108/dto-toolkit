@@ -2,6 +2,9 @@
 
 namespace Nandan108\DtoToolkit\Traits;
 
+/**
+ * @method static static withContext(array $values)
+ */
 trait HasContext
 {
     protected array $_context = [];
@@ -13,7 +16,7 @@ trait HasContext
         return $this;
     }
 
-    public function withContext(array $values): static
+    public function _withContext(array $values): static
     {
         foreach ($values as $key => $val) {
             $this->setContext($key, $val);

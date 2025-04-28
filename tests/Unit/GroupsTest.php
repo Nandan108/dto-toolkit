@@ -1,13 +1,11 @@
 <?php
 
-namespace Tests\Unit\Casting;
+namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
 use Nandan108\DtoToolkit\Attribute\CastModifier\Groups;
-use Nandan108\DtoToolkit\Attribute\CastModifier\PerItem;
 use Nandan108\DtoToolkit\Attribute\Outbound;
 use Nandan108\DtoToolkit\Attribute\PropGroups;
 use Nandan108\DtoToolkit\CastTo;
-use Nandan108\DtoToolkit\Contracts\NormalizesOutboundInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Core\FullDto;
 use Nandan108\DtoToolkit\Traits\NormalizesFromAttributes;
@@ -17,7 +15,7 @@ use PHPUnit\Framework\TestCase;
  * @method static static fromArray(array $input, bool $ignoreUnknownProps = false)
  * @method static static withGroups(array|string $all = [], array|string $inbound = [], array|string $inboundCast = [], array|string $outbound = [], array|string $outboundCast = [], array|string $validation = [])
  */
-class GroupsTestFooBarDto extends FullDto
+final class GroupsTestFooBarDto extends FullDto
 {
     /** @psalm-suppress PossiblyUnusedProperty */
     #[CastTo\Lowercase] // trim dashes
@@ -40,7 +38,7 @@ class GroupsTestFooBarDto extends FullDto
     public ?string $baz = null; // default value provided for the example
 }
 
-class CasterGroupsTestDto extends FullDto
+final class CasterGroupsTestDto extends FullDto
 {
     /** @psalm-suppress PossiblyUnusedProperty */
     public ?string $notCast = null; // default value provided for the example
@@ -55,6 +53,15 @@ class CasterGroupsTestDto extends FullDto
     public ?string $baz = null; // default value provided for the example
 }
 
+final class NotImplmementingUsesGroupsDto extends BaseDto
+{
+    use NormalizesFromAttributes;
+    /** @psalm-suppress PossiblyUnusedProperty */
+    #[Groups('foo')]
+    #[CastTo\Lowercase]
+    public ?string $qux = null;
+}
+
 final class GroupsTest extends TestCase
 {
     public function testOutboundGroupsExcludePropertiesWithoutMatchingContext(): void
@@ -63,12 +70,13 @@ final class GroupsTest extends TestCase
             'baz' => 'Test Value',
         ];
 
+        /** @psalm-suppress UndefinedMagicMethod */
         $dto = GroupsTestFooBarDto::withGroups(inbound: 'foo')->fromArray($input);
 
         $output = $dto->toOutboundArray();
 
         $this->assertIsArray($output);
-        $this->assertArrayNotHasKey('baz', $output, 'Property "baz" should not be exported without matching outbound group');
+        $this->assertArrayNotHasKey('baz', $output, 'Property "baz" should not be exported if not in scope');
         $this->assertSame([], $output, 'Output array should be empty if no filled fields are in scope');
     }
 
@@ -80,11 +88,12 @@ final class GroupsTest extends TestCase
             'bar' => 'Bar',
             'baz' => 'Baz',
         ];
-
+        /** @psalm-suppress UndefinedMagicMethod */
         $arr = GroupsTestFooBarDto::withGroups('foo')->fromArray($input)->toOutboundArray();
         // Baz is note included because it's in PropGroups('bar'), which isn't targetted
         $this->assertSame(['qux' => 'qux', 'foo' => 'foo'], $arr);
 
+        /** @psalm-suppress UndefinedMagicMethod */
         $arr = GroupsTestFooBarDto::withGroups('bar')->fromArray($input)->toOutboundArray();
         // This time, it's foo that's missing.
         $this->assertSame(['qux' => 'qux', 'bar' => 'bar', 'baz' => 'BAZ'], $arr);
@@ -98,19 +107,23 @@ final class GroupsTest extends TestCase
         ];
 
         // With no groups activated
+        /** @psalm-suppress UndefinedMagicMethod */
         $dto = CasterGroupsTestDto::fromArray($input);
         $this->assertSame(['notCast' => '- hello ', 'baz' => 'world'], $dto->toarray());
 
         // With group 'foo' active inbound
+        /** @psalm-suppress UndefinedMagicMethod */
         $dtoFoo = CasterGroupsTestDto::withGroups(inbound: 'foo')->fromArray($input);
         $this->assertSame('- hello ', $dtoFoo->notCast, 'notCast is not affected by groups');
         $this->assertSame('Foo:WORLD', $dtoFoo->baz, 'baz is trimmed, uppercased and prefixed Foo:');
 
         // With group 'bar' active inbound
+        /** @psalm-suppress UndefinedMagicMethod */
         $dtoBar = CasterGroupsTestDto::withGroups(inbound: 'bar')->fromArray($input);
         $this->assertSame('Bar:world', $dtoBar->baz, 'baz is trimmed and prefixed Bar:');
 
         // With both 'bar' amd 'foo' active inbound
+        /** @psalm-suppress UndefinedMagicMethod */
         $dtoBar = CasterGroupsTestDto::withGroups(inbound: ['foo', 'bar'])->fromArray($input);
         $this->assertSame('Foo:BAR:WORLD', $dtoBar->baz, 'baz is trimmed and prefixed Bar:');
     }
@@ -125,5 +138,14 @@ final class GroupsTest extends TestCase
         $output = $dto->toOutboundArray();
 
         $this->assertSame('SAMPLE', $output['baz'], 'baz should be uppercased at export');
+    }
+
+    public function testNormalizationThrowsIfGroupsAreUsedWithoutImplmementingUsesGroups(): void
+    {
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage('To use #[Groups], DTO must use UsesGroups trait or implement HasGroupsInterface');
+
+        $dto = new NotImplmementingUsesGroupsDto();
+        $dto->normalizeInbound();
     }
 }

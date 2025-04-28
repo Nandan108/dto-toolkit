@@ -17,6 +17,7 @@ use Nandan108\DtoToolkit\Enum\Phase;
  * Static analyzers require the above annotations to avoid false positives.
  *
  * @psalm-require-extends BaseDto
+ *
  **/
 trait CreatesFromArray
 {
@@ -32,7 +33,7 @@ trait CreatesFromArray
     public function _fromArray(
         array $input,
         bool $ignoreUnknownProps = false,
-    ) {
+    ): static {
         // fill the DTO with the input values
         /** @psalm-suppress InaccessibleMethod */
         $toBeFilled = $fillables = $this->getFillable();
@@ -55,11 +56,13 @@ trait CreatesFromArray
         // validate raw input values
         if ($this instanceof ValidatesInputInterface) {
             // args not passed directly, let validator pull from groups or context
+            /** @psalm-suppress UnusedMethodCall */
             $this->validate();
         }
 
         // cast the values to their respective types and return the DTO
         if ($this instanceof NormalizesInboundInterface) {
+            /** @psalm-suppress UnusedMethodCall */
             $this->normalizeInbound();
         }
 

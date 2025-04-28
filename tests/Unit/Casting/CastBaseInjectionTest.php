@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Casting;
+namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
 use Nandan108\DtoToolkit\Attribute\Injected;
 use Nandan108\DtoToolkit\Bridge\ContainerBridge;
@@ -78,7 +78,7 @@ final class BridgeBasedSlugifyCaster extends CastBase
     }
 }
 
-class FooBarDto extends FullDto
+final class FooBarDto extends FullDto
 {
     #[CastTo(InjectedSlugifyCasterResolvesWithContainer::class)]
     public mixed $value = null;
@@ -90,6 +90,7 @@ final class CastBaseInjectionTest extends TestCase
     {
         $dto = FooBarDto::fromArray(['value' => ' Hello World ']);
 
+        /** @psalm-suppress UndefinedMagicMethod */
         $dto->fromArray(['value' => ' Hello World ']);
 
         $this->assertEquals('hello*world', $dto->value);

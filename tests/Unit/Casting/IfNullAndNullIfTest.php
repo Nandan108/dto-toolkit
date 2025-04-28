@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Unit\Casting;
+namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
 use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Core\BaseDto;
@@ -31,8 +31,8 @@ final class IfNullAndNullIfTest extends TestCase
 
         $check = function (string $prop, mixed $value, mixed $expected) use ($dto): void {
             $dto->unfill(['foo', 'bar', 'baz']);
-            $dto->fill([$prop => $value])
-                ->normalizeInbound();
+            /** @psalm-suppress UnusedMethodCall */
+            $dto->fill([$prop => $value])->normalizeInbound();
 
             $this->assertSame($expected, $dto->$prop);
         };

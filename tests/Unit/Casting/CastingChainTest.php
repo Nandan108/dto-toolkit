@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Unit\Casting;
+namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
 use Nandan108\DtoToolkit\Attribute\CastModifier\FailNextTo;
 use Nandan108\DtoToolkit\Attribute\CastModifier\PerItem;
@@ -23,6 +23,7 @@ final class CastingChainTest extends TestCase
             public ?string $val = null; // default value provided for the example
         };
 
+        /** @psalm-suppress UnusedMethodCall */
         $dto->fill(['val' => 'initial-value'])->normalizeInbound();
 
         $this->assertSame(
@@ -46,6 +47,7 @@ final class CastingChainTest extends TestCase
             public string|array|null $prices = null; // default value provided for the example
         };
 
+        /** @psalm-suppress UnusedMethodCall */
         $dto->fill(['prices' => '---  X 6.196/  0.99/X2.00001/XX 3.5  /XX4.57   --'])
             ->normalizeInbound();
 
@@ -85,7 +87,7 @@ final class CastingChainTest extends TestCase
      *           ["[\"-1\", null, true]", "-1/n/a/1"]
      *           ["[\"-1\", \"\", 0]", "-1/n/a/0"]
      */
-    public function testChainingModifiers($someJson, $expected): void
+    public function testChainingModifiers(string $someJson, string $expected): void
     {
         /** @psalm-suppress ExtensionRequirementViolation */
         $dto = new class extends BaseDto implements NormalizesOutboundInterface {
@@ -94,7 +96,7 @@ final class CastingChainTest extends TestCase
             /* - */ #[FailNextTo('n/a')]
             /* ----- */ #[CastTo\Integer]
             #[CastTo\Join('/')]
-            public mixed $someProp;
+            public array|string|int|null $someProp = null;
         };
 
         $someProp = json_decode($someJson);
