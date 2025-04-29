@@ -3,6 +3,7 @@
 namespace Nandan108\DtoToolkit\Tests\Traits;
 
 use Nandan108\DtoToolkit\CastTo;
+use Nandan108\DtoToolkit\Contracts\NormalizesInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Traits\NormalizesFromAttributes;
 
@@ -18,7 +19,7 @@ trait CanTestCasterClassesAndMethods
     public function casterTest(mixed $method, mixed $input, mixed $expected, array $args = [], ?string $exceptionMessage = null): void
     {
         // /** @psalm-suppress ExtensionRequirementViolation */
-        $dto = new class extends BaseDto {
+        $dto = new class extends BaseDto implements NormalizesInterface {
             use NormalizesFromAttributes;
         };
 

@@ -2,14 +2,13 @@
 
 namespace Nandan108\DtoToolkit\CastTo;
 
-use Nandan108\DtoToolkit\Contracts\CasterInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Core\CastBase;
 use Nandan108\DtoToolkit\Enum\IntCastMode;
 use Nandan108\DtoToolkit\Exception\CastingException;
 
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
-final class Integer extends CastBase implements CasterInterface
+final class Integer extends CastBase
 {
     public function __construct(IntCastMode $mode = IntCastMode::Trunc)
     {

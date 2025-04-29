@@ -1,6 +1,59 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+---
+
+## [v0.3.0] - 2025-04-29
+
+### 🚀 Added
+- **Group-based casting and property scoping**:
+  - `#[Groups(...)]` cast modifier to control casting steps based on active context groups
+  - `#[PropGroups(...)]` attribute to include/exclude properties during inbound or outbound phases
+- **Context-aware processing chains**:
+  - Introduced `HasContext`, `UsesGroups` traits and `HasGroupsInterface`
+  - Processing chains can now adapt based on active runtime context
+- **New core casters**:
+  - `#[CastTo\RegexReplace]`
+  - `#[CastTo\RemoveDiacritics]`
+  - `#[CastTo\FromJson]`
+  - `#[CastTo\JsonExtract]`
+  - `#[CastTo\NumericString]`
+  - `#[CastTo\Base64Encode]`
+  - `#[CastTo\Base64Decode]`
+  - `#[CastTo\RegexSplit]`
+- **Magic method helpers**:
+  - DTOs now support dynamic `from*` / `with*` method forwarding via `__call` and `__callStatic`
+- **Extended DTO construction methods**:
+  - Added `_fromEntity()` for DTO instantiation from object instances
+- **Improved test tools**:
+  - Added `Tests\Traits\CanTestCasterClassesAndMethods` trait for easier caster testing
+
+### 🛠️ Changed
+- **Chain building mechanism**:
+  - Introduced recursive `buildNextSubchain()` composition
+- **Renamed**:
+  - CastModifier ➔ ChainModifier (namespace, interface, and base class)
+  - Casters `ArrayFromCsv` ➔ `Split`, `CsvFromArray` ➔ `Join`
+  - namespace `Attribute\CastModifier` ➔ `Attribute\ChainModifier`
+  - contract `Contracts\CastModifierInterface` ➔ `Contracts\ChainModifierInterface`
+- **Merged**:
+  - `NormalizesInboundInterface` and `NormalizedOutboundInterface` into `NormalizesInterface`
+- **Renamed**:
+  - `CreatesFromArray` trait ➔ `CreatesFromArrayOrEntity`
+
+### 📚 Documentation
+- Updated `README.md` intro and structure
+- Updated `docs/Casting.md` to reflect processing chains and outbound separation via `#[Outbound]`
+- Added `docs/BuiltInCasters.md`
+- Added `docs/BuiltInModifiers.md`
+- Updated backlog with future ideas
+
+### 🧹 Cleanups
+- Tightened type declarations and internal structure
+- Enabled parallel execution in php-cs-fixer
+- `psalm` static analysis: fully green
+
+
 
 ---
 

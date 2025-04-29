@@ -1,13 +1,13 @@
 <?php
 
-namespace Nandan108\DtoToolkit\Attribute\CastModifier;
+namespace Nandan108\DtoToolkit\Attribute\ChainModifier;
 
 use Nandan108\DtoToolkit\Contracts\HasGroupsInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Support\CasterChainBuilder;
 
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
-final class Groups extends CastModifierBase
+final class Groups extends ChainModifierBase
 {
     /** @psalm-suppress PossiblyUnusedProperty */
     public function __construct(

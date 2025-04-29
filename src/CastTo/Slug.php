@@ -2,7 +2,6 @@
 
 namespace Nandan108\DtoToolkit\CastTo;
 
-use Nandan108\DtoToolkit\Contracts\CasterInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Core\CastBase;
 use Nandan108\DtoToolkit\Traits\UsesDiacriticSanitizer;
@@ -11,7 +10,7 @@ use Nandan108\DtoToolkit\Traits\UsesDiacriticSanitizer;
  * Converts string into $separator separated groups of lowercase letters.
  **/
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
-final class Slug extends CastBase implements CasterInterface
+final class Slug extends CastBase
 {
     use UsesDiacriticSanitizer;
 

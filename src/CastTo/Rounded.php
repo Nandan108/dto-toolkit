@@ -2,7 +2,6 @@
 
 namespace Nandan108\DtoToolkit\CastTo;
 
-use Nandan108\DtoToolkit\Contracts\CasterInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Core\CastBase;
 use Nandan108\DtoToolkit\Exception\CastingException;
@@ -15,7 +14,7 @@ use Nandan108\DtoToolkit\Exception\CastingException;
  * - if $nullable = false, will throw a CastingException.
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
-final class Rounded extends CastBase implements CasterInterface
+final class Rounded extends CastBase
 {
     public function __construct(int $precision = 0)
     {

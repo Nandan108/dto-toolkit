@@ -8,23 +8,23 @@ use Nandan108\DtoToolkit\Exception\CastingException;
 
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 /** @psalm-api */
-final class RegexReplace extends CastBase
+final class RegexSplit extends CastBase
 {
-    public function __construct(public readonly string $pattern, public readonly string $replacement = '', public readonly int $limit = -1)
+    public function __construct(public readonly string $pattern, public readonly int $limit = -1)
     {
-        parent::__construct([$pattern, $replacement, $limit]);
+        parent::__construct([$pattern, $limit]);
 
         // Force Psalm to acknowledge these properties are used
-        [$this->pattern, $this->replacement, $this->limit];
+        [$this->pattern, $this->limit];
     }
 
     /**
      * @psalm-suppress PossiblyUnusedMethod, PossiblyUnusedParam
      */
     #[\Override]
-    public function cast(mixed $value, array $args, BaseDto $dto): string
+    public function cast(mixed $value, array $args, BaseDto $dto): array
     {
-        [$pattern, $replacement, $limit] = $args;
+        [$pattern, $limit] = $args;
 
         $value = $this->throwIfNotStringable($value);
 
@@ -33,7 +33,10 @@ final class RegexReplace extends CastBase
         });
 
         try {
-            return preg_replace($pattern, $replacement, $value, $limit) ?? '';
+            /** @var array $result */
+            $result = preg_split($pattern, $value, $limit);
+
+            return $result;
         } finally {
             restore_error_handler();
         }

@@ -3,7 +3,7 @@
 namespace Nandan108\DtoToolkit\Core;
 
 use Nandan108\DtoToolkit\Attribute\Outbound;
-use Nandan108\DtoToolkit\Contracts\NormalizesOutboundInterface;
+use Nandan108\DtoToolkit\Contracts\NormalizesInterface;
 use Nandan108\DtoToolkit\Contracts\PhaseAwareInterface;
 use Nandan108\DtoToolkit\Contracts\ScopedPropertyAccessInterface;
 use Nandan108\DtoToolkit\Enum\Phase;
@@ -24,16 +24,6 @@ abstract class BaseDto
      * @var true[]
      * */
     public array $_filled = [];
-
-    /**
-     * The class name of the entity that this DTO maps to.
-     * Optional since not all DTOs are mapped to entities.
-     *
-     * @var class-string
-     *
-     * @psalm-suppress PossiblyUnusedProperty
-     **/
-    protected static ?string $entityClass;
 
     // full metadata cache per class (static)
     private static array $_propertyMetadataCache = [];
@@ -125,7 +115,7 @@ abstract class BaseDto
 
         $data = $this->toArray($propsInScope);
 
-        if ($this instanceof NormalizesOutboundInterface) {
+        if ($this instanceof NormalizesInterface) {
             $data = $this->normalizeOutbound($data);
         }
 

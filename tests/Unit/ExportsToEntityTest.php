@@ -3,7 +3,7 @@
 namespace Nandan108\DtoToolkit\Tests\Unit;
 
 use Nandan108\DtoToolkit\CastTo;
-use Nandan108\DtoToolkit\Contracts\NormalizesOutboundInterface;
+use Nandan108\DtoToolkit\Contracts\NormalizesInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Traits\ExportsToEntity;
 use Nandan108\DtoToolkit\Traits\NormalizesFromAttributes;
@@ -16,10 +16,12 @@ final class ExportsToEntityTest extends TestCase
     {
         $dto = new class extends BaseDto {
             use ExportsToEntity;
-            /** @psalm-suppress NonInvariantDocblockPropertyType */
-            protected static ?string $entityClass = EntityClassToInstanciateFromName::class;
-            /** @psalm-suppress PossiblyUnusedProperty */
             public ?string $someProp = null;
+
+            public function __construct()
+            {
+                static::$entityClass = EntityClassToInstanciateFromName::class;
+            }
         };
 
         $entity1 = $dto->fill(['someProp' => 'someVal'])->toEntity();
@@ -74,7 +76,7 @@ final class ExportsToEntityTest extends TestCase
 
         // Create DTO
         /** @psalm-suppress ExtensionRequirementViolation (psalm = dumb+blind+crazy! Aaargh!) */
-        $dto = new class extends BaseDto implements NormalizesOutboundInterface {
+        $dto = new class extends BaseDto implements NormalizesInterface {
             use NormalizesFromAttributes;
             use ExportsToEntity;
             // use CanCastBasicValues;
@@ -115,8 +117,12 @@ final class ExportsToEntityTest extends TestCase
     {
         $dto = new class extends BaseDto {
             use ExportsToEntity;
-            /** @psalm-suppress NonInvariantDocblockPropertyType */
-            protected static ?string $entityClass = 'NonExistentClass';
+
+            public function __construct()
+            {
+                /** @psalm-suppress PropertyTypeCoercion */
+                static::$entityClass = 'NonExistentClass';
+            }
         };
 
         $this->expectException(\LogicException::class);
@@ -129,12 +135,10 @@ final class ExportsToEntityTest extends TestCase
     {
         $dto = new class extends BaseDto {
             use ExportsToEntity;
-            /** @psalm-suppress NonInvariantDocblockPropertyType */
-            protected static ?string $entityClass = null;
         };
 
         $this->expectException(\LogicException::class);
-        $this->expectExceptionMessage('No entity class defined for DTO');
+        $this->expectExceptionMessage('No entity class specified on DTO');
 
         $dto->toEntity();
     }
@@ -147,7 +151,7 @@ final class ExportsToEntityTest extends TestCase
         };
 
         $this->expectException(\LogicException::class);
-        $this->expectExceptionMessage('DTO must extend BaseDto to use ExportsToEntity.');
+        $this->expectExceptionMessage('DTO must extend BaseDto to use ExportsToEntity trait.');
 
         $dto->toEntity();
     }
@@ -157,9 +161,13 @@ final class ExportsToEntityTest extends TestCase
         $dto = new class extends BaseDto {
             use ExportsToEntity;
             /** @psalm-suppress NonInvariantDocblockPropertyType */
-            protected static ?string $entityClass = EntityClassToInstanciateFromName::class;
             public ?string $someProp = null;
             public ?string $email = null;
+
+            public function __construct()
+            {
+                static::$entityClass = EntityClassToInstanciateFromName::class;
+            }
         };
 
         $this->expectException(\LogicException::class);
@@ -167,6 +175,40 @@ final class ExportsToEntityTest extends TestCase
 
         /** @psalm-suppress UnusedMethodCall */
         $dto->fill(['someProp' => 'someVal', 'email' => 'foo@bar.baz'])->toEntity();
+    }
+
+    public function testToEntityAllowsOverridingNewEntityInstance(): void
+    {
+        $dto = new class extends BaseDto {
+            use ExportsToEntity;
+            public ?string $someProp = null;
+
+            public function __construct()
+            {
+                static::$entityClass = EntityClassToInstanciateFromName::class;
+            }
+
+            protected function newEntityInstance(array $inputData = []): array
+            {
+                if (null === static::$entityClass) {
+                    throw new \LogicException('Entity class must not be null');
+                }
+                $entity = new static::$entityClass();
+                $entity->someProp = $inputData['someProp'] ?? null;
+
+                // entity properties already set!
+                return [
+                    $entity,
+                    true, // indicate that the entity properties are already loaded
+                ];
+            }
+        };
+
+        /** @var object $entity */
+        $entity = $dto->fill(['someProp' => 'someVal'])->toEntity();
+
+        $this->assertInstanceOf(EntityClassToInstanciateFromName::class, $entity);
+        $this->assertSame('someVal', $entity->someProp);
     }
 }
 

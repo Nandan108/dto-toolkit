@@ -4,8 +4,7 @@ namespace Nandan108\DtoToolkit\Tests\Unit;
 
 use Nandan108\DtoToolkit\Attribute\Outbound;
 use Nandan108\DtoToolkit\CastTo;
-use Nandan108\DtoToolkit\Contracts\NormalizesInboundInterface;
-use Nandan108\DtoToolkit\Contracts\NormalizesOutboundInterface;
+use Nandan108\DtoToolkit\Contracts\NormalizesInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Traits\NormalizesFromAttributes;
 use PHPUnit\Framework\TestCase;
@@ -49,7 +48,7 @@ final class ToOutboundArrayTest extends TestCase
     public function testBaseDtoToExportsToOutboundArrayAfterNormalizing(): void
     {
         /** @psalm-suppress ExtensionRequirementViolation */
-        $dto = new class extends BaseDto implements NormalizesInboundInterface, NormalizesOutboundInterface {
+        $dto = new class extends BaseDto implements NormalizesInterface {
             use NormalizesFromAttributes;
 
             #[CastTo\Trimmed('-')] // inbound: trim dashes

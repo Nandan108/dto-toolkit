@@ -8,8 +8,8 @@ use Nandan108\DtoToolkit\Attribute\Injected;
 use Nandan108\DtoToolkit\Bridge\ContainerBridge;
 use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Contracts\Bootable;
-use Nandan108\DtoToolkit\Contracts\CasterInterface;
 use Nandan108\DtoToolkit\Contracts\Injectable;
+use Nandan108\DtoToolkit\Contracts\NormalizesInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Core\CastBase;
 use Nandan108\DtoToolkit\Core\FullDto;
@@ -29,7 +29,7 @@ final class DummySlugger
 
 // Caster using #[Injected]
 #[\Attribute(\Attribute::TARGET_PROPERTY)]
-final class InjectedSlugifyCasterResolvesWithContainer extends CastBase implements CasterInterface, Injectable, Bootable
+final class InjectedSlugifyCasterResolvesWithContainer extends CastBase implements Injectable, Bootable
 {
     public string $separator = '-';
 
@@ -162,7 +162,7 @@ final class CastBaseInjectionTest extends TestCase
         $this->expectException(\LogicException::class);
         $this->expectExceptionMessage('No casting method name or class provided');
 
-        $dto = new class extends BaseDto {
+        $dto = new class extends BaseDto implements NormalizesInterface {
             use NormalizesFromAttributes;
             #[CastTo('')]
             public mixed $value = null;
@@ -174,7 +174,7 @@ final class CastBaseInjectionTest extends TestCase
 
     public function testInstantiatesWithConstructorArgs(): void
     {
-        $casterClass = new class('X') extends CastBase implements CasterInterface {
+        $casterClass = new class('X') extends CastBase {
             public function __construct(public string $prefix)
             {
             }

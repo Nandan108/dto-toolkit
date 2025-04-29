@@ -1,6 +1,6 @@
 <?php
 
-namespace Nandan108\DtoToolkit\Attribute\CastModifier;
+namespace Nandan108\DtoToolkit\Attribute\ChainModifier;
 
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Exception\CastingException;
@@ -12,7 +12,7 @@ use Nandan108\DtoToolkit\Exception\CastingException;
  * @psalm-api
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
-class FailTo extends CastModifierBase
+class FailTo extends ChainModifierBase
 {
     protected \Closure|array|null $_handler = null;
 

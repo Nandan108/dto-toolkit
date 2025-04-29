@@ -1,32 +1,18 @@
-# Casters
+# 📚 Casting: Transforming Data Through Processing Chains
 
-Casters are a central feature of the DTO Toolkit. They allow you to modify the shape of:
+DTO Toolkit uses **processing chains** to transform property values during inbound (normalization) and outbound (export) phases.
 
-- **Inbound data**, after validation and before hydrating a DTO
-- **Outbound data**, before exporting from the DTO (to array, entity or model)
+Processing chains are built from **casters** (CastTo\*), **modifiers** (Mod\*), and (soon) **validators**. Each component is declared as an attribute, and the chains are JIT-compiled for maximum efficiency.
 
-The goal of this project is to provide expressive, declarative syntax for writing lean DTOs and clean controller logic.
+Properties may have both inbound and outbound chains. To separate them, use the `#[Outbound]` attribute:
+- **Inbound casters** are all casters that appear before an **`#[Outbound]`** attribute
+  They will be applied by a `->normalizeInbound()` step which is run immediately after the raw input is populated into the DTO, via a `fromArray()`, `fromEntity()`, or in adapter packages `fromRequest()` or `fromModel()`.
+- **Outbound casters** are those that appear *after* an `#[Outbound]` attribute
+  These are be applied by a `->normalizeOutbound()` step which is run as a transformation step on DTO data before it is returned by `toOutboundArray()` or used to populate object such as in `toEntity()`, and in adapters: `toResponse()` or `toModel()`.
 
----
-
-## 🔄 Inbound vs Outbound Casting
-
-The `#[CastTo(...)]` attribute supports an optional `outbound: true` flag to indicate **when** the casting should occur:
-
-- **Inbound casting** (default) applies when the DTO is being created from raw input, such as request data or an array (`fromArray()`)
-- **Outbound casting** applies when transforming the DTO back to an entity or output format (`toEntity()`, `toOutboundArray()`)
-
-This separation allows for clean and flexible data flows:
-
-- Sanitize or type-convert values on the way **in**
-- Format or enrich values on the way **out**
-
-### ✅ Example: Outbound Casting Only
-
-```php
-#[CastTo\DateTime(format: 'Y-m-d H:i:s')]
-public ?string $createdAt = null;
-```
+For a full list of built-in casters and modifiers, see:
+- [Built-In Casters](BuiltInCasters.md)
+- [Built-In Modifiers](BuiltInModifiers.md)
 
 ---
 
@@ -68,23 +54,23 @@ For casters that take arguments and more particularely multiple ones, it advised
    public float|string|null $price;
 
    #[CastTo\ReplaceIf(when: ['foo','bar'], then: 'baz')]
-   public ?string $price;
+   public ?string $myProp;
 ```
 
-Note that that Attribute parameters may only contain scalars, arrays, constants, and constant expressions. Anything else will not be concidered valid.
+Note that that PHP Attribute parameters may only contain scalars, arrays, constants, and constant expressions. Anything else is considered invalid by the PHP parser.
 
 ---
 
 ### 2. 🛠️ Custom Caster Classes (`CasterInterface`)
-
 Define reusable casting logic in your own class.
 
-```php
-#[CastTo(MyCustomCaster::class, args: ['param'], constructorArgs: [])]
-public string $value;
-```
+In some cases, the built-in casters may be insufficient, even composed together, to transform or sanitize exactly as you wish. In such cases you may define your own casters, to be used either
+- As an attribute (see previous syntax), by extending `Core\CastBase` and annotating your class with `#[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]` , or
+- By passing your classe's name to CastTo(), in which case it only needs to implement `Contracts\CasterInterface`.
+
 
 ```php
+// caster definition
 class MyCustomCaster implements CasterInterface {
     public function cast(mixed $value, array $args, BaseDto $dto): mixed {
         // custom logic here
@@ -92,13 +78,22 @@ class MyCustomCaster implements CasterInterface {
 }
 ```
 
-If `constructorArgs` are not provided, the system may fall back to container-based resolution (adapter-defined).
+```php
+// caster usage
+#[CastTo(MyCustomCaster::class, args: ['param'], constructorArgs: [])]
+public string $value;
+```
+
+
+If a caster class requires constructor arguments, but these are not provided in the Attribute's `constructorArgs`, the system will attempt container-based resolution (adapter-defined).
+
+*More details about dependency injection (DI) are coming soon in additional documentation.*
 
 ---
 
 ### 3. ⚙️ Method-Based Caster (String Identifier)
 
-Lightweight syntax that calls a method on the DTO or the core `CastTo` class.
+Lightweight syntax that calls a method on the DTO.
 
 ```php
 #[CastTo('slug', args: ['separator'])]
@@ -115,7 +110,7 @@ This is useful for one-off transformations where defining a full class would be 
 
 ## 🔗 Caster Chaining
 
-You can now apply multiple `#[CastTo(...)]` attributes to a single property.
+You can apply multiple caster attributes to a single property.
 They will be executed **in order**, allowing you to build rich transformation pipelines.
 
 ```php
@@ -132,7 +127,7 @@ Chaining also supports **modifiers** that affect how casters are applied.
 
 ### 🧩 Modifier Attributes
 
-Modifier attributes implement the `CastModifier` interface and control the behavior of the **caster chain**.
+Modifier attributes implement the `ChainModifier` interface and control the behavior of the **caster chain**.
 
 You can place modifiers before or after casters depending on their function:
 
@@ -144,7 +139,7 @@ Apply the next N casters to each item in an array.
 
 ```php
 #[CastTo\Split]
-#[PerItem(2), CastTo\Floating, CastTo\Rounded(2)]
+#[Mod\PerItem(2), CastTo\Floating, CastTo\Rounded(2)]
 #[CastTo\Join(';')]
 public string $prices = '10,12.45533,0';
 ```
@@ -155,49 +150,7 @@ This:
 2. Applies float conversion + rounding to each item
 3. Implodes the array back to CSV with `;`
 
----
-
-#### 🧯 Example: `#[FailTo]` _(post-modifier)_
-
-Catch any exceptions thrown by previous casters and return a fallback value:
-
-```php
-#[CastTo\JsonDecode]
-#[CastTo\Dto(AddressDto::class)]
-#[FailTo(fallback: [], handler: 'handleDtoFailure')]
-```
-
-This wraps all prior casting in a try/catch.
-If an error occurs, `handleDtoFailure(Throwable $e, mixed $fallback)` is called on the DTO.
-
----
-
-#### 🧷 Example: `#[FailNextTo]` _(pre-modifier)_
-
-Wraps only the **next** caster in a try/catch:
-
-```php
-#[FailNextTo('n/a')]
-#[CastTo\Floating]
-```
-
----
-
-#### 🛠️ Writing Your Own Modifiers
-
-To define a custom modifier, implement:
-
-```php
-interface CastModifier {
-    public function modify(ArrayIterator $queue, Closure $chain, BaseDto $dto): Closure;
-}
-```
-
-Modifiers can:
-
-- Slice the next N attributes using `$attr = CastTo::sliceNextAttributes($queue, $N)`
-- Build a subchain with `CastTo::buildCasterChain($attr, $dto);`
-- Wrap or conditionally apply transformations
+See [Built-In Modifiers](BuiltInModifiers.md) for more examples.
 
 ---
 
@@ -218,9 +171,8 @@ Core, adapter and project casters can't share the same namespace, which forces d
 Modifiers on the other hand, are like flow control primitives that can be generally considered a complete set. Thus, there won't be adapter-specific ones, and there should be no need of developping your own. Importing them individually is fine, but Importing their namespace as Mod makes their usage clearer.
 
 ```php
-use Nandan108\DtoToolkit\Core\BaseDto;
-use Nandan108\DtoToolkit\Attribute\CastModifier as Mod;
-use Nandan108\DtoToolkit\CastTo;
+use Nandan108\DtoToolkit\Attribute\ChainModifier as Mod;
+...
 
 class MyDto extends BaseDto {
     #[CastTo\Integer(IntCastMode::Ceil)]
@@ -264,7 +216,7 @@ class MyDto extends BaseDto {
 
 ## 🔁 Caster Caching and Instance Lifecycle
 
-Each `#[CastTo(...)]` attribute is resolved to a closure and **internally cached** for optimal performance.
+Casting attributes are resolved to a closure and **internally cached** for optimal performance.
 
 - **Class-based casters** (those implementing `CasterInterface`) are memoized by:
   - Class name + `json_encode(constructorArgs)`
@@ -272,6 +224,8 @@ Each `#[CastTo(...)]` attribute is resolved to a closure and **internally cached
   - Method name + `json_encode(args)`
 
 Caching allows repeated transformations across DTO instances without repeated instantiations or resolution overhead.
+
+After being compiled, transformation chains are also memoized, per-dto class and group scope.
 
 ---
 
@@ -311,6 +265,4 @@ These paths are opt-in and fully compatible with the core memoization logic.
 - Use `CastTo::getCasterMetadata()` to inspect resolved and cached caster instances
 - Use `CastTo::clearCasterMetadata()` to reset all cached instances
 
----
-
-Let me know if you'd like this dropped into the current `docs/Casting.md`, or saved for a future “Writing Custom Casters” doc.
+*A debug mode is planned, where CastingExceptions will provide full chain context information to the catcher when thrown from within a chain.*

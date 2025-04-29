@@ -40,7 +40,7 @@ final class CasterInterfaceTest extends TestCase
 
     public function testInstantiatesWithConstructorArgs(): void
     {
-        $casterClass = new class('X') extends CastBase implements CasterInterface {
+        $casterClass = new class('X') extends CastBase {
             public function __construct(public string $prefix)
             {
             }

@@ -7,7 +7,7 @@ use Nandan108\DtoToolkit\Exception\CastingException;
 use Nandan108\DtoToolkit\Tests\Traits\CanTestCasterClassesAndMethods;
 use PHPUnit\Framework\TestCase;
 
-final class RegexReplaceCastTest extends TestCase
+final class RegexCastTest extends TestCase
 {
     use CanTestCasterClassesAndMethods;
 
@@ -30,6 +30,28 @@ final class RegexReplaceCastTest extends TestCase
             $orgStr,
             CastingException::class,
             [$badRegex, $replaceStr],
+            'Compilation failed'
+        );
+    }
+
+    public function testRegexSplit(): void
+    {
+        $goodRegex = '/\b/';
+        $badRegex = '/*]/';
+        $input = 'hello.world';
+
+        $this->casterTest(
+            new CastTo\RegexSplit($goodRegex),
+            $input,
+            ['', 'hello', '.', 'world', ''],
+            [$goodRegex]
+        );
+
+        $this->casterTest(
+            new CastTo\RegexSplit($badRegex),
+            $input,
+            CastingException::class,
+            [$badRegex],
             'Compilation failed'
         );
     }

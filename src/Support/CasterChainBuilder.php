@@ -3,7 +3,7 @@
 namespace Nandan108\DtoToolkit\Support;
 
 use Nandan108\DtoToolkit\CastTo;
-use Nandan108\DtoToolkit\Contracts\CastModifierInterface;
+use Nandan108\DtoToolkit\Contracts\ChainModifierInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 
 final class CasterChainBuilder
@@ -66,7 +66,7 @@ final class CasterChainBuilder
             $attr = $queue->current();
             $queue->next();
 
-            if ($attr instanceof CastModifierInterface) {
+            if ($attr instanceof ChainModifierInterface) {
                 $chain = $attr->modify($queue, $chain, $dto);
                 continue;
             }

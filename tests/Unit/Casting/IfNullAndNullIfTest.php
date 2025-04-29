@@ -3,6 +3,7 @@
 namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
 use Nandan108\DtoToolkit\CastTo;
+use Nandan108\DtoToolkit\Contracts\NormalizesInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Traits\NormalizesFromAttributes;
 use PHPUnit\Framework\TestCase;
@@ -12,7 +13,7 @@ final class IfNullAndNullIfTest extends TestCase
     public function testAppliesIfnullAndNullifCasters(): void
     {
         /** @psalm-suppress ExtensionRequirementViolation */
-        $dto = new class extends BaseDto {
+        $dto = new class extends BaseDto implements NormalizesInterface {
             use NormalizesFromAttributes;
 
             #[CastTo\IfNull(-1)]
@@ -59,21 +60,4 @@ final class IfNullAndNullIfTest extends TestCase
         $check('baz', [1], [1]);
         $check('baz', [1, 2], 'c');
     }
-
-    // public function test_applies_ifnull_and_nullif_casters(): void
-    // {
-    //     /** @psalm-suppress ExtensionRequirementViolation */
-    //     $dto = new class extends BaseDto {
-    //         use NormalizesFromAttributes;
-
-    //         #[CastTo\IfNull(-1)]
-    //         #[CastTo\Integer]
-    //         public null|string|int $age = null;
-    //     };
-
-    //     // Assert that the IfNull fallback is used when normalizing NULL
-    //     $dto->fill(['age' => null])->normalizeInbound();
-    //     ///** @psalm-suppress DocblockTypeContradiction */
-    //     $this->assertSame(-1, $dto->age);
-    // }
 }

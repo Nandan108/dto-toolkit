@@ -1,6 +1,6 @@
 <?php
 
-namespace Nandan108\DtoToolkit\Attribute\CastModifier;
+namespace Nandan108\DtoToolkit\Attribute\ChainModifier;
 
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Exception\CastingException;

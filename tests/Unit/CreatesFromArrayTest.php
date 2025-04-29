@@ -3,10 +3,10 @@
 namespace Nandan108\DtoToolkit\Tests\Unit;
 
 use Nandan108\DtoToolkit\CastTo;
-use Nandan108\DtoToolkit\Contracts\NormalizesInboundInterface;
+use Nandan108\DtoToolkit\Contracts\NormalizesInterface;
 use Nandan108\DtoToolkit\Contracts\ValidatesInputInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
-use Nandan108\DtoToolkit\Traits\CreatesFromArray;
+use Nandan108\DtoToolkit\Traits\CreatesFromArrayOrEntity;
 use Nandan108\DtoToolkit\Traits\NormalizesFromAttributes;
 use PHPUnit\Framework\TestCase;
 
@@ -15,26 +15,11 @@ final class CreatesFromArrayTest extends TestCase
 {
     public function testInstantiatesDtoFromArray(): void
     {
-        /**
-         * @method static static fromArray(array $input, bool $ignoreUnknownProps = false)
-         * @method static static fromArrayLoose(array $input, bool $ignoreUnknownProps = false)
-         *
-         * @psalm-suppress ExtensionRequirementViolation
-         */
-        $dtoClass = new class extends BaseDto {
-            use CreatesFromArray;
-            use NormalizesFromAttributes;
-
-            public string|int|null $item_id = null;
-            public ?string $email = null;
-            public string|int|null $age = null;
-        };
-
         /** @psalm-suppress NoValue, UnusedVariable, UndefinedMagicMethod */
-        $dto = $dtoClass->fromArray([ // GET
-            'item_id' => $rawItemId = '5',
-            'age'     => $rawAge = '30',
-            'email'   => $rawEmail = 'john@example.com',
+        $dto = FromArrayTestDto::fromArray([ // GET
+            'itemId'   => $rawItemId = '5',
+            'name'     => $name = 'John',
+            'email'    => $rawEmail = 'john@example.com',
         ]);
 
         // still raw
@@ -42,21 +27,21 @@ final class CreatesFromArrayTest extends TestCase
         $this->assertSame($rawEmail, $dto->email);
         // still raw, taken from GET
         /** @psalm-suppress UndefinedPropertyFetch */
-        $this->assertSame($rawAge, $dto->age);
+        $this->assertSame(strtoupper($name), $dto->name);
         /** @psalm-suppress UndefinedPropertyFetch */
-        $this->assertSame($rawItemId, $dto->item_id);
+        $this->assertSame((int) $rawItemId, $dto->itemId);
 
         // filled
         $this->assertArrayHasKey('email', $dto->_filled);
-        $this->assertArrayHasKey('age', $dto->_filled);
-        $this->assertArrayHasKey('item_id', $dto->_filled);
+        $this->assertArrayHasKey('name', $dto->_filled);
+        $this->assertArrayHasKey('itemId', $dto->_filled);
     }
 
     // Test the the DTO is validateda after being filled if it implements ValidatesInputInterface
     public function testDtoIsValidatedInFromArrayIfItImplementsValidatesInputInterface(): void
     {
         $dtoClass = new class extends BaseDto implements ValidatesInputInterface {
-            use CreatesFromArray;
+            use CreatesFromArrayOrEntity;
 
             #[\Override]
             public function validate(array $args = []): static
@@ -93,7 +78,7 @@ final class CreatesFromArrayTest extends TestCase
     public function testThrowExceptionForUnknownPropertiesWhenIgnoreUnknownPropertiesIsFalse(): void
     {
         $dtoClass = new class extends BaseDto {
-            use CreatesFromArray;
+            use CreatesFromArrayOrEntity;
             public ?string $email = null;
         };
 
@@ -126,9 +111,9 @@ final class CreatesFromArrayTest extends TestCase
     public function testFromArrayCallsNormalizeInboundOnDtosImplementingNormalizesInboundInterface(): void
     {
         /** @psalm-suppress ExtensionRequirementViolation */
-        $dtoClass = new class extends BaseDto implements NormalizesInboundInterface {
+        $dtoClass = new class extends BaseDto implements NormalizesInterface {
             // implements NormalizesInbound
-            use CreatesFromArray;
+            use CreatesFromArrayOrEntity;
             use NormalizesFromAttributes;
 
             #[CastTo\Integer]
@@ -151,4 +136,77 @@ final class CreatesFromArrayTest extends TestCase
         /** @psalm-suppress UndefinedPropertyFetch */
         $this->assertSame('sam', $dto->name);
     }
+
+    public function testNormalizesFromEntity(): void
+    {
+        $dtoClass = new class extends BaseDto implements NormalizesInterface {
+            use CreatesFromArrayOrEntity;
+            use NormalizesFromAttributes;
+
+            #[CastTo\Integer]
+            public string|int|null $itemId = null;
+            public ?string $email = null;
+            #[CastTo\Uppercase]
+            public string|int|null $name = null;
+        };
+
+        $entity = new class {
+            public string|int|null $itemId = '5';
+
+            public ?string $email = 'name@domain.test';
+
+            private string|int|null $name = 'sam';
+
+            public function getName(): string|int|null
+            {
+                return $this->name;
+            }
+
+            public function setName(string $name): void
+            {
+                $this->name = $name;
+            }
+
+            public string|int|null $ignoredPropNotOnDTO = 'value';
+        };
+
+        /** @psalm-suppress UndefinedMagicMethod */
+        $dto = $dtoClass->fromEntity($entity);
+        $this->assertSame('SAM', $dto->name);
+        $this->assertSame(5, $dto->itemId);
+        $this->assertSame('name@domain.test', $dto->email);
+
+        // Again, this time for coverage of cache-hit path on property getter
+        $entity->setName('joe');
+        /** @psalm-suppress UndefinedMagicMethod */
+        $anotherDto = $dtoClass->fromEntity($entity);
+        $this->assertSame('JOE', $anotherDto->name);
+    }
+
+    public function testFailsIfPropertyDoesntExistOnEntity(): void
+    {
+        $entity = new class {
+            public string|int|null $itemNumber = '5';
+            public ?string $email = 'name@domain.test';
+            // name is private, not accessible
+            private string|int|null $name = 'sam';
+        };
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage('No public getter or property found for \'itemId\' in '.get_class($entity));
+
+        FromArrayTestDto::fromEntity($entity, false);
+    }
+}
+
+final class FromArrayTestDto extends BaseDto implements NormalizesInterface
+{
+    use CreatesFromArrayOrEntity;
+    use NormalizesFromAttributes;
+
+    #[CastTo\Integer]
+    public string|int|null $itemId = null;
+    public ?string $email = null;
+    #[CastTo\Uppercase]
+    public string|int|null $name = null;
 }

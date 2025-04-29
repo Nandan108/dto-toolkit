@@ -5,8 +5,10 @@ namespace Nandan108\DtoToolkit\Traits;
 use Nandan108\DtoToolkit\CastTo;
 
 /** @psalm-require-extends \Nandan108\DtoToolkit\Core\BaseDto */
-trait NormalizesFromAttributes
+trait NormalizesFromAttributes // implements NormalizesInterface
 {
+    // will be used if using class implements NormalizesInboundInterface
+    #[\Override]
     public function normalizeInbound(): void
     {
         $casters = CastTo::getCastingClosureMap(dto: $this, outbound: false);
@@ -18,6 +20,8 @@ trait NormalizesFromAttributes
         }
     }
 
+    // will be used if using class implements NormalizesOutboundInterface
+    #[\Override]
     public function normalizeOutbound(array $props): array
     {
         $casters = CastTo::getCastingClosureMap(dto: $this, outbound: true);

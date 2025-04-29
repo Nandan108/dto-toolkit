@@ -2,10 +2,10 @@
 
 namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
-use Nandan108\DtoToolkit\Attribute\CastModifier\FailNextTo;
-use Nandan108\DtoToolkit\Attribute\CastModifier\PerItem;
+use Nandan108\DtoToolkit\Attribute\ChainModifier\FailNextTo;
+use Nandan108\DtoToolkit\Attribute\ChainModifier\PerItem;
 use Nandan108\DtoToolkit\CastTo;
-use Nandan108\DtoToolkit\Contracts\NormalizesOutboundInterface;
+use Nandan108\DtoToolkit\Contracts\NormalizesInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Core\CastBase;
 use Nandan108\DtoToolkit\Exception\CastingException;
@@ -17,7 +17,7 @@ final class CastingChainTest extends TestCase
     public function testAppliesAllCasterInAChain(): void
     {
         /** @psalm-suppress ExtensionRequirementViolation */
-        $dto = new class extends BaseDto implements NormalizesOutboundInterface {
+        $dto = new class extends BaseDto implements NormalizesInterface {
             use NormalizesFromAttributes;
             #[Prefix('foo:'), Prefix('bar:'), Prefix('baz:')]
             public ?string $val = null; // default value provided for the example
@@ -35,7 +35,7 @@ final class CastingChainTest extends TestCase
     public function testAppliesChainCastingAndPerItemModifier(): void
     {
         /** @psalm-suppress ExtensionRequirementViolation */
-        $dto = new class extends BaseDto implements NormalizesOutboundInterface {
+        $dto = new class extends BaseDto implements NormalizesInterface {
             use NormalizesFromAttributes;
             #[CastTo\Trimmed('-')] // trim dashes
             #[CastTo\Split('/')] // split into an array
@@ -60,7 +60,7 @@ final class CastingChainTest extends TestCase
     public function testFailsIfPerItemIsAppliedOnANonArrayValue(): void
     {
         /** @psalm-suppress ExtensionRequirementViolation */
-        $dto = new class extends BaseDto implements NormalizesOutboundInterface {
+        $dto = new class extends BaseDto implements NormalizesInterface {
             use NormalizesFromAttributes;
             #[CastTo\Trimmed('-')] // trim dashes
             // #[CastTo\Split('/')] // FORGET to split into an array
@@ -90,7 +90,7 @@ final class CastingChainTest extends TestCase
     public function testChainingModifiers(string $someJson, string $expected): void
     {
         /** @psalm-suppress ExtensionRequirementViolation */
-        $dto = new class extends BaseDto implements NormalizesOutboundInterface {
+        $dto = new class extends BaseDto implements NormalizesInterface {
             use NormalizesFromAttributes;
             #[PerItem]
             /* - */ #[FailNextTo('n/a')]
@@ -110,7 +110,7 @@ final class CastingChainTest extends TestCase
     public function testThrowsIfModifierCountArgIsGreaterThanFollowingCasterCount(): void
     {
         /** @psalm-suppress ExtensionRequirementViolation */
-        $dto = new class extends BaseDto implements NormalizesOutboundInterface {
+        $dto = new class extends BaseDto implements NormalizesInterface {
             use NormalizesFromAttributes;
             #[CastTo\Trimmed('-')] // trim dashes
             #[CastTo\Split('/')] // split into an array

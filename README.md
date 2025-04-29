@@ -1,15 +1,16 @@
-
 # DTO Toolkit Core
-
 
 ![CI](https://github.com/nandan108/dto-toolkit/actions/workflows/ci.yml/badge.svg)
 ![Coverage](https://codecov.io/gh/nandan108/dto-toolkit/branch/main/graph/badge.svg)
 ![Style](https://img.shields.io/badge/style-php--cs--fixer-brightgreen)
 ![Packagist](https://img.shields.io/packagist/v/nandan108/dto-toolkit)
 
-A lightweight, framework-agnostic toolkit for defining, transforming, and validating **Data Transfer Objects** (DTOs) in PHP.
+DTO Toolkit Core is a lightweight, framework-agnostic library for defining, transforming, and (soon) validating **Data Transfer Objects** (DTOs) in PHP.
 
-This package provides a clean, declarative API for working with DTOs — including input normalization, output transformation, and attribute-based type casting — all without coupling to a specific framework (though framework adapters are coming soon).
+It offers a clean, declarative API powered by attributes — handling normalization, casting, and output shaping — all without coupling to any specific framework.
+
+Casters, modifiers, and validators are composed into a fully declarative transformation DSL, JIT-compiled into efficient processing chains at runtime.
+
 
 ## ✨ Features
 
@@ -58,9 +59,23 @@ These provide a convenient, framework-free entry point with all standard functio
 
 ---
 
+## 📚 Documentation
+
+- [DTO Fundamentals](docs/DtoFundamentals.md) – what DTOs are, why they matter, and how to use them in modern PHP
+- [Casting](docs/Casting.md) – how casting works and how to write your own
+- [Lifecycle](docs/DtoLifecycle.md) – Understanding the lifecycle of a DTO
+- [Lifecycle Hooks](docs/Hooks.md) – customize behavior with `postLoad()` and `preOutput()`
+- [Toolkit Comparison](docs/Comparison.md) – see how this toolkit compares to other PHP DTO/mapping libraries
+- [Built-In Casters](docs/BuiltInCasters.md) — Full list of available `CastTo\*` casters
+- [Built-In Modifiers](docs/BuiltInModifiers.md) — Full list of available `Mod\*` chain modifiers
+- Validation *(coming soon)*
+- Writing Adapters *(coming soon)*
+
+---
+
 ## 🧩 Adapter Packages
 
-- Laravel Adapter: [`nandan108/dto-toolkit-laravel`](https://github.com/nandan108/dto-toolkit-laravel) *(not started yet)*
+- Laravel Adapter: [`nandan108/dto-toolkit-laravel`](https://github.com/nandan108/dto-toolkit-laravel) *(planned, not started yet)*
 - Symfony Adapter: [`nandan108/dto-toolkit-symfony`](https://github.com/nandan108/dto-toolkit-symfony) *(in progress)*
 
 Adapters will provide support for:
@@ -70,19 +85,6 @@ Adapters will provide support for:
 - `toResponse()` generation
 - DI for class-based casters resolution
 - Graceful handling of validation and casting exceptions in HTTP contexts, with standardized API error responses
-
----
-
-## 📚 Documentation
-
-- [DTO Fundamentals](docs/DtoFundamentals.md) – what DTOs are, why they matter, and how to use them in modern PHP
-- [Casting](docs/Casting.md) – how casting works and how to write your own
-- [Lifecycle](docs/DtoLifecycle.md) – Understanding the lifecycle of a DTO
-- [Lifecycle Hooks](docs/Hooks.md) – customize behavior with `postLoad()` and `preOutput()`
-- [Toolkit Comparison](docs/Comparison.md) – see how this toolkit compares to other PHP DTO/mapping libraries
-- [Core Casters & Modifiers](docs/BuiltInAttributes.md) - see the list of built-in caster and modifier attributes
-- Validation *(coming soon)*
-- Writing Adapters *(coming soon)*
 
 ---
 

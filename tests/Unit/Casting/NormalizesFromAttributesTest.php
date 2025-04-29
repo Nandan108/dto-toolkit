@@ -4,7 +4,7 @@ namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
 use Nandan108\DtoToolkit\Attribute\Outbound;
 use Nandan108\DtoToolkit\CastTo;
-use Nandan108\DtoToolkit\Contracts\NormalizesOutboundInterface;
+use Nandan108\DtoToolkit\Contracts\NormalizesInterface;
 // use Nandan108\DtoToolkit\Traits\CanCastBasicValues;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Exception\CastingException;
@@ -16,7 +16,7 @@ final class NormalizesFromAttributesTest extends TestCase
     public function testReturnsNormalizedProperties(): void
     {
         /** @psalm-suppress ExtensionRequirementViolation */
-        $dto = new class extends BaseDto {
+        $dto = new class extends BaseDto implements NormalizesInterface {
             use NormalizesFromAttributes;
 
             #[CastTo\IfNull(-1)]
@@ -40,7 +40,7 @@ final class NormalizesFromAttributesTest extends TestCase
     public function testNormalizeOutboundAppliesCastsToTaggedProperties(): void
     {
         /** @psalm-suppress ExtensionRequirementViolation */
-        $dto = new class extends BaseDto implements NormalizesOutboundInterface {
+        $dto = new class extends BaseDto implements NormalizesInterface {
             use NormalizesFromAttributes;
 
             #[Outbound, CastTo\Trimmed]

@@ -2,10 +2,11 @@
 
 namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
-use Nandan108\DtoToolkit\Attribute\CastModifier\Groups;
+use Nandan108\DtoToolkit\Attribute\ChainModifier\Groups;
 use Nandan108\DtoToolkit\Attribute\Outbound;
 use Nandan108\DtoToolkit\Attribute\PropGroups;
 use Nandan108\DtoToolkit\CastTo;
+use Nandan108\DtoToolkit\Contracts\NormalizesInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Core\FullDto;
 use Nandan108\DtoToolkit\Traits\NormalizesFromAttributes;
@@ -53,7 +54,7 @@ final class CasterGroupsTestDto extends FullDto
     public ?string $baz = null; // default value provided for the example
 }
 
-final class NotImplmementingUsesGroupsDto extends BaseDto
+final class NotImplmementingUsesGroupsDto extends BaseDto implements NormalizesInterface
 {
     use NormalizesFromAttributes;
     /** @psalm-suppress PossiblyUnusedProperty */

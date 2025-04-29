@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Traits;
 
+use Nandan108\DtoToolkit\Contracts\HasContextInterface;
 use Nandan108\DtoToolkit\Traits\HasContext;
 use PHPUnit\Framework\TestCase;
 
@@ -14,7 +15,7 @@ final class HasContextTest extends TestCase
     {
         parent::setUp();
 
-        $this->object = new class {
+        $this->object = new class implements HasContextInterface {
             use HasContext;
         };
     }

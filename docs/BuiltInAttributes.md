@@ -1,6 +1,6 @@
 # Built-in Casting Attributes
 
-This document lists all built-in attributes available in the DTO Toolkit, including value casters (`CastTo`) and chain modifiers (`CastModifier`).
+This document lists all built-in attributes available in the DTO Toolkit, including value casters (`CastTo`) and chain modifiers (`ChainModifier`).
 
 ---
 
@@ -122,7 +122,7 @@ Throws a CastingException on non-stringable input.
 
 ---
 
-## 🧩 CastModifier Attributes
+## 🧩 ChainModifier Attributes
 
 These attributes affect the behavior of the casting chain itself.
 ### PerItem(N)
@@ -155,7 +155,7 @@ If one of the caster throws, `FailTo` will catch (CastingException $e), handle i
 
 **Usage**:
 ```php
-use Nandan108\DtoToolkit\Attribute\CastModifier as Mod;
+use Nandan108\DtoToolkit\Attribute\ChainModifier as Mod;
 
 class MyDto extends FullDto {
     ...

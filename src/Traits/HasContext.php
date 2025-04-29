@@ -9,6 +9,8 @@ trait HasContext
 {
     protected array $_context = [];
 
+    /** @psalm-suppress PossiblyUnusedReturnValue */
+    #[\Override]
     public function setContext(string $key, mixed $value): static
     {
         $this->_context[$key] = $value;
@@ -25,6 +27,7 @@ trait HasContext
         return $this;
     }
 
+    #[\Override]
     public function getContext(string $key, mixed $default = null): mixed
     {
         return $this->_context[$key] ?? $default;

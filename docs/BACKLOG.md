@@ -2,7 +2,7 @@
 
 ## Product Backlog Items
 
-- **[052]** Add Casters fromJson, JsonExtract, NumericString, Base64Encode/Decode, RegexSplit
+- **[067]** Fix to/fromEntity getEntityGetters() and getEntitySetters() to also check for camelCase methods for snake_cased properties
 - **[053]** Add Caster LocaleAwareNumericString, with trait UsesLocaleResolver. See if we can share resolution/injection logic with CastTo
 - **[060]** Extract inject() functionality from caster to IsInjectable trait, rename #[Injected] to #[Inject]
 - **[061]** let DtoBase use IsInjectable, make sure $dto->inject() is called after new instanciation
@@ -11,7 +11,7 @@
   E.g.: `#[Collect(3), NoOp, Wrap(2), CastTo\Rounded(1), CastTo\NumericString(2,','), CastTo\CurrencyVal('USD')]` => cast("2.42") Returns: `["2.42", "2,40", CurrencyVal object]`
 - **[059]** Add #[Wrap(N)] chain modifier that does nothing but wraps a subchain. Could be useful with #[Collect(N)]
 - **[051]** Add modifier `#[ApplyIfTruthy(check, count=1, negate=false)]` (and suggar `#[ApplyIfNot]` )
-  - E.g.: `#[ApplyIf('isAdmin', count(2))]` (or `#[ApplyIf]`?) would result in applying the next 2 casters only if one of the following returns truthy:
+  - E.g.: `#[ApplyIfTruthy('isAdmin', count(2))]` (or `#[ApplyIf]`?) would result in applying the next 2 casters only if one of the following returns truthy:
     - `$dto->isAdmin()` (if available), or
     - `$dto->isAdmin` (if property exists), or
     - `$context['isAdmin']` (would requires $dto instanceof HasContextInterface).
@@ -20,6 +20,10 @@
 - **[055]** Add `#[MapFromInternal(string|array $fields)]` to allow mapping from one or more internal properties or values already cast in a previous step, rather than external input.
 - **[044]** Add support for DTO transforms (`\$dto->toDto($otherDtoClass)`) [See details](#PBI-044)
 - **[034]** Add support for logging failed casts in FailTo/FailNextTo. `CastTo::$castSoftFailureLogger = function (CastingException $e, $returnedVal)`
+- **[062]** Add support for getCaster() debug mode
+  - When enabled, caster closures push/pop debug context during execution
+  - On casting failure, CastingException::castingFailure() can include full chain trace
+  - Example message: "PropName: Caster1->Caster2->FailNextTo(PerItem(Caster3 -> Caster4))"
 - **[048]** Add debug mode setting. When enabled, add casting stack tracking (push/pop) to enable logging full context when failing within a chain.
 - **[050]** Add `#[LogCast($debugOnly = true)]` to also allow logging non-failing chains.
 - **[036]** Add support for `#[AlwaysCast(fromVal:..., groups:...)]`. Forces casting unfilled props by providing a default value to cast when unfilled.
@@ -29,6 +33,21 @@
 - **[056]** Support multi-step casting by making withGroups(inboundCast: ...) take a sequence of group(s)
   Then apply each step in sequence. Same with outboundCast.
   **[058]** Add a doc about FullDto and making one's own slimmed-down version if not all features are needed
+- **[063]** Add validation attributes as part of caster chains
+  - E.g., #[Valid\Range(min, max)], #[Valid\StrLength()]
+  - Non-mutating steps: must have validate($value): void, can throw ValidationException
+  - Must be phase-aware like other processing chain elements
+  - Consider renaming "casting chains" to "processing chains" where applicable
+- **[064]** Add framework-specific ValidationException mappers in adapters
+  - Core DTOT will throw a generic ValidationException on validation failure
+  - Allow adapters (e.g., dtot-adapter-laravel, dtot-adapter-symfony) to map or wrap ValidationExceptions into framework-native exceptions
+  - This enables seamless integration with Laravel and Symfony's validation error handling mechanisms
+  - Keep validation logic and error reporting fully pluggable and framework-agnostic
+  - Consider a "ValidationErrorMapperInterface" for adapter overrides (optional future enhancement)
+- **[065]** Add FirstSuccess chain modifier: #[FirstSuccess($count)]
+  - Wraps next $count suchains as candidates and attemps each one in sequence
+  - Return the result of the first successful chain, or throw if none succeeds.
+  - Enables graceful branching on multi-type or multi-format inputs
 ---
 
 ## Completed PBIs
@@ -69,6 +88,9 @@
 - [039] Publish to GitHub and add CI
 - [057] Replace per-Caster $outbound ctor param with #[Outbound]: marks subsequent attributes as belonging to outbound phase
 - [054] Add `CastTo\RegexReplace($needle, $haystack)`
+- [066] Add BaseDto::fromEntity($object)
+- [052] Add Casters fromJson, JsonExtract, NumericString, Base64Encode/Decode, RegexSplit
+
 ---
 
 ### <a id="PBI-043"></a>**🔧 PBI 43: Add support for scoping groups (cross-cutting concern)**

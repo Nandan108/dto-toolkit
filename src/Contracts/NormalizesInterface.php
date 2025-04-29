@@ -10,7 +10,7 @@ namespace Nandan108\DtoToolkit\Contracts;
  *
  * @psalm-suppress UnusedClass
  */
-interface NormalizesInboundInterface
+interface NormalizesInterface
 {
     /**
      * Apply transformations (casting/coerctions) to input values to DTO properties.
@@ -21,4 +21,13 @@ interface NormalizesInboundInterface
      * @psalm-suppress PossiblyUnusedMethod
      */
     public function normalizeInbound();
+
+    /**
+     * Apply outbound transformations to DTO values before mapping to array/entity.
+     *
+     * @param array $props The properties to normalize
+     *
+     * @return array The normalized key-value pairs
+     */
+    public function normalizeOutbound(array $props): array;
 }
