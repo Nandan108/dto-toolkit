@@ -4,5 +4,6 @@ namespace Nandan108\DtoToolkit\Contracts;
 
 interface Injectable
 {
-    public function inject(): void;
+    /** @psalm-suppress PossiblyUnusedReturnValue */
+    public function inject(): static;
 }

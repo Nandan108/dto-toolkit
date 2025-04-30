@@ -3,6 +3,8 @@
 namespace Nandan108\DtoToolkit\Core;
 
 use Nandan108\DtoToolkit\Attribute\Outbound;
+use Nandan108\DtoToolkit\Contracts\Bootable;
+use Nandan108\DtoToolkit\Contracts\Injectable;
 use Nandan108\DtoToolkit\Contracts\NormalizesInterface;
 use Nandan108\DtoToolkit\Contracts\PhaseAwareInterface;
 use Nandan108\DtoToolkit\Contracts\ScopedPropertyAccessInterface;
@@ -222,8 +224,6 @@ abstract class BaseDto
 
     /**
      * @psalm-suppress PossiblyUnusedMethod, PossiblyUnusedParam
-     *
-     * @psalm-mutation-free
      **/
     public static function __callStatic(string $method, array $arguments): static
     {
@@ -231,9 +231,20 @@ abstract class BaseDto
             // if the static method doesn't exist, create a new instance and call the method on it
             /** @psalm-suppress UnsafeInstantiation */
             $instance = new static();
-            $forwarded = "_$method";
-            if (method_exists($instance, $forwarded)) {
-                return $instance->$forwarded(...$arguments);
+            $realMethodName = "_$method";
+            if (method_exists($instance, $realMethodName)) {
+                // prepare the instance for use
+                if ($instance instanceof Injectable) {
+                    /** @psalm-suppress UnusedMethodCall */
+                    $instance->inject();
+                }
+                if ($instance instanceof Bootable) {
+                    /** @psalm-suppress UnusedMethodCall */
+                    $instance->boot();
+                }
+
+                // call the method on the instance
+                return $instance->$realMethodName(...$arguments);
             }
         } elseif (method_exists(static::class, $method)) {
             // if the method was public, or visible from context, the call would not have been caught

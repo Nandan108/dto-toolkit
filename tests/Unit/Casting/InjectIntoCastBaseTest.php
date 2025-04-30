@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
-use Nandan108\DtoToolkit\Attribute\Injected;
+use Nandan108\DtoToolkit\Attribute\Inject;
 use Nandan108\DtoToolkit\Bridge\ContainerBridge;
 use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Contracts\Bootable;
@@ -40,7 +40,7 @@ final class InjectedSlugifyCasterResolvesWithContainer extends CastBase implemen
     }
 
     /** @psalm-suppress PropertyNotSetInConstructor */
-    #[Injected]
+    #[Inject]
     private DummySlugger $slugger;
 
     #[\Override]
@@ -64,7 +64,7 @@ final class InjectedSlugifyCasterResolvesWithContainer extends CastBase implemen
 final class BridgeBasedSlugifyCaster extends CastBase
 {
     /** @psalm-suppress PropertyNotSetInConstructor */
-    #[Injected] private DummySlugger $slugger;
+    #[Inject] private DummySlugger $slugger;
     #[\Override]
     public function cast(mixed $value, array $args, BaseDto $dto): string
     {
@@ -84,7 +84,7 @@ final class FooBarDto extends FullDto
     public mixed $value = null;
 }
 
-final class CastBaseInjectionTest extends TestCase
+final class InjectIntoCastBaseTest extends TestCase
 {
     public function testInjectionAndCasting(): void
     {
@@ -122,7 +122,7 @@ final class CastBaseInjectionTest extends TestCase
     {
         $caster = new class extends CastBase {
             /** @psalm-suppress PropertyNotSetInConstructor */
-            #[Injected] private DummySlugger $slugger;
+            #[Inject] private DummySlugger $slugger;
             /**
              * Dummy cast() method that's never called in this test.
              */
@@ -134,7 +134,7 @@ final class CastBaseInjectionTest extends TestCase
         };
 
         $this->expectException(\LogicException::class);
-        $this->expectExceptionMessage('No container resolver defined in Core');
+        $this->expectExceptionMessage('No DI container was configured, unable to resolve type');
 
         $caster->inject();
     }
@@ -143,7 +143,7 @@ final class CastBaseInjectionTest extends TestCase
     {
         $caster = new class extends CastBase {
             /** @psalm-suppress MissingPropertyType */
-            #[Injected] private $prop;
+            #[Inject] private $prop;
             #[\Override]
             public function cast(mixed $value, array $args, BaseDto $dto): mixed
             {

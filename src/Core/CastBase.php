@@ -3,17 +3,19 @@
 namespace Nandan108\DtoToolkit\Core;
 
 use Attribute;
-use Nandan108\DtoToolkit\Attribute\Injected;
 use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Contracts\CasterInterface;
 use Nandan108\DtoToolkit\Contracts\Injectable;
 use Nandan108\DtoToolkit\Exception\CastingException;
+use Nandan108\DtoToolkit\Traits\IsInjectable;
 
 /**
  * Base class for all Caster classes.
  */
 abstract class CastBase extends CastTo implements CasterInterface, Injectable
 {
+    use IsInjectable;
+
     /**
      * Constructs an instance of a Caster class.
      *
@@ -25,29 +27,6 @@ abstract class CastBase extends CastTo implements CasterInterface, Injectable
             methodOrClass: static::class,
             args: $args,
         );
-    }
-
-    /**
-     * Uses $this->resolveFromContainer($type) to populate instance properties that are marked with #[Injected].
-     *
-     * @throws \RuntimeException
-     */
-    #[\Override]
-    public function inject(): void
-    {
-        $injectableProps = array_filter(
-            (new \ReflectionClass($this))->getProperties(),
-            static fn (\ReflectionProperty $prop) => $prop->getAttributes(Injected::class)
-        );
-        foreach ($injectableProps as $prop) {
-            /** @psalm-suppress UndefinedMethod */
-            $type = $prop->getType()?->getName();
-            if (!$type) {
-                throw new \RuntimeException("Cannot inject untyped property {$prop->getName()}");
-            }
-            $value = $this->resolveFromContainer($type);
-            $prop->setValue($this, $value);
-        }
     }
 
     /**
@@ -72,16 +51,6 @@ abstract class CastBase extends CastTo implements CasterInterface, Injectable
         }
 
         throw CastingException::castingFailure(className: $this::class, operand: $value, messageOverride: "Expected: $expected, but got ".gettype($value));
-    }
-
-    /**
-     * Resolve a type from a DI container.
-     *
-     * @throws \LogicException
-     */
-    protected function resolveFromContainer(string $type): mixed
-    {
-        throw new \LogicException("No container resolver defined in Core. Unable to resolve type '$type'.");
     }
 
     /**

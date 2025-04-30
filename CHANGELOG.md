@@ -3,6 +3,20 @@
 All notable changes to this project will be documented in this file.
 ---
 
+## [Unreleased]
+
+### Added
+- Trait `IsInjectable` to provide a reusable `inject()` mechanism for DTOs and casters
+
+### Changed
+- Renamed `#[Injected]` attribute to `#[Inject]`
+- `FullDto` now uses `IsInjectable`, thereby implementing `Injectable`
+- `BaseDto` now automatically calls after instanciating a new DTO :
+  - `$dto->inject()` for DTOs implementing Injectable interface
+  - `$dto->boot()` for DTOs implementing Bootable interface
+
+---
+
 ## [v0.3.0] - 2025-04-29
 
 ### 🚀 Added
@@ -25,6 +39,7 @@ All notable changes to this project will be documented in this file.
   - DTOs now support dynamic `from*` / `with*` method forwarding via `__call` and `__callStatic`
 - **Extended DTO construction methods**:
   - Added `_fromEntity()` for DTO instantiation from object instances
+    E.g. `MyDtoClass::fromEntity($inputEntity)->...`
 - **Improved test tools**:
   - Added `Tests\Traits\CanTestCasterClassesAndMethods` trait for easier caster testing
 

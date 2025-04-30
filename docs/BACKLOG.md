@@ -2,10 +2,8 @@
 
 ## Product Backlog Items
 
-- **[067]** Fix to/fromEntity getEntityGetters() and getEntitySetters() to also check for camelCase methods for snake_cased properties
+- **[067]** Fix to/fromEntity getEntityGetters() and setEntitySetters() to also check for camelCase methods for snake_cased properties
 - **[053]** Add Caster LocaleAwareNumericString, with trait UsesLocaleResolver. See if we can share resolution/injection logic with CastTo
-- **[060]** Extract inject() functionality from caster to IsInjectable trait, rename #[Injected] to #[Inject]
-- **[061]** let DtoBase use IsInjectable, make sure $dto->inject() is called after new instanciation
 - **[046]** Add modifier `#[SkipIfMatch(mixed $values, $return=null)]`, allows short-circuitting following caster(s) by returning \$return if input === \$values or input in $values.
 - **[049]** Add `#[Collect(count: N)]` and #[Wrap(N)] (`#[NoOp]` = sugar for #[Wrap(0)]). Aggregate the result of the next N subchains into an array.
   E.g.: `#[Collect(3), NoOp, Wrap(2), CastTo\Rounded(1), CastTo\NumericString(2,','), CastTo\CurrencyVal('USD')]` => cast("2.42") Returns: `["2.42", "2,40", CurrencyVal object]`
@@ -90,6 +88,8 @@
 - [054] Add `CastTo\RegexReplace($needle, $haystack)`
 - [066] Add BaseDto::fromEntity($object)
 - [052] Add Casters fromJson, JsonExtract, NumericString, Base64Encode/Decode, RegexSplit
+- [060] Extract inject() functionality from caster to IsInjectable trait, rename #[Injected] to #[Inject]
+- [061] let DtoBase use IsInjectable, make sure $dto->inject() is called after new instanciation
 
 ---
 
