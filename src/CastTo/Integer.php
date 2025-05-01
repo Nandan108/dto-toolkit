@@ -2,7 +2,6 @@
 
 namespace Nandan108\DtoToolkit\CastTo;
 
-use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Core\CastBase;
 use Nandan108\DtoToolkit\Enum\IntCastMode;
 use Nandan108\DtoToolkit\Exception\CastingException;
@@ -16,7 +15,7 @@ final class Integer extends CastBase
     }
 
     #[\Override]
-    public function cast(mixed $value, array $args, BaseDto $dto): int
+    public function cast(mixed $value, array $args): int
     {
         /** @var IntCastMode $mode */
         $mode = $args[0];

@@ -2,7 +2,6 @@
 
 namespace Nandan108\DtoToolkit\CastTo;
 
-use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Core\CastBase;
 use Nandan108\DtoToolkit\Exception\CastingException;
 
@@ -22,7 +21,7 @@ final class RegexReplace extends CastBase
      * @psalm-suppress PossiblyUnusedMethod, PossiblyUnusedParam
      */
     #[\Override]
-    public function cast(mixed $value, array $args, BaseDto $dto): string
+    public function cast(mixed $value, array $args): string
     {
         [$pattern, $replacement, $limit] = $args;
 

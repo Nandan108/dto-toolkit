@@ -28,6 +28,9 @@ class CastTo implements PhaseAwareInterface
     protected static ?\stdClass $globalMemoizedCasters = null;
     protected static array $injectables = [];
 
+    protected static ?string $currentPropName = null;
+    protected static ?BaseDto $currentDto = null;
+
     /**
      * @internal a hook closure that is called when a cast is resolved
      *
@@ -285,5 +288,16 @@ class CastTo implements PhaseAwareInterface
         // return the cast/ers for the requested phase
 
         return $casts[$phaseKey] ?? [];
+    }
+
+    /**
+     * Set the current casting property.
+     *
+     * @param string $propName The name of the property being cast
+     */
+    public static function setCurrentCastingContext(?string $propName, ?BaseDto $dto): void
+    {
+        self::$currentPropName = $propName;
+        self::$currentDto = $dto;
     }
 }

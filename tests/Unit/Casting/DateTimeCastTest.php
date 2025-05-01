@@ -9,7 +9,7 @@ use PHPUnit\Framework\TestCase;
 
 final class DateTimeCastTest extends TestCase
 {
-    public function testPhaseCanReportItsComponents(): void
+    public function testStringIsCastToDateTimeImmutableComponents(): void
     {
         $dto = new FullDto();
         $format = 'Y-m-d H:i:s';
@@ -18,12 +18,12 @@ final class DateTimeCastTest extends TestCase
         $dateTimeObj = \DateTimeImmutable::createFromFormat($format, $dateTime);
         $dt = new CastTo\DateTime($format);
 
-        $castDateTime = $dt->cast($dateTime, [$format], $dto);
+        $castDateTime = $dt->cast($dateTime, [$format]);
         $this->assertEquals($dateTimeObj, $castDateTime);
 
         // Throws on input $value that's not a date (string 'bad date')
         try {
-            $dt->cast($badDate, [$format], $dto);
+            $dt->cast($badDate, [$format]);
             $this->fail('DateTime cast should not be able to cast "invalid date" string into a DateTimeImmutable');
         } catch (CastingException $e) {
             $this->assertStringStartsWith("Unable to parse date with format '$format' from '$badDate'", $e->getMessage());
@@ -31,7 +31,7 @@ final class DateTimeCastTest extends TestCase
 
         // Throws on input value that's not a stringable
         try {
-            $dt->cast(new \stdClass(), [$format], $dto);
+            $dt->cast(new \stdClass(), [$format]);
             $this->fail('DateTime cast should not be able to cast "invalid date" string into a DateTimeImmutable');
         } catch (CastingException $e) {
             $this->assertStringStartsWith('Expected: string or Stringable, but got object', $e->getMessage());

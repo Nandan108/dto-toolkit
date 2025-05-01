@@ -2,7 +2,6 @@
 
 namespace Nandan108\DtoToolkit\CastTo;
 
-use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Core\CastBase;
 
 /** @psalm-api */
@@ -10,7 +9,7 @@ use Nandan108\DtoToolkit\Core\CastBase;
 final class Base64Encode extends CastBase
 {
     #[\Override]
-    public function cast(mixed $value, array $args, BaseDto $dto): string
+    public function cast(mixed $value, array $args): string
     {
         return base64_encode($this->throwIfNotStringable($value));
     }

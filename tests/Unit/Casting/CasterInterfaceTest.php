@@ -46,7 +46,7 @@ final class CasterInterfaceTest extends TestCase
             }
 
             #[\Override]
-            public function cast(mixed $value, array $args, BaseDto $dto): mixed
+            public function cast(mixed $value, array $args): mixed
             {
                 return $this->prefix.$value;
             }
@@ -62,7 +62,7 @@ final class CasterInterfaceTest extends TestCase
     {
         $casterClass = new class implements CasterInterface {
             #[\Override]
-            public function cast(mixed $value, array $args, BaseDto $dto): mixed
+            public function cast(mixed $value, array $args): mixed
             {
                 return strtoupper($value);
             }
@@ -82,7 +82,7 @@ final class CasterInterfaceTest extends TestCase
             }
 
             #[\Override]
-            public function cast(mixed $value, array $args, BaseDto $dto): mixed
+            public function cast(mixed $value, array $args): mixed
             {
                 return $this->prefix.':'.$value;
             }
@@ -115,7 +115,7 @@ final class CasterInterfaceTest extends TestCase
             }
 
             #[\Override]
-            public function cast(mixed $value, array $args, BaseDto $dto): mixed
+            public function cast(mixed $value, array $args): mixed
             {
                 return $value;
             }
@@ -134,7 +134,7 @@ final class CasterInterfaceTest extends TestCase
     {
         $className = new class implements CasterInterface {
             #[\Override]
-            public function cast(mixed $value, array $args, BaseDto $dto): mixed
+            public function cast(mixed $value, array $args): mixed
             {
                 static $calls = 0;
 
@@ -208,7 +208,7 @@ final class CasterInterfaceTest extends TestCase
                     }
 
                     #[\Override]
-                    public function cast(mixed $value, array $args, BaseDto $dto): mixed
+                    public function cast(mixed $value, array $args): mixed
                     {
                         $ctorArgs = json_encode($this->constructorArgs);
                         $castParams = json_encode([$value, $args]);

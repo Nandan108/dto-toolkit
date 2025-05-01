@@ -9,7 +9,7 @@ use Nandan108\DtoToolkit\Support\CaseConverter;
 final class UpperSnakeCase extends CastBase
 {
     #[\Override]
-    public function cast(mixed $value, array $args, $dto): string
+    public function cast(mixed $value, array $args): string
     {
         return CaseConverter::toUpperSnake($this->throwIfNotStringable($value));
     }

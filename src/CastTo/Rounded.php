@@ -2,7 +2,6 @@
 
 namespace Nandan108\DtoToolkit\CastTo;
 
-use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Core\CastBase;
 use Nandan108\DtoToolkit\Exception\CastingException;
 
@@ -22,7 +21,7 @@ final class Rounded extends CastBase
     }
 
     #[\Override]
-    public function cast(mixed $value, array $args, BaseDto $dto): mixed
+    public function cast(mixed $value, array $args): mixed
     {
         [$precision] = $args;
 

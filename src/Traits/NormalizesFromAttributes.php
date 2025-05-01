@@ -15,9 +15,11 @@ trait NormalizesFromAttributes // implements NormalizesInterface
 
         foreach ($casters as $prop => $method) {
             if (!empty($this->_filled[$prop])) {
+                CastTo::setCurrentCastingContext($prop, $this);
                 $this->$prop = $method($this->$prop);
             }
         }
+        CastTo::setCurrentCastingContext(null, null);
     }
 
     // will be used if using class implements NormalizesOutboundInterface
@@ -28,11 +30,13 @@ trait NormalizesFromAttributes // implements NormalizesInterface
         $normalized = [];
 
         foreach ($props as $prop => $value) {
+            CastTo::setCurrentCastingContext($prop, $this);
             if (isset($casters[$prop])) {
                 $normalized[$prop] = $casters[$prop]($value);
             } else {
                 $normalized[$prop] = $value;
             }
+            CastTo::setCurrentCastingContext(null, null);
         }
 
         return $normalized;

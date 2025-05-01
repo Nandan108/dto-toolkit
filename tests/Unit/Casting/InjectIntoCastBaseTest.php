@@ -51,7 +51,7 @@ final class InjectedSlugifyCasterResolvesWithContainer extends CastBase implemen
     private DummySlugger $slugger;
 
     #[\Override]
-    public function cast(mixed $value, array $args, BaseDto $dto): string
+    public function cast(mixed $value, array $args): string
     {
         return $this->slugger->slugify((string) $value, $this->separator);
     }
@@ -64,7 +64,7 @@ final class BridgeBasedSlugifyCaster extends CastBase
     /** @psalm-suppress PropertyNotSetInConstructor */
     #[Inject] private DummySlugger $slugger;
     #[\Override]
-    public function cast(mixed $value, array $args, BaseDto $dto): string
+    public function cast(mixed $value, array $args): string
     {
         return $this->slugger->slugify((string) $value);
     }
@@ -106,7 +106,7 @@ final class InjectIntoCastBaseTest extends TestCase
         $caster = new BridgeBasedSlugifyCaster();
         $caster->inject();
 
-        $result = $caster->cast(' More DI Magic ', args: [], dto: new FooBarDto());
+        $result = $caster->cast(' More DI Magic ', args: []);
         $this->assertEquals('more-di-magic', $result);
     }
 
@@ -116,7 +116,7 @@ final class InjectIntoCastBaseTest extends TestCase
             /** @psalm-suppress MissingPropertyType */
             #[Inject] private $prop;
             #[\Override]
-            public function cast(mixed $value, array $args, BaseDto $dto): mixed
+            public function cast(mixed $value, array $args): mixed
             {
                 return $value;
             }
@@ -151,7 +151,7 @@ final class InjectIntoCastBaseTest extends TestCase
             }
 
             #[\Override]
-            public function cast(mixed $value, array $args, BaseDto $dto): mixed
+            public function cast(mixed $value, array $args): mixed
             {
                 return $this->prefix.$value;
             }

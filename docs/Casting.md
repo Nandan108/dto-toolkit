@@ -72,7 +72,7 @@ In some cases, the built-in casters may be insufficient, even composed together,
 ```php
 // caster definition
 class MyCustomCaster implements CasterInterface {
-    public function cast(mixed $value, array $args, BaseDto $dto): mixed {
+    public function cast(mixed $value, array $args): mixed {
         // custom logic here
     }
 }

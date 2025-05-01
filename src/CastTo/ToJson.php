@@ -2,7 +2,6 @@
 
 namespace Nandan108\DtoToolkit\CastTo;
 
-use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Core\CastBase;
 use Nandan108\DtoToolkit\Exception\CastingException;
 
@@ -16,7 +15,7 @@ final class ToJson extends CastBase
     }
 
     #[\Override]
-    public function cast(mixed $value, array $args, BaseDto $dto): string
+    public function cast(mixed $value, array $args): string
     {
         /** @var int $flags */
         [$flags, $depth] = $args;

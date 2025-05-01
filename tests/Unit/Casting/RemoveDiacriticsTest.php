@@ -11,7 +11,7 @@ final class RemoveDiacriticsTest extends TestCase
 {
     use CanTestCasterClassesAndMethods;
 
-    public function testPhaseCanReportItsComponents(): void
+    public function testRemoveDiacriticsComponents(): void
     {
         $dto = new FullDto();
 

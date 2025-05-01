@@ -2,8 +2,6 @@
 
 namespace Nandan108\DtoToolkit\Contracts;
 
-use Nandan108\DtoToolkit\Core\BaseDto;
-
 interface CasterInterface
 {
     /**
@@ -13,5 +11,5 @@ interface CasterInterface
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
-    public function cast(mixed $value, array $args, BaseDto $dto): mixed;
+    public function cast(mixed $value, array $args): mixed;
 }

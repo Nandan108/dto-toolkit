@@ -59,5 +59,5 @@ abstract class CastBase extends CastTo implements CasterInterface, Injectable
      * @param mixed[] $args passed from Attribute constructor
      */
     #[\Override]
-    abstract public function cast(mixed $value, array $args, BaseDto $dto): mixed;
+    abstract public function cast(mixed $value, array $args): mixed;
 }
