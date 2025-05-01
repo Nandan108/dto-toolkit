@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
 use Nandan108\DtoToolkit\Attribute\Inject;
-use Nandan108\DtoToolkit\Bridge\ContainerBridge;
 use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Contracts\Bootable;
 use Nandan108\DtoToolkit\Contracts\Injectable;
 use Nandan108\DtoToolkit\Core\FullDto;
+use Nandan108\DtoToolkit\Support\ContainerBridge;
 use Nandan108\DtoToolkit\Traits\IsInjectable;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;

@@ -27,7 +27,7 @@ final class CaseConvertTest extends TestCase
             foreach ($inputs as $input) {
                 $this->assertSame(
                     $expected,
-                    $caster->cast($input, []),
+                    $caster->cast($input, [], $dto),
                 );
             }
         }

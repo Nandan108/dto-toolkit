@@ -3,7 +3,7 @@
 namespace Nandan108\DtoToolkit\Traits;
 
 use Nandan108\DtoToolkit\Attribute\Inject;
-use Nandan108\DtoToolkit\Bridge\ContainerBridge;
+use Nandan108\DtoToolkit\Support\ContainerBridge;
 
 /**
  * Basic implementation of the Injectable interface.
@@ -11,7 +11,7 @@ use Nandan108\DtoToolkit\Bridge\ContainerBridge;
 trait IsInjectable
 {
     /**
-     * Uses $this->resolveFromContainer($type) to populate instance properties that are marked with #[Inject].
+     * Uses ContainerBridge::get($type); to populate instance properties that are marked with #[Inject].
      *
      * @throws \RuntimeException
      */
@@ -28,21 +28,11 @@ trait IsInjectable
             if (!$type) {
                 throw new \RuntimeException("Cannot inject untyped property {$prop->getName()}");
             }
-            $value = $this->resolveFromContainer($type);
+            $value = ContainerBridge::get($type);
+            $prop->setAccessible(true);
             $prop->setValue($this, $value);
         }
 
         return $this;
-    }
-
-    /**
-     * Resolve a type using the ContainerBridge.
-     * This method is a good place to override in adapter packages.
-     *
-     * @throws \LogicException
-     */
-    protected function resolveFromContainer(string $type): mixed
-    {
-        return ContainerBridge::get($type);
     }
 }

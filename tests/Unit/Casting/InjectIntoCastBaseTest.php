@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
 use Nandan108\DtoToolkit\Attribute\Inject;
-use Nandan108\DtoToolkit\Bridge\ContainerBridge;
 use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Contracts\Bootable;
 use Nandan108\DtoToolkit\Contracts\Injectable;
@@ -13,6 +12,7 @@ use Nandan108\DtoToolkit\Contracts\NormalizesInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Core\CastBase;
 use Nandan108\DtoToolkit\Core\FullDto;
+use Nandan108\DtoToolkit\Support\ContainerBridge;
 use Nandan108\DtoToolkit\Traits\NormalizesFromAttributes;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -24,6 +24,13 @@ final class DummySlugger
     public function slugify(string $text, string $separator = '-'): string
     {
         return strtolower(str_replace(' ', $separator, trim($text)));
+    }
+}
+
+final class DummySluggerWithCtorArgs
+{
+    public function __construct(public string $foo)
+    {
     }
 }
 
@@ -48,15 +55,6 @@ final class InjectedSlugifyCasterResolvesWithContainer extends CastBase implemen
     {
         return $this->slugger->slugify((string) $value, $this->separator);
     }
-
-    #[\Override]
-    protected function resolveFromContainer(string $type): mixed
-    {
-        if (DummySlugger::class === $type) {
-            return new DummySlugger();
-        }
-        throw new \RuntimeException("Unknown type: $type");
-    }
 }
 
 /** @psalm-suppress PropertyNotSetInConstructor */
@@ -69,12 +67,6 @@ final class BridgeBasedSlugifyCaster extends CastBase
     public function cast(mixed $value, array $args, BaseDto $dto): string
     {
         return $this->slugger->slugify((string) $value);
-    }
-
-    #[\Override]
-    protected function resolveFromContainer(string $type): mixed
-    {
-        return ContainerBridge::get($type);
     }
 }
 
@@ -116,27 +108,6 @@ final class InjectIntoCastBaseTest extends TestCase
 
         $result = $caster->cast(' More DI Magic ', args: [], dto: new FooBarDto());
         $this->assertEquals('more-di-magic', $result);
-    }
-
-    public function testResolveFromContainerThrowsByDefault(): void
-    {
-        $caster = new class extends CastBase {
-            /** @psalm-suppress PropertyNotSetInConstructor */
-            #[Inject] private DummySlugger $slugger;
-            /**
-             * Dummy cast() method that's never called in this test.
-             */
-            #[\Override]
-            public function cast(mixed $value, array $args, BaseDto $dto): mixed
-            {
-                return $this->slugger->slugify((string) $value);
-            }
-        };
-
-        $this->expectException(\LogicException::class);
-        $this->expectExceptionMessage('No DI container was configured, unable to resolve type');
-
-        $caster->inject();
     }
 
     public function testThrowsIfInjectedPropHasNoType(): void
