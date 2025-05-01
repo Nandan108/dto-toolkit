@@ -8,6 +8,7 @@ use Nandan108\DtoToolkit\Contracts\ScopedPropertyAccessInterface;
 use Nandan108\DtoToolkit\Contracts\ValidatesInputInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Enum\Phase;
+use Nandan108\DtoToolkit\Support\CaseConverter;
 
 /**
  * @method static static fromArray(array $input, bool $ignoreUnknownProps = false)
@@ -128,9 +129,12 @@ trait CreatesFromArrayOrEntity
             // If we can find a getter method for the property, make a getter closure that uses it
             $entityReflection ??= new \ReflectionClass($entity);
             try {
+                // make a setter name in camelCase from potentially snake_case $prop name
+                $getter = 'get'.CaseConverter::toPascal($prop);
+
                 // Here we assume that DTO and entity have the same property names
                 // and that the entity has a getter for each property
-                if ($entityReflection->getMethod($getter = 'get'.ucfirst($prop))->isPublic()) {
+                if ($entityReflection->getMethod($getter)->isPublic()) {
                     $getterMap[$entityClass][$prop] = $map[$prop] =
                         static function (object $entity) use ($getter): mixed {
                             return $entity->$getter();

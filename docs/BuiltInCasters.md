@@ -23,21 +23,25 @@ These attributes can be freely combined and chained to compose complex transform
 
 ## 🏷️ Available CastTo Attributes
 
-### CastTo\Split
+### Case converters
 
-**Arguments:** `string $separator = ','`
+**Arguments:** _none_
+All throw a `CastingException` if the input is not stringable.
 
-Splits a CSV string into an array.
-Throws a `CastingException` if the input cannot be cast to a string.
+#### Standard lower/upper case
 
----
+- CastTo\\**Lowercase**: `"postalCode"` ➔ `"postalcode"`
+- CastTo\\**Uppercase**: `"postalCode"` ➔ `"POSTALCODE"`
 
-### CastTo\Join
+#### Identifier Casing Styles
 
-**Arguments:** `string $separator = ','`
+Words in input value may be separated by non-letter characters ***or*** a change of case.
 
-Converts an array of strings into a comma-separated string.
-Throws a `CastingException` if the input is not an array.
+- CastTo\\**CamelCase**:  `"postal_code"` ➔ `"postalCode"`
+- CastTo\\**PascalCase**:  `"postal_code"` ➔ `"PostalCode"`
+- CastTo\\**KebabCase**:  `"postalCode"` ➔ `"postal-code"`
+- CastTo\\**SnakeCase**:  `"PostalCode"` ➔ `"postal_code"`
+- CastTo\\**UpperSnakeCase**:  `"PostalCode"` ➔ `"POSTAL_CODE"`
 
 ---
 
@@ -98,6 +102,15 @@ Casts the value to an integer using a strategy: `Ceil`, `Floor`, `Round`, or `Tr
 
 ---
 
+### CastTo\Join
+
+**Arguments:** `string $separator = ','`
+
+Converts an array of strings into a comma-separated string.
+Throws a `CastingException` if the input is not an array.
+
+---
+
 ### CastTo\JsonEncode
 
 **Arguments:** `int $flags = 0, int $depth = 512`
@@ -107,10 +120,15 @@ Throws a `CastingException` on failure.
 
 ---
 
-### CastTo\Lowercase
+### CastTo\NumericString
 
-Converts a string to lowercase.
-Throws a `CastingException` if the input is not stringable.
+**Arguments:**
+- `int $decimals = 0`
+- `string $decimalPoint = '.'`
+- `string $thousandsSeparator = ''`
+
+Formats a numeric value into a string with configurable decimal and thousands separators.
+Throws a `CastingException` if the input is not numeric.
 
 ---
 
@@ -168,6 +186,15 @@ Throws a `CastingException` if input is not stringable or if Intl is unavailable
 
 ---
 
+### CastTo\Split
+
+**Arguments:** `string $separator = ','`
+
+Splits a CSV string into an array.
+Throws a `CastingException` if the input cannot be cast to a string.
+
+---
+
 ### CastTo\Str
 
 Casts the value to a string using `(string)` coercion.
@@ -179,11 +206,4 @@ Casts the value to a string using `(string)` coercion.
 **Arguments:** `string $characters = " \n\r\t\v\x00", string $where = 'both'`
 
 Trims whitespace (or specified characters) from the string.
-Throws a `CastingException` if the input is not stringable.
-
----
-
-### CastTo\Uppercase
-
-Converts a string to uppercase.
 Throws a `CastingException` if the input is not stringable.

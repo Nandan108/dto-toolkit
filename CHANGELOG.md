@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 - Trait `IsInjectable` to provide a reusable `inject()` mechanism for DTOs and casters
+- Identifier casing casters: CamelCase, PascalCase, KebabCase, SnakeCase
 
 ### Changed
 - Renamed `#[Injected]` attribute to `#[Inject]`
@@ -14,6 +15,12 @@ All notable changes to this project will be documented in this file.
 - `BaseDto` now automatically calls after instanciating a new DTO :
   - `$dto->inject()` for DTOs implementing Injectable interface
   - `$dto->boot()` for DTOs implementing Bootable interface
+- fromEntity() now looks for getters named 'get'.PascalCase($propName)
+- toEntity() now looks for setters named 'set'.PascalCase($propName)
+- CastTo/Join now throws if an array elements is not stringable
+
+### Dev / DX
+- Updated cs-fixer config to disallow lose == comparisons.
 
 ---
 
@@ -76,8 +83,6 @@ All notable changes to this project will be documented in this file.
 
 ### 🚀 Added
 - `#[Outbound]` attribute to mark subsequent attributes as outbound-only, replacing repetitive `outbound: true` flags in `#[CastTo]`
-- `#[DtoLifecycleConfig(...)]` attribute to declare default lifecycle group sequences for one-liner transforms like `$dto = MyDto::fromRequest($request)->toEntity()`
-- `BaseDto::amendDefaultLifecycleGroups(...)` method to override lifecycle config at runtime
 
 ### 🔧 Changed
 - Refactored `CastTo::getCaster()` to unify resolution and memoization for all caster types

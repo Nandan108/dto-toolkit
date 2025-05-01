@@ -19,6 +19,7 @@ return (new PhpCsFixer\Config())
                 '=>' => 'align',
             ],
         ],
+        'strict_comparison' => true,
     ])
     ->setFinder($finder)
 ;

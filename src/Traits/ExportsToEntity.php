@@ -3,6 +3,7 @@
 namespace Nandan108\DtoToolkit\Traits;
 
 use Nandan108\DtoToolkit\Core\BaseDto;
+use Nandan108\DtoToolkit\Support\CaseConverter;
 
 /**
  * @psalm-require-extends BaseDto
@@ -125,7 +126,11 @@ trait ExportsToEntity
             try {
                 // Here we assume that DTO and entity have the same property names
                 // and that the entity has a setter for each property
-                if ($entityReflection->getMethod($setter = 'set'.ucfirst($prop))->isPublic()) {
+
+                // make a setter name in camelCase from potentially snake_case $prop name
+                $setter = 'set'.CaseConverter::toPascal($prop);
+
+                if ($entityReflection->getMethod($setter)->isPublic()) {
                     $setterMap[$entityClass][$prop] = $map[$prop] =
                         static function (mixed $value) use ($entity, $setter): void {
                             $entity->$setter($value);

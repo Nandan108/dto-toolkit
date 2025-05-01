@@ -23,6 +23,11 @@ final class Join extends CastBase
             throw CastingException::castingFailure(className: self::class, operand: $value, messageOverride: 'Expected array, but got '.gettype($value));
         }
 
+        $value = array_map(
+            fn ($item) => $this->throwIfNotStringable($item),
+            $value
+        );
+
         return implode($separator, $value);
     }
 }

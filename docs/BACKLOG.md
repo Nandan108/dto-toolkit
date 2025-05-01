@@ -2,7 +2,6 @@
 
 ## Product Backlog Items
 
-- **[067]** Fix to/fromEntity getEntityGetters() and setEntitySetters() to also check for camelCase methods for snake_cased properties
 - **[053]** Add Caster LocaleAwareNumericString, with trait UsesLocaleResolver. See if we can share resolution/injection logic with CastTo
 - **[046]** Add modifier `#[SkipIfMatch(mixed $values, $return=null)]`, allows short-circuitting following caster(s) by returning \$return if input === \$values or input in $values.
 - **[049]** Add `#[Collect(count: N)]` and #[Wrap(N)] (`#[NoOp]` = sugar for #[Wrap(0)]). Aggregate the result of the next N subchains into an array.
@@ -13,6 +12,7 @@
     - `$dto->isAdmin()` (if available), or
     - `$dto->isAdmin` (if property exists), or
     - `$context['isAdmin']` (would requires $dto instanceof HasContextInterface).
+- **[069]** Add  #[WithDefaultGroups(...)] class attribute, takes same params as UsesGrops::_withGroups() and auto-applies them after instanciation
 - **[040]** Add `#[MapFrom(string|array $fields)]`
 - **[020]** Add `#[MapTo(...)]` Attribute [See details](Mapping.md)
 - **[055]** Add `#[MapFromInternal(string|array $fields)]` to allow mapping from one or more internal properties or values already cast in a previous step, rather than external input.
@@ -90,6 +90,8 @@
 - [052] Add Casters fromJson, JsonExtract, NumericString, Base64Encode/Decode, RegexSplit
 - [060] Extract inject() functionality from caster to IsInjectable trait, rename #[Injected] to #[Inject]
 - [061] let DtoBase use IsInjectable, make sure $dto->inject() is called after new instanciation
+- [068] Add casters to convert input to camelCase, kebab-case, PascalCase and snake_case
+- [067] Fix to/fromEntity getEntityGetters() and setEntitySetters() to also check for camelCase methods for snake_cased properties
 
 ---
 

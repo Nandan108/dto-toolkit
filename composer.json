@@ -32,7 +32,7 @@
         }
     ],
     "scripts": {
-        "cs-fix": "./vendor/bin/php-cs-fixer fix",
+        "cs-fix": "./vendor/bin/php-cs-fixer fix --allow-risky=yes --diff",
         "psalm": "./vendor/bin/psalm",
         "test": "./vendor/bin/phpunit",
         "testAndCover": "./vendor/bin/phpunit --coverage-text --coverage-html coverage"

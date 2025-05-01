@@ -19,9 +19,7 @@ class ReplaceIf extends CastBase
     {
         [$when, $then, $strict] = $args;
 
-        $match = is_array($when)
-            ? in_array($value, $when, $strict)
-            : ($strict ? $value === $when : $value == $when);
+        $match = in_array($value, (array) $when, $strict);
 
         return $match ? $then : $value;
     }
