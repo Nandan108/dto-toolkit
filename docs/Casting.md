@@ -87,7 +87,7 @@ public string $value;
 
 If a caster class requires constructor arguments, but these are not provided in the Attribute's `constructorArgs`, the system will attempt container-based resolution (adapter-defined).
 
-*More details about dependency injection (DI) are coming soon in additional documentation.*
+For more details about dependency injection, see [DI with ContainerBridge](DI.md).
 
 ---
 

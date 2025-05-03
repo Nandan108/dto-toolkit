@@ -68,6 +68,7 @@ These provide a convenient, framework-free entry point with all standard functio
 - [Toolkit Comparison](docs/Comparison.md) – see how this toolkit compares to other PHP DTO/mapping libraries
 - [Built-In Casters](docs/BuiltInCasters.md) — Full list of available `CastTo\*` casters
 - [Built-In Modifiers](docs/BuiltInModifiers.md) — Full list of available `Mod\*` chain modifiers
+- [Dependency Injection](docs/DI.md)
 - Validation *(coming soon)*
 - Writing Adapters *(coming soon)*
 

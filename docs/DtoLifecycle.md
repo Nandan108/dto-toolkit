@@ -9,10 +9,14 @@ This section outlines the phases your DTO goes through, from input to output, se
 
 #### 1. 🏗️ DTO Creation (from Input)
 
-The DTO is created using `fromArray()` or (via adapter) `fromRequest()`:
+A new DTO instance is generally created directly from an input source. E.g. using `fromArray()`, `fromEntity()` or (via adapter), `fromRequest()`.
 
-- Public properties are populated with raw input values.
-- Each property filled is recorded in `$this->_filled`.
+1. Under the hood, the ::newInstance() static method is used to instantiate the DTO, possibly injecting necessary dependencies ([See DI doc for more details](DI.md)).
+  ⚠️ DTO props are not initialized in the constructor, therefore each must have a default value (generally null).
+2. Public properties are populated with raw input values.
+  ⚠️ This means that the types of public properties must allow raw input value types to be stored.
+  E.g. a birthdate property could have type null|string|DateTimeImmutable, which supports 1. the initial, pre-load null value, 2. the post-load, pre-normalization raw string value, 3. the post-normalization date-time object's type.
+3. Each property filled is recorded in `$this->_filled`.
 
 This happens *before* any casting or transformation is applied.
 
@@ -36,9 +40,10 @@ This ensures:
 
 If the DTO implements `NormalizesInboundInterface`, all `#[CastTo(...)]` attributes before #[Outbound] are applied.
 
-This phase:
-- Transforms raw values into the appropriate internal types
-- Uses method-based or class-based casters (like `#[CastTo\Floating]`)
+For properties marked as *`filled`*, this phase:
+- Applies method-based or class-based casters (like `#[CastTo\Floating]`)
+- Transforms raw values of  into the appropriate internal types
+  ⚠️ This means that the types of public properties must also allow post-transformation value types to be stored.
 
 Only properties marked as filled will be normalized unless future features (e.g., `#[AlwaysCast]`) are added.
 
@@ -61,7 +66,10 @@ This second phase concerns exporting the DTO data to another form for use by the
 
 This is done by calling one of:
 - `toOutboundArray()` - returns outbound-cast DTO content as an array
-- `toEntity()` - internally calls `toOutboundArray()` then hydrates the result into an object via public props or setters.
+- `toEntity(object $entity = null)` (trait `ExportsToEntity`)
+   - prepares outbound data
+   - uses passed entity or instantiates a new one
+   - loads result into the entity via public props or setters, then returns entity
 - `toDto()` - for DTO-to-DTO transformations *(coming soon)*
 - `toResponse()` or `toModel()` *(coming soon via adapters)*
 
@@ -83,9 +91,11 @@ This phase ensures clean, typed, or enriched output — e.g., transforming strin
 Inbound :
    $dto = MyDto::fromArray() or ::fromRequest()
       ↓
+      Instantiation via newInstance()
+      ↓
       Raw values assigned
       ↓
-      Validation (on raw input)
+      Validation (on raw input, using external validator)
       ↓
       Normalization (inbound casting)
       ↓

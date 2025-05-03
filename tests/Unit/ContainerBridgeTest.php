@@ -7,8 +7,9 @@ use Nandan108\DtoToolkit\Support\ContainerBridge;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 
-class ContainerBridgeTest extends TestCase
+final class ContainerBridgeTest extends TestCase
 {
+    #[\Override]
     protected function tearDown(): void
     {
         // Reset container and bindings after each test
@@ -47,6 +48,7 @@ class ContainerBridgeTest extends TestCase
     public function testDelegatesToContainerIfSet(): void
     {
         /** @var ContainerInterface|\Mockery\MockInterface $mock */
+        /** @psalm-suppress PossiblyUndefinedMethod */
         $mock = $this->createMock(ContainerInterface::class);
         $mock->expects($this->once())
              ->method('get')

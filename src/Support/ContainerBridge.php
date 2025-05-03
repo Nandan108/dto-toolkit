@@ -51,6 +51,8 @@ final class ContainerBridge
         if (class_exists($concrete)) {
             $ref = new \ReflectionClass($concrete);
             if ($ref->isInstantiable() && 0 === ($ref->getConstructor()?->getNumberOfRequiredParameters() ?? 0)) {
+                self::$manualBindings[$id] = fn (): object => new $concrete();
+
                 return new $concrete();
             }
         }

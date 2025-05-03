@@ -47,12 +47,15 @@ trait CreatesFromArrayOrEntity
             }
         }
 
+        // restrict properties to current scope
         if ($this instanceof ScopedPropertyAccessInterface) {
             $propsInScope = $this->getPropertiesInScope(Phase::InboundLoad);
             $toBeFilled = array_intersect($fillables, $propsInScope);
         }
 
+        // get actual data to be filled
         $inputToBeFilled = array_intersect_key($input, array_flip($toBeFilled));
+        // and fill the DTO
         $this->fill($inputToBeFilled);
 
         // validate raw input values

@@ -3,7 +3,6 @@
 namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
 use Nandan108\DtoToolkit\CastTo;
-use Nandan108\DtoToolkit\Core\FullDto;
 use Nandan108\DtoToolkit\Exception\CastingException;
 use PHPUnit\Framework\TestCase;
 
@@ -11,7 +10,6 @@ final class DateTimeCastTest extends TestCase
 {
     public function testStringIsCastToDateTimeImmutableComponents(): void
     {
-        $dto = new FullDto();
         $format = 'Y-m-d H:i:s';
         $badDate = 'invalid date';
         $dateTime = date($format);

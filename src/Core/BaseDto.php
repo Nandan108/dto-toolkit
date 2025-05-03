@@ -2,6 +2,7 @@
 
 namespace Nandan108\DtoToolkit\Core;
 
+use Nandan108\DtoToolkit\Attribute\Inject;
 use Nandan108\DtoToolkit\Attribute\Outbound;
 use Nandan108\DtoToolkit\Contracts\Bootable;
 use Nandan108\DtoToolkit\Contracts\Injectable;
@@ -9,6 +10,7 @@ use Nandan108\DtoToolkit\Contracts\NormalizesInterface;
 use Nandan108\DtoToolkit\Contracts\PhaseAwareInterface;
 use Nandan108\DtoToolkit\Contracts\ScopedPropertyAccessInterface;
 use Nandan108\DtoToolkit\Enum\Phase;
+use Nandan108\DtoToolkit\Support\ContainerBridge;
 
 abstract class BaseDto
 {
@@ -182,10 +184,14 @@ abstract class BaseDto
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
-    public function unfill(array $props): static
+    public function unfill(?array $props = null): static
     {
-        foreach ($props as $key) {
-            unset($this->_filled[$key]);
+        if (null === $props) {
+            $this->_filled = [];
+        } else {
+            foreach ($props as $key) {
+                unset($this->_filled[$key]);
+            }
         }
 
         return $this;
@@ -227,48 +233,102 @@ abstract class BaseDto
      **/
     public static function __callStatic(string $method, array $arguments): static
     {
-        if (in_array(substr($method, 0, 4), ['from', 'with'])) {
-            // if the static method doesn't exist, create a new instance and call the method on it
-            /** @psalm-suppress UnsafeInstantiation */
-            $instance = new static();
-            $realMethodName = "_$method";
-            if (method_exists($instance, $realMethodName)) {
-                // prepare the instance for use
-                if ($instance instanceof Injectable) {
-                    /** @psalm-suppress UnusedMethodCall */
-                    $instance->inject();
-                }
-                if ($instance instanceof Bootable) {
-                    /** @psalm-suppress UnusedMethodCall */
-                    $instance->boot();
-                }
+        $ref = static::getClassRef();
 
-                // call the method on the instance
-                return $instance->$realMethodName(...$arguments);
-            }
-        } elseif (method_exists(static::class, $method)) {
-            // if the method was public, or visible from context, the call would not have been caught
-            // by __callStatic(), therefore this must be a call to a protected or private method.
-            throw new \BadMethodCallException('Cannot access non-public static method '.static::class."::{$method}()");
+        if (str_starts_with($method, 'from') || str_starts_with($method, 'with')) {
+            $methodRef = self::getValidMethodRef("_$method", $ref);
+
+            $instance = static::newInstance();
+
+            // call the method on the instance
+            $instance = $methodRef->invoke($instance, ...$arguments);
+        } else {
+            // if __callStatic was called, it means the method doesn't exist, therefore getValidMethodRef() will throw.
+            self::getValidMethodRef($method, $ref, false);
         }
 
-        throw new \BadMethodCallException("Method {$method}() does not exist on ".static::class.'.');
+        // $instance is always set in the magic method case, but adding `?? new static()`
+        // keeps Psalm and IDEs happy (ensures return type is always `static`) and avoids
+        // unreachable throw lines that would break test coverage goals.
+        /** @psalm-suppress UnsafeInstantiation */
+        return $instance ?? new static();
+    }
+
+    /**
+     * Create a new instance of the DTO.
+     * This method will use the container to create the instance if the class is marked with #[Inject].
+     * If the class is not marked with #[Inject], it will create a new instance using `new static()`.
+     *
+     * This method will also call the `inject()` method if the class implements Injectable,
+     * and the `boot()` method if the class implements Bootable.
+     */
+    public static function newInstance(): static
+    {
+        /** @var bool[] $isInjectable */
+        static $isInjectable = [];
+
+        $shouldUseContainer = $isInjectable[static::class] ??=
+            (bool) static::getClassRef()->getAttributes(Inject::class);
+
+        // make a new instance of the class,
+        /** @psalm-suppress UnsafeInstantiation */
+        $instance = $shouldUseContainer
+            // via container injection if the class is marked with #[Inject],
+            ? ContainerBridge::get(static::class)
+            // otherwise with a simple new static()
+            : new static();
+
+        // prepare the instance for use
+        if ($instance instanceof Injectable) {
+            /** @psalm-suppress UnusedMethodCall */
+            $instance->inject();
+        }
+        if ($instance instanceof Bootable) {
+            /** @psalm-suppress UnusedMethodCall */
+            $instance->boot();
+        }
+
+        /** @var static $instance */
+        return $instance;
     }
 
     /**
      * @psalm-suppress PossiblyUnusedMethod, PossiblyUnusedParam
-     *
-     * @psalm-mutation-free
      **/
     public function __call(string $method, array $parameters): static
     {
-        if (in_array(substr($method, 0, 4), ['from', 'with'])) {
-            $forwarded = '_'.$method;
-            if (method_exists($this, $forwarded)) {
-                return $this->$forwarded(...$parameters);
-            }
+        $ref = static::getClassRef();
+
+        if (str_starts_with($method, 'from') || str_starts_with($method, 'with')) {
+            $methodRef = self::getValidMethodRef("_$method", $ref);
+            $methodRef->invoke($this, ...$parameters);
+        } else {
+            self::getValidMethodRef($method, $ref, false);
         }
 
-        throw new \BadMethodCallException("Method {$method}() does not exist on ".static::class.'.');
+        return $this;
+    }
+
+    protected static function getClassRef(): \ReflectionClass
+    {
+        static $refs = [];
+        $class = static::class;
+
+        return $refs[$class] ??= new \ReflectionClass($class);
+    }
+
+    protected static function getValidMethodRef(string $method, \ReflectionClass $classRef, bool $visible = true): \ReflectionMethod
+    {
+        $className = $classRef->getName();
+        if (!$classRef->hasMethod($method)) {
+            throw new \BadMethodCallException("Method $className::{$method}() does not exist.");
+        }
+        $methodRef = $classRef->getMethod($method);
+        $visibility = $methodRef->isPublic() ? 'public' : ($methodRef->isProtected() ? 'protected' : 'private');
+        if (!$visible || $methodRef->isPrivate()) {
+            throw new \BadMethodCallException(ucfirst($visibility)." method $className::{$method}() is not reachable from calling context.");
+        }
+
+        return $methodRef;
     }
 }

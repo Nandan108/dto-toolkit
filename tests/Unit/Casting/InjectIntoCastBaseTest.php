@@ -78,6 +78,14 @@ final class FooBarDto extends FullDto
 
 final class InjectIntoCastBaseTest extends TestCase
 {
+    #[\Override]
+    protected function tearDown(): void
+    {
+        // Reset container and bindings after each test
+        ContainerBridge::setContainer(null);
+        ContainerBridge::clearBindings();
+    }
+
     public function testInjectionAndCasting(): void
     {
         $dto = FooBarDto::fromArray(['value' => ' Hello World ']);

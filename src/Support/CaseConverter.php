@@ -52,6 +52,7 @@ final class CaseConverter
         return self::normalizeWords($str, ['strtolower'], '-');
     }
 
+    /** @psalm-suppress PossiblyUnusedMethod */
     public static function toUpperSnake(string $str): string
     {
         return self::normalizeWords($str, ['strtoupper'], '_');

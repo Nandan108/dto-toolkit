@@ -33,6 +33,8 @@ trait CanTestCasterClassesAndMethods
             $this->fail('Invalid method type: '.gettype($method));
         }
 
+        CastTo::setCurrentCastingContext('test', $dto);
+
         // Call the caster closure with the input value and get the result
         try {
             $result = $caster($input);

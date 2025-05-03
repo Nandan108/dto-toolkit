@@ -3,21 +3,31 @@
 All notable changes to this project will be documented in this file.
 ---
 
-## [Unreleased]
+## [0.4.0] - 2025-05-04
 
 ### Added
 - Trait `IsInjectable` to provide a reusable `inject()` mechanism for DTOs and casters
-- Identifier casing casters: CamelCase, PascalCase, KebabCase, SnakeCase
+- Identifier casing casters: `CamelCase`, `PascalCase`, `KebabCase`, `SnakeCase`
+- Support for `#[Inject]` attribute on DTO classes to resolve them via `ContainerBridge::get()`
+- Fallback instantiation in `ContainerBridge::get()` for zero-argument constructors
+- `ContainerBridge::register()` to bind classes, singleton instances, or factories (closures)
+- `ContainerBridgeTest` covering all registration and fallback behaviors
 
 ### Changed
 - Renamed `#[Injected]` attribute to `#[Inject]`
 - `FullDto` now uses `IsInjectable`, thereby implementing `Injectable`
-- `BaseDto` now automatically calls after instanciating a new DTO :
-  - `$dto->inject()` for DTOs implementing Injectable interface
-  - `$dto->boot()` for DTOs implementing Bootable interface
+- `BaseDto::newInstance()` now centralizes instantiation for all static constructors:
+  - Uses `ContainerBridge::get()` if the DTO is marked with `#[Inject]`
+  - Falls back to `new static()` otherwise
+  - Automatically calls `$dto->inject()` and `$dto->boot()` if applicable
+- Static constructors like `fromArray()` and `fromEntity()` now delegate to `newInstance()`
 - fromEntity() now looks for getters named 'get'.PascalCase($propName)
 - toEntity() now looks for setters named 'set'.PascalCase($propName)
-- CastTo/Join now throws if an array elements is not stringable
+- CastTo/Join now throws if an array element is not stringable
+- Casters now access current DTO context via `$this->currentDto` instead of receiving it via method argument
+
+### Removed
+- Removed `$dto` argument from `CasterInterface::cast()` (now accessed via internal context)
 
 ### Dev / DX
 - Updated cs-fixer config to disallow lose == comparisons.

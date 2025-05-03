@@ -3,6 +3,7 @@
 ## Product Backlog Items
 
 - **[053]** Add Caster LocaleAwareNumericString, with trait UsesLocaleResolver. See if we can share resolution/injection logic with CastTo
+- **[069]** Add  #[WithDefaultGroups(...)] class attribute, takes same params as UsesGrops::_withGroups() and auto-applies them after instanciation
 - **[046]** Add modifier `#[SkipIfMatch(mixed $values, $return=null)]`, allows short-circuitting following caster(s) by returning \$return if input === \$values or input in $values.
 - **[049]** Add `#[Collect(count: N)]` and #[Wrap(N)] (`#[NoOp]` = sugar for #[Wrap(0)]). Aggregate the result of the next N subchains into an array.
   E.g.: `#[Collect(3), NoOp, Wrap(2), CastTo\Rounded(1), CastTo\NumericString(2,','), CastTo\CurrencyVal('USD')]` => cast("2.42") Returns: `["2.42", "2,40", CurrencyVal object]`
@@ -12,7 +13,6 @@
     - `$dto->isAdmin()` (if available), or
     - `$dto->isAdmin` (if property exists), or
     - `$context['isAdmin']` (would requires $dto instanceof HasContextInterface).
-- **[069]** Add  #[WithDefaultGroups(...)] class attribute, takes same params as UsesGrops::_withGroups() and auto-applies them after instanciation
 - **[040]** Add `#[MapFrom(string|array $fields)]`
 - **[020]** Add `#[MapTo(...)]` Attribute [See details](Mapping.md)
 - **[055]** Add `#[MapFromInternal(string|array $fields)]` to allow mapping from one or more internal properties or values already cast in a previous step, rather than external input.

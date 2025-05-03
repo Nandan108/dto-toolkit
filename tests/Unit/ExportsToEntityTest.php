@@ -111,6 +111,8 @@ final class ExportsToEntityTest extends TestCase
         $this->assertSame($id, $entity->id);
         // email should not be set
         $this->assertNull($entity->email);
+        $dto->unfill();
+        $this->assertSame([], $dto->_filled);
     }
 
     public function testThrowsExceptionIfEntityClassDoesNotExist(): void

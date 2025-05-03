@@ -15,7 +15,7 @@ final class BaseDtoTest extends TestCase
             $this->fail('Expected exception not thrown');
         } catch (\Exception $e) {
             $this->assertInstanceOf(\Exception::class, $e);
-            $this->assertSame('Cannot access non-public static method '.BaseDtoTestDtoWithProtectedStaticFunc::class.'::protectedMakeSpecialObject()', $e->getMessage());
+            $this->assertSame('Protected method '.BaseDtoTestDtoWithProtectedStaticFunc::class.'::protectedMakeSpecialObject() is not reachable from calling context.', $e->getMessage());
         }
     }
 
@@ -42,7 +42,7 @@ final class BaseDtoTest extends TestCase
             $this->fail('Expected exception not thrown');
         } catch (\Exception $e) {
             $this->assertInstanceOf(\Exception::class, $e);
-            $this->assertSame('Method fromNonExistentMethod() does not exist on '.BaseDtoTestDtoWithProtectedStaticFunc::class.'.', $e->getMessage());
+            $this->assertSame('Method '.BaseDtoTestDtoWithProtectedStaticFunc::class.'::_fromNonExistentMethod() does not exist.', $e->getMessage());
         }
 
         // test instance call on non-existent from* method
@@ -53,7 +53,7 @@ final class BaseDtoTest extends TestCase
             $this->fail('Expected exception not thrown');
         } catch (\Exception $e) {
             $this->assertInstanceOf(\Exception::class, $e);
-            $this->assertSame('Method fromNonExistentMethod() does not exist on '.BaseDtoTestDtoWithProtectedStaticFunc::class.'.', $e->getMessage());
+            $this->assertSame('Method '.BaseDtoTestDtoWithProtectedStaticFunc::class.'::_fromNonExistentMethod() does not exist.', $e->getMessage());
         }
     }
 }

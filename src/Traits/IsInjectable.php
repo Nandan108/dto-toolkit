@@ -14,6 +14,8 @@ trait IsInjectable
      * Uses ContainerBridge::get($type); to populate instance properties that are marked with #[Inject].
      *
      * @throws \RuntimeException
+     *
+     * @psalm-suppress MethodSignatureMismatch
      */
     #[\Override] // implements Injectable
     public function inject(): static
@@ -29,6 +31,7 @@ trait IsInjectable
                 throw new \RuntimeException("Cannot inject untyped property {$prop->getName()}");
             }
             $value = ContainerBridge::get($type);
+            /** @psalm-suppress UnusedMethodCall */
             $prop->setAccessible(true);
             $prop->setValue($this, $value);
         }
