@@ -5,6 +5,8 @@
 ![Style](https://img.shields.io/badge/style-php--cs--fixer-brightgreen)
 ![Packagist](https://img.shields.io/packagist/v/nandan108/dto-toolkit)
 
+✅ Requires PHP 8.1–8.4
+
 DTO Toolkit Core is a lightweight, framework-agnostic library for defining, transforming, and (soon) validating **Data Transfer Objects** (DTOs) in PHP.
 
 It offers a clean, declarative API powered by attributes — handling normalization, casting, and output shaping — all without coupling to any specific framework.

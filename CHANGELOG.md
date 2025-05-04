@@ -1,7 +1,14 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+
 ---
+
+## [0.4.1] - 2025-05-04
+
+- Added PHP 8.4 to test matrix and marked as officially supported
+- CI now tests against PHP 8.4; cs-fixer runs only under PHP 8.2
+- Updated composer.json to allow php ">=8.1 <8.5"
 
 ## [0.4.0] - 2025-05-04
 

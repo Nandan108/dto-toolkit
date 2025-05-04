@@ -12,8 +12,11 @@ jobs:
 
     strategy:
       matrix:
-        php: [8.1, 8.2, 8.3]
-
+        php: [8.1, 8.2, 8.3, 8.4]
+        include:
+          - php: 8.2
+            run-cs-fixer: true
+            run-psalm: true
     name: PHP ${{ matrix.php }} Tests
 
     steps:
@@ -31,6 +34,7 @@ jobs:
         run: composer install --prefer-dist --no-progress
 
       - name: Run PHP-CS-Fixer (dry run)
+        if: matrix.run-cs-fixer == 'true'
         run: vendor/bin/php-cs-fixer fix --dry-run --diff --verbose --allow-risky=yes
 
       - name: Run PHPUnit
@@ -46,4 +50,5 @@ jobs:
           verbose: true # optional (default = false)
 
       - name: Run Psalm
+        if: matrix.run-psalm == 'true'
         run: vendor/bin/psalm
