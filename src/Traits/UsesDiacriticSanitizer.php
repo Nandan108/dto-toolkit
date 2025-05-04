@@ -11,6 +11,8 @@ trait UsesDiacriticSanitizer
 {
     public static bool $useIntlExtension = true;
     protected static string $transliterateParams = 'Any-Latin; Latin-ASCII; [\u0100-\u7fff] remove';
+
+    /** @var \Transliterator[] */
     protected static array $_transliterators = [];
 
     protected static function removeDiacritics(string $value, ?bool $useIntlExtension = null): string
@@ -18,25 +20,48 @@ trait UsesDiacriticSanitizer
         $useIntlExtension ??= static::$useIntlExtension;
 
         if ($useIntlExtension && extension_loaded('intl')) {
-            $params = static::$transliterateParams;
-            $transliterator = static::$_transliterators[$params] ??= \Transliterator::create($params);
-
-            // Could fail in a subclass that tries to use invalid $transliterateParams
-            if (null === $transliterator) {
-                throw CastingException::castingFailure(static::class, $value, "Transliterator::create('$params') failed");
-            }
-
-            set_error_handler(function ($errno, $errstr) use ($value) {
-                throw CastingException::castingFailure(static::class, $value, 'Transliterator failed to remove diacritics: '.$errstr);
-            });
-
-            try {
-                return $transliterator->transliterate($value);
-            } finally {
-                restore_error_handler();
-            }
+            return static::removeDiacriticsWithIntl($value);
         }
 
+        return static::sanitizeWithStrtr($value);
+    }
+
+    public static function removeDiacriticsWithIntl(string $value): string
+    {
+        $transliterator = static::getIntlTransliterator();
+
+        set_error_handler(function ($errno, $errstr) use ($value) {
+            // very difficult to cover this line with a test
+            throw CastingException::castingFailure(static::class, $value, "Transliterator failed to remove diacritics: $errstr");
+        });
+
+        try {
+            return $transliterator->transliterate($value);
+        } finally {
+            restore_error_handler();
+        }
+    }
+
+    protected static function getIntlTransliterator(): \Transliterator
+    {
+        $params = static::$transliterateParams;
+
+        if (isset(static::$_transliterators[static::$transliterateParams])) {
+            return static::$_transliterators[static::$transliterateParams];
+        }
+
+        $transliterator = \Transliterator::create($params);
+        if (null === $transliterator) {
+            /** @var string $params */
+            $params = json_encode($params);
+            throw new \InvalidArgumentException("Invalid transliteration parameters: $params");
+        }
+
+        return static::$_transliterators[$params] = $transliterator;
+    }
+
+    public static function sanitizeWithStrtr(string $value): string
+    {
         // Rudimentary fallback for common accents (incomplete but helpful)
         static $map = [
             'à'=> 'a', 'á'=>'a', 'â'=>'a', 'ã'=>'a', 'ä'=>'a', 'å'=>'a',

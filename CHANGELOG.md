@@ -3,6 +3,22 @@
 All notable changes to this project will be documented in this file.
 
 ---
+## [0.4.2] - 2025-05-05
+
+### Added
+- Locale-aware casting support:
+  - `CastTo\LocalizedNumber`
+  - `CastTo\LocalizedCurrency`
+  - `CastTo\LocalizedDateTime`
+- New trait `UsesLocaleResolver` for flexible locale resolution:
+  1. Locale string (e.g. `'fr_CH'`) or provider class passed as caster attribute argument
+  2. Registered `LocaleProviderInterface` instance from container (via `ContainerBridge`)
+  3. Locale-aware DTO, with method `getLocale($value, $propName)`
+  4. Context key via `withContext(['locale' => 'xx_XX'])`
+  5. Fallback to `locale_get_default()` if `intl` extension is loaded
+
+- `LocaleProviderInterface` allows centralized or dynamic resolution strategies
+- Test coverage for all fallback and error paths
 
 ## [0.4.1] - 2025-05-04
 

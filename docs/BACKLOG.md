@@ -2,7 +2,7 @@
 
 ## Product Backlog Items
 
-- **[053]** Add Caster LocaleAwareNumericString, with trait UsesLocaleResolver. See if we can share resolution/injection logic with CastTo
+- **[053]** Add Caster LocalizedNumber, with trait UsesLocaleResolver. See if we can share resolution/injection logic with CastTo
 - **[069]** Add  #[WithDefaultGroups(...)] class attribute, takes same params as UsesGrops::_withGroups() and auto-applies them after instanciation
 - **[046]** Add modifier `#[SkipIfMatch(mixed $values, $return=null)]`, allows short-circuitting following caster(s) by returning \$return if input === \$values or input in $values.
 - **[049]** Add `#[Collect(count: N)]` and #[Wrap(N)] (`#[NoOp]` = sugar for #[Wrap(0)]). Aggregate the result of the next N subchains into an array.

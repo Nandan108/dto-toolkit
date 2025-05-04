@@ -24,11 +24,24 @@ final class HasContextTest extends TestCase
     {
         $this->object or throw new \Exception('Object not initialized');
 
+        // set a value 'foo' => 'bar' in the context
         $this->object->setContext('foo', 'bar');
-
+        // check if the value is set
         $this->assertSame('bar', $this->object->getContext('foo'));
+        // check if getting an unset value returns null
         $this->assertNull($this->object->getContext('missing'));
+        // check if getting an unset value with a default returns the default
         $this->assertSame('default', $this->object->getContext('missing', 'default'));
+        // Set a null value
+        $this->object->setContext('foo', null);
+        // Check if hasContext returns false for null value
+        $this->assertFalse($this->object->hasContext('foo'));
+        // Check if hasContext returns true for null value with treatNullAsMissing = false
+        $this->assertTrue($this->object->hasContext('foo', false));
+        // Remove value from context
+        $this->object->unsetContext('foo');
+        // Check if the value is removed -- hasContext with treatNullAsMissing = false should return false
+        $this->assertFalse($this->object->hasContext('foo', false));
     }
 
     public function testWithContextAndGetContextMap(): void

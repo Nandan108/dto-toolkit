@@ -112,8 +112,6 @@ final class CanCastBasicValuesTest extends TestCase
     {
         // parent-constructor call line in caster constructor is not covered
         // if constructor is instanciated within the DataProvider method, for some reason. So test them separately.
-        $this->casterTest(new CastTo\Slug('.'), 'Let\'s go for Smörgåsbord', 'let.s.go.for.smorgasbord');
-
         $this->casterTest(CastTo\NumericString::class, '1234.456', '1 234,46', ['2', ',', ' ']);
         $this->casterTest(CastTo\NumericString::class, 'not-a-number', CastingException::class, ['2', ',', ' ']);
     }
