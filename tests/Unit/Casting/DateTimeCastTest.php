@@ -16,23 +16,23 @@ final class DateTimeCastTest extends TestCase
         $dateTimeObj = \DateTimeImmutable::createFromFormat($format, $dateTime);
         $dt = new CastTo\DateTime($format);
 
-        $castDateTime = $dt->cast($dateTime, [$format]);
+        $castDateTime = $dt->cast($dateTime, [$format, null, null]);
         $this->assertEquals($dateTimeObj, $castDateTime);
 
         // Throws on input $value that's not a date (string 'bad date')
         try {
-            $dt->cast($badDate, [$format]);
+            $dt->cast($badDate, [$format, null, null]);
             $this->fail('DateTime cast should not be able to cast "invalid date" string into a DateTimeImmutable');
         } catch (CastingException $e) {
-            $this->assertStringStartsWith("Unable to parse date with format '$format' from '$badDate'", $e->getMessage());
+            $this->assertStringContainsString("Unable to parse date with pattern '$format' from '$badDate'", $e->getMessage());
         }
 
         // Throws on input value that's not a stringable
         try {
-            $dt->cast(new \stdClass(), [$format]);
+            $dt->cast(new \stdClass(), [$format, null, null]);
             $this->fail('DateTime cast should not be able to cast "invalid date" string into a DateTimeImmutable');
         } catch (CastingException $e) {
-            $this->assertStringStartsWith('Expected: string or Stringable, but got object', $e->getMessage());
+            $this->assertStringContainsString('Expected non-empty date string', $e->getMessage());
         }
     }
 }

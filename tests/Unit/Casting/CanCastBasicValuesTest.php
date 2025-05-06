@@ -6,6 +6,7 @@ namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 // use Nandan108\DtoToolkit\Traits\CanCastBasicValues;
 
 use Nandan108\DtoToolkit\CastTo;
+use Nandan108\DtoToolkit\Enum\DateTimeFormat;
 use Nandan108\DtoToolkit\Enum\IntCastMode;
 use Nandan108\DtoToolkit\Exception\CastingException;
 use Nandan108\DtoToolkit\Tests\Traits\CanTestCasterClassesAndMethods;
@@ -60,9 +61,9 @@ final class CanCastBasicValuesTest extends TestCase
             'Trimmed:right'                   => [new CastTo\Trimmed('to', 'right'), 'hotelot', 'hotel'],
             'Capitalized'                     => [new CastTo\Capitalized(), 'hello', 'Hello'],
             'Uppercase'                       => [new CastTo\Uppercase(), 'hello', 'HELLO'],
-            'DateTime'                        => [new CastTo\DateTime(format: 'Y-m-d H:i:s'), $dateTime, $dateTimeObj],
-            'DateTime:invalid date'           => [new CastTo\DateTime(format: 'Y-m-d H:i:s'), 'invalid date', CastingException::class, [], 'Unable to parse date with format \'Y-m-d H:i:s\' from \'invalid date\''],
-            'DateTime:\stdClass'              => [new CastTo\DateTime(format: 'Y-m-d H:i:s'), new \stdClass(), CastingException::class],
+            'DateTime'                        => [new CastTo\DateTime(format: DateTimeFormat::SQL), $dateTime, $dateTimeObj],
+            'DateTime:invalid date'           => [new CastTo\DateTime(format: DateTimeFormat::SQL), 'invalid date', CastingException::class, [], 'Unable to parse date with pattern \'Y-m-d H:i:s\' from \'invalid date\''],
+            'DateTime:\stdClass'              => [new CastTo\DateTime(format: DateTimeFormat::SQL), new \stdClass(), CastingException::class],
             'Split'                           => [new CastTo\Split(), 'a,b,c', ['a', 'b', 'c']],
             'Split:sep:"-"'                   => [new CastTo\Split(separator: '-'), 'a-b-c', ['a', 'b', 'c']],
             'Split:empty'                     => [new CastTo\Split(), '', ['']],
