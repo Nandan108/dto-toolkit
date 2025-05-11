@@ -3,11 +3,12 @@
 namespace Nandan108\DtoToolkit\Contracts;
 
 use Nandan108\DtoToolkit\Core\BaseDto;
+use Nandan108\DtoToolkit\Internal\CasterChain;
 
 interface ChainModifierInterface extends PhaseAwareInterface
 {
     /**
-     * Modify the casting chain, given the remaining attribute queue.
+     * Returns a closure that takes a $chain amd a $subChain and returns a modified chain.
      */
-    public function modify(\ArrayIterator $queue, \Closure $chain, BaseDto $dto): \Closure;
+    public function getModifier(\ArrayIterator $queue, BaseDto $dto): CasterChain;
 }

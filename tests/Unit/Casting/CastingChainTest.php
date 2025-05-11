@@ -5,11 +5,12 @@ namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 use Nandan108\DtoToolkit\Attribute\ChainModifier\FailNextTo;
 use Nandan108\DtoToolkit\Attribute\ChainModifier\PerItem;
 use Nandan108\DtoToolkit\CastTo;
+use Nandan108\DtoToolkit\CastTo\RegexReplace;
 use Nandan108\DtoToolkit\Contracts\NormalizesInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
-use Nandan108\DtoToolkit\Core\CastBase;
 use Nandan108\DtoToolkit\Exception\CastingException;
 use Nandan108\DtoToolkit\Traits\NormalizesFromAttributes;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class CastingChainTest extends TestCase
@@ -19,7 +20,9 @@ final class CastingChainTest extends TestCase
         /** @psalm-suppress ExtensionRequirementViolation */
         $dto = new class extends BaseDto implements NormalizesInterface {
             use NormalizesFromAttributes;
-            #[Prefix('foo:'), Prefix('bar:'), Prefix('baz:')]
+            #[RegexReplace('/^/', 'foo:')]
+            #[RegexReplace('/^/', 'bar:')]
+            #[RegexReplace('/^/', 'baz:')]
             public ?string $val = null; // default value provided for the example
         };
 
@@ -42,7 +45,7 @@ final class CastingChainTest extends TestCase
             #[PerItem(3)] // Apply next 3 casters on the value's array elements instead of whole value
             #[CastTo\Trimmed('X ')] // trim whitespace
             #[CastTo\Rounded(2)] // round to 2 decimals
-            #[Prefix('$')] // add prefix (implicit cast to string)
+            #[RegexReplace('/^/', '$')] // add prefix (implicit cast to string)
             #[CastTo\Join(', ')] // (default separator is ',')
             public string|array|null $prices = null; // default value provided for the example
         };
@@ -67,7 +70,7 @@ final class CastingChainTest extends TestCase
             #[PerItem(3)] // Apply next 3 casters on the value's array elements instead of whole value
             /* - */ #[CastTo\Trimmed('X ')] // trim whitespace
             /* - */ #[CastTo\Rounded(2)] // round to 2 decimals
-            /* - */ #[Prefix('$')] // add prefix (implicit cast to string)
+            /* - */ #[RegexReplace('/^/', '$')] // add $ prefix (implicit cast to string)
             #[CastTo\Join(', ')] // (default separator is ',')
             public string|array|null $prices = null; // default value provided for the example
         };
@@ -82,11 +85,7 @@ final class CastingChainTest extends TestCase
         }
     }
 
-    /**
-     * @testWith ["[\"1\", \"008\", \"4\", false]", "1/8/4/0"]
-     *           ["[\"-1\", null, true]", "-1/n/a/1"]
-     *           ["[\"-1\", \"\", 0]", "-1/n/a/0"]
-     */
+    #[DataProvider('chainingModifiersProvider')]
     public function testChainingModifiers(string $someJson, string $expected): void
     {
         /** @psalm-suppress ExtensionRequirementViolation */
@@ -105,6 +104,24 @@ final class CastingChainTest extends TestCase
         $dto->normalizeInbound();
 
         $this->assertSame($expected, $dto->someProp);
+    }
+
+    public static function chainingModifiersProvider(): array
+    {
+        return [
+            'test1' => [
+                'someJson' => '["1", "008", "4", false]',
+                'expected' => '1/8/4/0',
+            ],
+            'test2' => [
+                'someJson' => '["-1", null, true]',
+                'expected' => '-1/n/a/1',
+            ],
+            'test3' => [
+                'someJson' => '["-1", "", 0]',
+                'expected' => '-1/n/a/0',
+            ],
+        ];
     }
 
     public function testThrowsIfModifierCountArgIsGreaterThanFollowingCasterCount(): void
@@ -126,29 +143,9 @@ final class CastingChainTest extends TestCase
         try {
             $dto->normalizeInbound();
             $this->fail('Expected CastingException not thrown');
-        } catch (\InvalidArgumentException $e) {
-            $this->assertStringStartsWith('PerItem requested 3 castable elements, but only found 2', $e->getMessage());
+        } catch (\LogicException $e) {
+            $this->assertStringStartsWith('#[PerItem] expected 3 cast chains, but only found 2', $e->getMessage());
         }
         $this->assertTrue(true);
-    }
-}
-
-#[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
-final class Prefix extends CastBase
-{
-    public static int $counter = 0;
-
-    public function __construct(public ?string $prefix = null)
-    {
-        $this->prefix ??= (string) static::$counter++;
-        parent::__construct([$prefix]);
-    }
-
-    #[\Override]
-    public function cast(mixed $value, array $args): string
-    {
-        [$prefix] = $args;
-
-        return "$prefix$value";
     }
 }

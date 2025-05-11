@@ -7,6 +7,7 @@ use Nandan108\DtoToolkit\Core\CastBase;
 use Nandan108\DtoToolkit\Enum\DateTimeFormat;
 use Nandan108\DtoToolkit\Exception\CastingException;
 
+/** @psalm-suppress UnusedClass */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class DateTimeString extends CastBase implements CasterInterface
 {
@@ -16,6 +17,8 @@ final class DateTimeString extends CastBase implements CasterInterface
         public readonly ?string $timezone = null,
     ) {
         parent::__construct([$pattern, $format, $timezone]);
+        // noop to keep psalm happy
+        [$this->pattern, $this->format, $this->timezone];
     }
 
     #[\Override]

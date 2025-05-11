@@ -4,7 +4,7 @@ namespace Nandan108\DtoToolkit\Attribute\ChainModifier;
 
 use Nandan108\DtoToolkit\Contracts\HasGroupsInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
-use Nandan108\DtoToolkit\Support\CasterChainBuilder;
+use Nandan108\DtoToolkit\Internal\CasterChain;
 
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class Groups extends ChainModifierBase
@@ -17,26 +17,28 @@ final class Groups extends ChainModifierBase
     }
 
     #[\Override]
-    public function modify(\ArrayIterator $queue, \Closure $chain, BaseDto $dto): \Closure
+    public function getModifier(\ArrayIterator $queue, BaseDto $dto): CasterChain
     {
         if (!$dto instanceof HasGroupsInterface) {
             throw new \LogicException('To use #[Groups], DTO must use UsesGroups trait or implement HasGroupsInterface');
         }
 
         // consume the subchain, whether it'll be applied or not
-        $subchain = CasterChainBuilder::buildNextSubchain(
-            length: $this->count,
-            queue: $queue,
-            dto: $dto,
-            modifier: 'Groups'
+        return new CasterChain($queue, $dto, $this->count, 'PerItem',
+            buildCasterClosure: function (array $chainElements, ?\Closure $upstreamChain) use ($dto): callable {
+                // apply the subchain only if the groups are in scope
+                if ($this->inPhase($dto)) {
+                    return CasterChain::composeFromNodes($chainElements, $upstreamChain);
+                }
+
+                // Just skip — passthrough unchanged
+                return $upstreamChain ?? fn (mixed $value): mixed => $value;
+            }
         );
+    }
 
-        // apply the subchain only if the groups are in scope
-        if ($dto->groupsAreInScope($this->getPhase(), (array) $this->groups)) {
-            return fn (mixed $value): mixed => $subchain($chain($value));
-        }
-
-        // Just skip — passthrough unchanged
-        return $chain;
+    protected function inPhase(BaseDto $dto): bool
+    {
+        return $dto->groupsAreInScope($this->getPhase(), (array) $this->groups);
     }
 }

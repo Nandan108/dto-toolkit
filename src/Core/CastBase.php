@@ -20,6 +20,8 @@ abstract class CastBase extends CastTo implements CasterInterface, Injectable
      * Constructs an instance of a Caster class.
      *
      * @param array $args should contain any argument values used to parameterize caster behavior
+     *
+     * @psalm-suppress PossiblyUnusedParam
      */
     public function __construct(array $args = [])
     {

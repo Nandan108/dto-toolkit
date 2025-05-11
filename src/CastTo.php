@@ -11,7 +11,8 @@ use Nandan108\DtoToolkit\Contracts\PhaseAwareInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Enum\Phase;
 use Nandan108\DtoToolkit\Exception\CastingException;
-use Nandan108\DtoToolkit\Support\CasterChainBuilder;
+use Nandan108\DtoToolkit\Internal\CasterChain;
+use Nandan108\DtoToolkit\Internal\CasterMeta;
 
 /**
  * Base class for all caster attributes.
@@ -34,7 +35,7 @@ class CastTo implements PhaseAwareInterface
     /**
      * @internal a hook closure that is called when a cast is resolved
      *
-     * @var \Closure(array, bool): void
+     * @var \Closure(CasterMeta, bool): void
      */
     public static \Closure $onCastResolved;
 
@@ -59,11 +60,9 @@ class CastTo implements PhaseAwareInterface
      *
      * @param mixed $dto The DTO instance
      *
-     * @return \Closure a closure that takes a value to cast calls the casting method and returns the result
-     *
      * @throws \LogicException If the method does not exist
      */
-    public function getCaster(BaseDto $dto): \Closure
+    public function getCaster(BaseDto $dto): CasterMeta
     {
         $cache = static::$globalMemoizedCasters;
         $args = $this->args;
@@ -80,16 +79,17 @@ class CastTo implements PhaseAwareInterface
         // Check if we have a memoized caster for the given method
         foreach (['class', 'dto-method'] as $keyType) {
             $memoKey = $getMemoizeKey($keyType, $dto);
-            $casterMeta = $cache->$memoKey['casters'][$serialize($args)] ?? [];
-            if (count($casterMeta)) {
+            /** @var ?CasterMeta $casterMeta */
+            $casterMeta = $cache->$memoKey['casters'][$serialize($args)] ?? null;
+            if ($casterMeta) {
                 (static::$onCastResolved)($casterMeta, true);
 
-                return $casterMeta['caster'];
+                return $casterMeta;
             }
         }
 
         // Helper function to memoize the caster
-        $memoizeCaster = function (string $keyType, ?\Closure $caster = null, ?string $object = null, ?string $method = null, ?object $instance = null) use (&$cache, $serialize, $args, $dto, $getMemoizeKey): \Closure {
+        $memoizeCaster = function (string $keyType, ?\Closure $caster = null, ?string $object = null, ?string $method = null, ?object $instance = null) use (&$cache, $serialize, $args, $dto, $getMemoizeKey): CasterMeta {
             $memoKey = $getMemoizeKey($keyType, $dto);
 
             // CastInterface instances are memoized by class name, so we only keep one instance of each
@@ -113,19 +113,25 @@ class CastTo implements PhaseAwareInterface
             }
 
             $caster ??= match ($keyType) {
-                'class'      => fn (mixed $value): mixed => $instance?->cast($value, $args, $dto),
+                'class'      => fn (mixed $value): mixed => $instance?->cast($value, $args),
                 'dto-method' => fn (mixed $value): mixed => $dto->{$method}($value, ...$args),
             };
-            $cache->$memoKey['casters'][$serialize($args)] = $casterMeta = [
-                'caster' => $caster,
-                // object and method are only useful for debugging
-                'object' => $object ?? $this->methodOrClass,
-                'method' => $method,
-            ];
+
+            // object and method are only useful for debugging
+            $object ??= $this->methodOrClass;
+
+            /** @psalm-suppress PossiblyNullArgument */
+            $cache->$memoKey['casters'][$serialize($args)] = $casterMeta = new CasterMeta(
+                caster: $caster, // The actual transformation closure or callable
+                instance: $instance, // The object behind the closure (if any)
+                sourceClass: $object, // For debugging: where the caster came from
+                sourceMethod: $method // Optional: method or other debug info
+            );
+
             // echo "\nMemoizing caster: {$memoKey}";
             (static::$onCastResolved)($casterMeta, false);
 
-            return $caster;
+            return $casterMeta;
         };
 
         // Check if we're using an Attribute Caster
@@ -160,7 +166,7 @@ class CastTo implements PhaseAwareInterface
         // Use a the custom resolver, if available.
         if (static::$customCasterResolver) {
             $caster = static::$customCasterResolver
-                ->resolve($this->methodOrClass, $this->constructorArgs);
+                ->resolve($this->methodOrClass, $this->args, $this->constructorArgs ?? []);
 
             /** @var ?CasterInterface $instance */
             $instance = $caster instanceof CasterInterface ? $caster : null;
@@ -280,7 +286,7 @@ class CastTo implements PhaseAwareInterface
             $attrInstancesByProp = ($dto::class)::loadPropertyMetadata($phase, 'attr');
 
             foreach (array_filter($attrInstancesByProp) as $propName => $attrInstances) {
-                $chain = CasterChainBuilder::buildCasterChain($attrInstances, $dto);
+                $chain = new CasterChain(new \ArrayIterator($attrInstances), $dto);
                 $casts[$phaseKey][$propName] = $chain;
             }
         }

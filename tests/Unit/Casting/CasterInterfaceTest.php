@@ -171,10 +171,10 @@ final class CasterInterfaceTest extends TestCase
         // Test a custom CasterResolver returning a Closure
         CastTo::$customCasterResolver = new class implements CasterResolverInterface {
             #[\Override]
-            public function resolve(string $className, ?array $constructorArgs = []): CasterInterface|\Closure
+            public function resolve(string $className, array $args = [], array $constructorArgs = []): CasterInterface|\Closure
             {
                 /** @psalm-suppress MissingClosureParamType */
-                return function (mixed $value, ...$args) use ($className, $constructorArgs) {
+                return function (mixed $value) use ($className, $args, $constructorArgs) {
                     $ctorArgs = json_encode($constructorArgs);
                     $castParams = json_encode([$value, $args]);
                     $returnVal = "executing {$className}(...$ctorArgs)->cast(...$castParams)";
@@ -185,7 +185,7 @@ final class CasterInterfaceTest extends TestCase
         };
 
         $casterClosure = $attr->getCaster($dto);
-        $castResult = $casterClosure('val', 'foo', 'baz');
+        $castResult = $casterClosure('val');
         $this->assertSame(
             "executing $className(...[\"bar\"])->cast(...[\"val\",[\"foo\",\"baz\"]])",
             $castResult
@@ -198,7 +198,7 @@ final class CasterInterfaceTest extends TestCase
             }
 
             #[\Override]
-            public function resolve(string $className, ?array $constructorArgs = []): CasterInterface|\Closure
+            public function resolve(string $className, array $args = [], array $constructorArgs = []): CasterInterface|\Closure
             {
                 return new class($className, $constructorArgs) extends CastBase {
                     public function __construct(

@@ -4,6 +4,7 @@ namespace Nandan108\DtoToolkit\Attribute\ChainModifier;
 
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Exception\CastingException;
+use Nandan108\DtoToolkit\Internal\CasterChain;
 
 /**
  * The FailTo attribute is used to catch and handle exceptions
@@ -23,21 +24,32 @@ class FailTo extends ChainModifierBase
     }
 
     #[\Override]
-    public function modify(\ArrayIterator $queue, \Closure $chain, BaseDto $dto): \Closure
+    public function getModifier(\ArrayIterator $queue, BaseDto $dto): CasterChain
     {
-        $handler = $this->getHandler($dto);
+        $handler = $this->resolveHandler($dto);
 
-        return function (mixed $value) use ($chain, $dto, $handler): mixed {
-            try {
-                // execute upstream chain and return value
-                return $chain($value);
-            } catch (CastingException $e) {
-                return $handler($value, $this->fallback, $e, $dto);
+        return new CasterChain(queue: $queue, dto: $dto, count: 0, class: 'FailTo',
+            buildCasterClosure: function (array $chainElements, ?callable $upstreamChain) use ($handler, $dto): \Closure {
+                if (!$upstreamChain) {
+                    // If there is no upstream chain, we can't catch exceptions
+                    throw new \LogicException('FailTo modifier catches failures that may be thrown by previous Casters, therefore it should not be used as the first element of a chain. Use FailNextTo instead.');
+                }
+
+                // Wrap upstream chain execution in a try-catch block
+                // to handle exceptions thrown upstream
+                return function (mixed $value) use ($upstreamChain, $handler, $dto): mixed {
+                    try {
+                        // execute upstream chain and return value
+                        return $upstreamChain($value);
+                    } catch (CastingException $e) {
+                        return $handler($value, $this->fallback, $e, $dto);
+                    }
+                };
             }
-        };
+        );
     }
 
-    protected function getHandler(BaseDto $dto): callable
+    protected function resolveHandler(BaseDto $dto): callable
     {
         $fallback = $this->fallback;
 

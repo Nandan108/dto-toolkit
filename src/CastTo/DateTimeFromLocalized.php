@@ -7,6 +7,7 @@ use Nandan108\DtoToolkit\Core\CastBase;
 use Nandan108\DtoToolkit\Exception\CastingException;
 use Nandan108\DtoToolkit\Traits\UsesLocaleResolver;
 
+/** @psalm-suppress UnusedClass */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class DateTimeFromLocalized extends CastBase implements CasterInterface
 {

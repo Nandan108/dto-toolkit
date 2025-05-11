@@ -10,12 +10,15 @@ use Nandan108\DtoToolkit\Exception\CastingException;
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class DateTime extends CastBase implements CasterInterface
 {
+    /** @psalm-suppress PossiblyUnusedProperty */
     public function __construct(
         public readonly ?string $pattern = null,
         public readonly ?DateTimeFormat $format = DateTimeFormat::ISO,
         public readonly ?string $timezone = null,
     ) {
         parent::__construct([$pattern, $format, $timezone]);
+        // noop to keep psalm happy
+        [$this->pattern, $this->format, $this->timezone];
     }
 
     #[\Override]

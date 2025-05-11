@@ -10,5 +10,5 @@ interface CasterResolverInterface
      * @param string $className       the class name to resolve
      * @param array  $constructorArgs optional constructor arguments for the class
      */
-    public function resolve(string $className, ?array $constructorArgs = []): \Closure|CasterInterface;
+    public function resolve(string $className, array $args = [], array $constructorArgs = []): \Closure|CasterInterface;
 }

@@ -4,7 +4,7 @@ namespace Nandan108\DtoToolkit\Attribute\ChainModifier;
 
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Exception\CastingException;
-use Nandan108\DtoToolkit\Support\CasterChainBuilder;
+use Nandan108\DtoToolkit\Internal\CasterChain;
 
 /**
  * The FailNextTo attribute is used to catch and handle exceptions potentially
@@ -26,27 +26,29 @@ class FailNextTo extends FailTo
     }
 
     #[\Override]
-    public function modify(\ArrayIterator $queue, \Closure $chain, BaseDto $dto): \Closure
+    public function getModifier(\ArrayIterator $queue, BaseDto $dto): CasterChain
     {
-        $subchain = CasterChainBuilder::buildNextSubchain(
-            length: $this->count,
-            queue: $queue,
-            dto: $dto,
-            modifier: 'FailNextTo', // for error messages
-        );
-        // ToDo, if subchain is empty, throw a CastingException
-        $handler = $this->getHandler($dto);
+        $handler = $this->resolveHandler($dto);
 
-        return function (mixed $value) use ($chain, $subchain, $dto, $handler): mixed {
-            // get value from upstream
-            $value = $chain($value);
+        return new CasterChain($queue, $dto, $this->count, class: 'FailNextTo',
+            buildCasterClosure: function (array $chainElements, ?callable $upstreamChain) use ($handler, $dto): \Closure {
+                $subchain = CasterChain::composeFromNodes($chainElements);
 
-            try {
-                // catch-and-handle exceptions from the next caster
-                return $subchain($value);
-            } catch (CastingException $e) {
-                return $handler($value, $this->fallback, $e, $dto);
+                return function (mixed $value) use ($upstreamChain, $subchain, $handler, $dto): mixed {
+                    // get the value from upstream (exceptions thrown there are not the concern of this modifier)
+                    if ($upstreamChain) {
+                        $value = $upstreamChain($value);
+                    }
+
+                    // Wrap downstream subchain execution in a try-catch block
+                    try {
+                        // catch-and-handle exceptions from the next caster
+                        return $subchain($value);
+                    } catch (CastingException $e) {
+                        return $handler($value, $this->fallback, $e, $dto);
+                    }
+                };
             }
-        };
+        );
     }
 }
