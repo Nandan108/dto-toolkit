@@ -8,10 +8,16 @@ use PHPUnit\Framework\TestCase;
 
 final class NumericStringParsingTest extends TestCase
 {
+    #[\Override]
+    public function setUp(): void
+    {
+        if (!extension_loaded('intl')) {
+            $this->markTestSkipped('intl extension not available');
+        }
+    }
+
     public function testParsesNumericString(): void
     {
-        extension_loaded('intl') or $this->markTestSkipped('intl not available');
-
         $dtoClass = new class extends FullDto {
             #[Floating(decimalPoint: ',')]
             public string|float|null $num = null;

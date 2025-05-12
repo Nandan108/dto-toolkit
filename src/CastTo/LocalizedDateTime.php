@@ -2,16 +2,19 @@
 
 namespace Nandan108\DtoToolkit\CastTo;
 
+use Nandan108\DtoToolkit\Contracts\BootsOnDtoInterface;
 use Nandan108\DtoToolkit\Contracts\CasterInterface;
 use Nandan108\DtoToolkit\Core\CastBase;
 use Nandan108\DtoToolkit\Exception\CastingException;
 use Nandan108\DtoToolkit\Traits\UsesLocaleResolver;
+use Nandan108\DtoToolkit\Traits\UsesTimeZoneResolver;
 
 /** @psalm-suppress UnusedClass */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
-final class LocalizedDateTime extends CastBase implements CasterInterface
+final class LocalizedDateTime extends CastBase implements CasterInterface, BootsOnDtoInterface
 {
     use UsesLocaleResolver;
+    use UsesTimeZoneResolver;
 
     public function __construct(
         ?string $locale = null,
@@ -20,40 +23,50 @@ final class LocalizedDateTime extends CastBase implements CasterInterface
         ?string $pattern = null,
         ?string $timezone = null,
     ) {
-        $this->resolveLocaleProvider($locale);
+        $this->throwIfExtensionNotLoaded('intl');
 
-        parent::__construct([$locale, $dateStyle, $timeStyle, $pattern, $timezone]);
+        parent::__construct([$dateStyle, $timeStyle, $pattern], ['locale' => $locale, 'timezone' => $timezone]);
+    }
+
+    /**
+     * This function will be called once per caster+ctorArgs+dto.
+     */
+    #[\Override]
+    public function bootOnDto(): void
+    {
+        $this->configureLocaleResolver();
+        $this->configureTimeZoneResolver();
     }
 
     #[\Override]
     public function cast(mixed $value, array $args): string
     {
-        [$localeOrProviderClass, $dateStyle, $timeStyle, $pattern, $timezone] = $args;
-
+        [$dateStyle, $timeStyle, $pattern] = $args;
+        /** @var int $dateStyle */
+        /** @var int $timeStyle */
+        /** @var ?string $pattern */
         if (!$value instanceof \DateTimeInterface) {
             throw CastingException::castingFailure(static::class, $value, 'Value must be a DateTimeInterface');
         }
 
-        $locale = $this->getLocale($value, $localeOrProviderClass);
+        /** @var ?\DateTimeZone $timezone */
+        /** @var string $locale */
+        $locale = $this->resolveParam('locale', $value);
+        $timezone = $this->resolveParam('timezone', $value);
 
-        try {
-            $formatter = new \IntlDateFormatter(
-                $locale,
-                $dateStyle,
-                $timeStyle,
-                $timezone ?? $value->getTimezone()->getName(),
-                \IntlDateFormatter::GREGORIAN,
-                $pattern ?: null
-            );
-        } catch (\IntlException $e) {
+        $formatter = \IntlDateFormatter::create(
+            locale: $locale,
+            dateType: $dateStyle,
+            timeType: $timeStyle,
+            timezone: $timezone,
+            calendar: \IntlDateFormatter::GREGORIAN,
+            pattern: $pattern,
+        );
+        if (!$formatter) {
             $message = 'Invalid date formater arguments: '.json_encode(compact('locale', 'dateStyle', 'timeStyle', 'pattern', 'timezone'), JSON_THROW_ON_ERROR);
-            throw CastingException::castingFailure(static::class, $value, $message.' - '.$e->getMessage());
+            throw CastingException::castingFailure(static::class, $value, messageOverride: $message);
         }
 
-        // $formatter->format() may return false on failure, but the failure is impossible
-        // to reproduce since invalid inputs are caught earlier, so we can safely assume
-        // that the result is a string.
-        /** @var string $formatted */
         $formatted = $formatter->format($value);
 
         return $formatted;

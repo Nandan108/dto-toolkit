@@ -23,6 +23,9 @@ These attributes can be freely combined and chained to compose complex transform
 
 ## 🏷️ Available CastTo Attributes
 
+> 💡 Parameters like `?string $locale = null` or `?string $timezone = null` support flexible resolution.
+> See [Parameter Resolution](#parameter-resolution) below for details.
+
 ### Case converters
 
 **Arguments:** _none_
@@ -30,18 +33,37 @@ All throw a `CastingException` if the input is not stringable.
 
 #### Standard lower/upper case
 
-- CastTo\\**Lowercase**: `"postalCode"` ➔ `"postalcode"`
-- CastTo\\**Uppercase**: `"postalCode"` ➔ `"POSTALCODE"`
+- CastTo\**Lowercase**: `"postalCode"` ➔ `"postalcode"`
+- CastTo\**Uppercase**: `"postalCode"` ➔ `"POSTALCODE"`
 
 #### Identifier Casing Styles
 
 Words in input value may be separated by non-letter characters ***or*** a change of case.
 
-- CastTo\\**CamelCase**:  `"postal_code"` ➔ `"postalCode"`
-- CastTo\\**PascalCase**:  `"postal_code"` ➔ `"PostalCode"`
-- CastTo\\**KebabCase**:  `"postalCode"` ➔ `"postal-code"`
-- CastTo\\**SnakeCase**:  `"PostalCode"` ➔ `"postal_code"`
-- CastTo\\**UpperSnakeCase**:  `"PostalCode"` ➔ `"POSTAL_CODE"`
+- CastTo\**CamelCase**:  `"postal_code"` ➔ `"postalCode"`
+- CastTo\**PascalCase**:  `"postal_code"` ➔ `"PostalCode"`
+- CastTo\**KebabCase**:  `"postalCode"` ➔ `"postal-code"`
+- CastTo\**SnakeCase**:  `"PostalCode"` ➔ `"postal_code"`
+- CastTo\**UpperSnakeCase**:  `"PostalCode"` ➔ `"POSTAL_CODE"`
+
+---
+
+### CastTo\Base64
+
+**Arguments:** *none*
+
+Encodes a string into Base64 format.
+Throws a `CastingException` if the input is not stringable.
+
+---
+
+### CastTo\Base64Decode
+
+**Arguments:** `bool $strict = false`
+
+Decodes a Base64-encoded string.
+If `$strict` is true, decoding will fail on invalid characters.
+Throws a `CastingException` if the input is not a valid Base64 string or if decoding fails.
 
 ---
 
@@ -62,10 +84,40 @@ Throws a `CastingException` if the input is not stringable.
 
 ### CastTo\DateTime
 
-**Arguments:** `string $format = 'Y-m-d H:i:s'`
+**Arguments:**
+- `string $format = 'Y-m-d H:i:s'`
+- `?string $timezone = null` ([see resolution](#parameter-resolution))
 
 Parses a datetime string into a `\DateTimeImmutable` instance.
+Optionally coerces the result to a given timezone.
 Throws a `CastingException` if parsing fails.
+
+---
+
+### CastTo\DateTimeFromLocalized
+
+**Arguments:**
+- `?string $locale = null,` ([see resolution](#parameter-resolution))
+- `int $dateStyle = \IntlDateFormatter::SHORT,`
+- `int $timeStyle = \IntlDateFormatter::SHORT,`
+- `?string $pattern = null,`
+- `?string $timezone = null,` ([see resolution](#parameter-resolution))
+
+
+
+Parses a locale-dependent date/time string using PHP's `IntlDateFormatter`.
+Supports fallback resolution for locale and timezone.
+Throws a `CastingException` on invalid input.
+
+---
+
+### CastTo\DateTimeString
+
+**Arguments:**
+- `string $format = 'Y-m-d H:i:s'`
+
+Converts a `DateTimeInterface` object to a formatted string.
+Throws a `CastingException` if the input is not a `DateTimeInterface`.
 
 ---
 
@@ -81,8 +133,27 @@ Throws a `CastingException` if the value does not match any enum case.
 
 ### CastTo\Floating
 
-Casts a numeric string or int to float.
-Throws a `CastingException` on invalid input.
+**Arguments:**
+- `?string $decimalPoint = null`
+
+Normalizes and casts numeric-looking strings to `float`.
+
+If a decimal point character is provided (e.g., `','`), the string will be cleaned by keeping only digits, one decimal point, and at most one, leading minus sign.
+
+Examples:
+- `'1 234,56'` with `','` ➔ `1234.56`
+- `'-1_000.50'` ➔ `-1000.5`
+
+Throws a `CastingException` if the input is not stringable or cannot be interpreted as numeric.
+
+---
+
+### CastTo\FromJson
+
+**Arguments:** *none*
+
+Parses a JSON string into a native PHP array or object.
+Throws a `CastingException` if the input is not stringable or not valid JSON.
 
 ---
 
@@ -111,12 +182,60 @@ Throws a `CastingException` if the input is not an array.
 
 ---
 
-### CastTo\JsonEncode
+### CastTo\Json
 
 **Arguments:** `int $flags = 0, int $depth = 512`
 
 Converts the value to a JSON string using `json_encode()`.
 Throws a `CastingException` on failure.
+
+---
+
+### CastTo\JsonExtract
+
+**Arguments:** `string $path`
+
+Extracts a specific key or subfield from a JSON string or any array, or nested array structure. Object traversal isn't supported yet.
+The `$path` can use dot-notation for nested fields (e.g. `"user.name"`).
+Throws a `CastingException` if the input is not an array or a valid JSON string, or the path does not exist.
+
+---
+
+### CastTo\LocalizedCurrency
+
+**Arguments:**
+- `int $style = \NumberFormatter::CURRENCY`
+- `int $precision = 2`
+- `?string $locale = null` ([see resolution](#parameter-resolution))
+- `?string $currency = null`
+
+Formats a number as a locale-aware currency string using `NumberFormatter`.
+Throws if the input is not numeric.
+
+---
+
+### CastTo\LocalizedDateTime
+
+**Arguments:**
+- `int $dateStyle = \IntlDateFormatter::MEDIUM`
+- `int $timeStyle = \IntlDateFormatter::SHORT`
+- `?string $locale = null` ([see resolution](#parameter-resolution))
+- `?string $timezone = null` ([see resolution](#parameter-resolution))
+
+Formats a `DateTimeInterface` using a locale-aware format.
+Throws if input is not a valid date/time object.
+
+---
+
+### CastTo\LocalizedNumber
+
+**Arguments:**
+- `int $style = \NumberFormatter::DECIMAL`
+- `int $precision = 2`
+- `?string $locale = null` ([see resolution](#parameter-resolution))
+
+Formats a float as a locale-aware number string.
+Throws a `CastingException` if the input is not numeric.
 
 ---
 
@@ -154,8 +273,7 @@ Throws a `CastingException` if the regex operation fails or if input is not stri
 **Arguments:** `bool $useIntlExtension = true`
 
 Removes diacritical marks (accents) from characters.
-Relies on PHP's Intl extension (`Transliterator`) if $useIntlExtension is true amd Intl is available.
-Otherwise, falls back to using strtr() with a hard-coded transliteration map.
+Uses Transliterator if available, or falls back to a basic ASCII transliteration.
 
 ---
 
@@ -207,3 +325,24 @@ Casts the value to a string using `(string)` coercion.
 
 Trims whitespace (or specified characters) from the string.
 Throws a `CastingException` if the input is not stringable.
+
+---
+
+## <a id="parameter-resolution"></a>📘 Parameter Resolution
+
+For specific parameters, casters may use the trait `UsesParamResolver` or derived traits* to allow flexible, cast-time resolution. This is the case for `locale` and `timezone` parameters in core casters.
+
+### 🔍 Resolution Priority
+
+Examples given for parameter `"locale"`
+| | Case                     | Resolved from                                                  |
+|-|--------------------------|-----------------------------------------------------------------|
+|1| `'fr_CH'` (string)       | Used directly                                                   |
+|2| `Provider::class`        | Calls `Provider::getLocale($value, $prop, $dto)`                   |
+|3| `'<context'` string      | Calls `$dto->getContext('locale')`                                 |
+|4| `'<dto'` string         | Calls `$dto->getLocale()`                                          |
+|5| `null`                   | Fallback order:<br>1. context → 2. dto getter → 3. fallback()   |
+
+Visit [Crafting Casters](CraftingAttributeCasters.md) for more info on how to support flexible parameter resolution in your own casters.
+
+*Existing derived traits: `UsesLocaleResolver`, `UsesTimezoneResolver`

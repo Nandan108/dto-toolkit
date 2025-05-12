@@ -38,7 +38,7 @@ class PerItem extends ChainModifierBase
                 // receive from earlier transformations by $chain().
                 return function (mixed $value) use ($upstreamChain, $subchain): array {
                     // get value from upstream
-                    if ($upstreamChain) {
+                    if (null !== $upstreamChain) {
                         $value = $upstreamChain($value);
                     }
 

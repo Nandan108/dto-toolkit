@@ -25,9 +25,6 @@ final class CanCastBasicValuesTest extends TestCase
 
     public static function builtinCastProvider(): array
     {
-        $dateTime = date('Y-m-d H:i:s');
-        $dateTimeObj = \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $dateTime);
-
         $stringable = new class($strVal = 'foo') {
             public function __construct(public string $strVal)
             {
@@ -61,9 +58,6 @@ final class CanCastBasicValuesTest extends TestCase
             'Trimmed:right'                   => [new CastTo\Trimmed('to', 'right'), 'hotelot', 'hotel'],
             'Capitalized'                     => [new CastTo\Capitalized(), 'hello', 'Hello'],
             'Uppercase'                       => [new CastTo\Uppercase(), 'hello', 'HELLO'],
-            'DateTime'                        => [new CastTo\DateTime(format: DateTimeFormat::SQL), $dateTime, $dateTimeObj],
-            'DateTime:invalid date'           => [new CastTo\DateTime(format: DateTimeFormat::SQL), 'invalid date', CastingException::class, [], 'Unable to parse date with pattern \'Y-m-d H:i:s\' from \'invalid date\''],
-            'DateTime:\stdClass'              => [new CastTo\DateTime(format: DateTimeFormat::SQL), new \stdClass(), CastingException::class],
             'Split'                           => [new CastTo\Split(), 'a,b,c', ['a', 'b', 'c']],
             'Split:sep:"-"'                   => [new CastTo\Split(separator: '-'), 'a-b-c', ['a', 'b', 'c']],
             'Split:empty'                     => [new CastTo\Split(), '', ['']],
@@ -91,8 +85,8 @@ final class CanCastBasicValuesTest extends TestCase
             'Rounded(1)'                      => [new CastTo\Rounded(1), 0.991, 1.0],
             'Rounded(stringable obj)'         => [new CastTo\Rounded(2), new $stringable('0.991'), 0.99],
             'Rounded:not-a-number'            => [new CastTo\Rounded(1), 'not-a-number', CastingException::class],
-            'JsonEncode(valid)'               => [new CastTo\ToJson(), [1, 'a', null, true], '[1,"a",null,true]'],
-            'JsonEncode(invalid)'             => [new CastTo\ToJson(), $circular, CastingException::class, [], 'Failed to cast value to JSON'],
+            'JsonEncode(valid)'               => [new CastTo\Json(), [1, 'a', null, true], '[1,"a",null,true]'],
+            'JsonEncode(invalid)'             => [new CastTo\Json(), $circular, CastingException::class, [], 'Failed to cast value to JSON'],
             // ReplaceIf
             'ReplaceIf:string-match'          => [new CastTo\ReplaceIf('foo', 'bar'), 'foo', 'bar'],
             'ReplaceIf:string-mismatch'       => [new CastTo\ReplaceIf('foo', 'bar'), 'qux', 'qux'],
@@ -104,8 +98,8 @@ final class CanCastBasicValuesTest extends TestCase
             'ReplaceIf:array-lose-match'      => [new CastTo\ReplaceIf(['1', '3'], 'foo', strict: false), 3, 'foo'],
             'Base64Decode'                    => [new CastTo\Base64Decode(), base64_encode($someString), $someString],
             'Base64Decode:invalid'            => [new CastTo\Base64Decode(), ' invalid string ', CastingException::class],
-            'Base64Encode'                    => [new CastTo\Base64Encode(), $someString, base64_encode($someString)],
-            'Base64Encode:invalid'            => [new CastTo\Base64Encode(), [], CastingException::class],
+            'Base64Encode'                    => [new CastTo\Base64(), $someString, base64_encode($someString)],
+            'Base64Encode:invalid'            => [new CastTo\Base64(), [], CastingException::class],
         ];
     }
 
@@ -115,5 +109,23 @@ final class CanCastBasicValuesTest extends TestCase
         // if constructor is instanciated within the DataProvider method, for some reason. So test them separately.
         $this->casterTest(CastTo\NumericString::class, '1234.456', '1 234,46', ['2', ',', ' ']);
         $this->casterTest(CastTo\NumericString::class, 'not-a-number', CastingException::class, ['2', ',', ' ']);
+    }
+
+    public function testDateTime(): void
+    {
+        $dateTime = date('Y-m-d H:i:s');
+        $dateTimeObj = \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $dateTime);
+
+        $this->casterTest(new CastTo\DateTime(format: DateTimeFormat::SQL), $dateTime, $dateTimeObj);
+    }
+
+    public function testDateTimeWithInvalidDateString(): void
+    {
+        $this->casterTest(new CastTo\DateTime(format: DateTimeFormat::SQL), 'invalid date', CastingException::class, [], 'Unable to parse date with pattern \'Y-m-d H:i:s\' from \'invalid date\'');
+    }
+
+    public function testDateTimeWithNonStringValue(): void
+    {
+        $this->casterTest(new CastTo\DateTime(format: DateTimeFormat::SQL), new \stdClass(), CastingException::class);
     }
 }

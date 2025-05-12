@@ -3,6 +3,7 @@
 namespace Nandan108\DtoToolkit\Tests\Traits;
 
 use Nandan108\DtoToolkit\CastTo;
+use Nandan108\DtoToolkit\Contracts\BootsOnDtoInterface;
 use Nandan108\DtoToolkit\Contracts\NormalizesInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Traits\NormalizesFromAttributes;
@@ -33,7 +34,12 @@ trait CanTestCasterClassesAndMethods
             $this->fail('Invalid method type: '.gettype($method));
         }
 
-        CastTo::setCurrentCastingContext('test', $dto);
+        CastTo::setCurrentPropName('test');
+        CastTo::setCurrentDto($dto);
+
+        if ($caster->instance instanceof BootsOnDtoInterface) {
+            $caster->instance->bootOnDto();
+        }
 
         // Call the caster closure with the input value and get the result
         try {

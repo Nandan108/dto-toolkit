@@ -34,10 +34,6 @@ final class ContainerBridge
 
     public static function get(string $id): mixed
     {
-        if (null !== self::$container) {
-            return self::$container->get($id);
-        }
-
         // Try registered binding
         $concrete = self::$manualBindings[$id] ?? $id;
 
@@ -46,8 +42,14 @@ final class ContainerBridge
             return $concrete instanceof \Closure ? $concrete() : $concrete;
         }
 
-        // Fallback to reflection if no container is available -- this is a last resort that should be avoided in production.
-        // Allows for instantiation of classes without constructor arguments
+        // Try DI container, if it's set, let it resolve the type
+        if (null !== self::$container) {
+            return self::$container->get($id);
+        }
+
+        // Fallback to reflection if no container is available.
+        // This DOES NOT SUPPORT constructor arguments or any sort of auto-wiring like full-fledged DI containers.
+        // It only works for classes with no constructor or with only optional parameters.
         if (class_exists($concrete)) {
             $ref = new \ReflectionClass($concrete);
             if ($ref->isInstantiable() && 0 === ($ref->getConstructor()?->getNumberOfRequiredParameters() ?? 0)) {

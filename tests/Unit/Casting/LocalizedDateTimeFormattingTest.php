@@ -9,10 +9,16 @@ use PHPUnit\Framework\TestCase;
 
 final class LocalizedDateTimeFormattingTest extends TestCase
 {
+    #[\Override]
+    public function setUp(): void
+    {
+        if (!extension_loaded('intl')) {
+            $this->markTestSkipped('intl extension not available');
+        }
+    }
+
     public function testLocalizedDateTimeWithShortFormat(): void
     {
-        extension_loaded('intl') or $this->markTestSkipped('intl extension not loaded');
-
         $dtoClass = new class extends FullDto {
             #[LocalizedDateTime(locale: 'fr_FR')]
             public \DateTimeInterface|string|null $date = null;
@@ -27,8 +33,6 @@ final class LocalizedDateTimeFormattingTest extends TestCase
 
     public function testLocalizedDateTimeThrowsIfInputIsNotDateTimeInterface(): void
     {
-        extension_loaded('intl') or $this->markTestSkipped('intl extension not loaded');
-
         $dtoClass = new class extends FullDto {
             #[LocalizedDateTime(locale: 'fr_FR')]
             public \DateTimeInterface|string|null $date = null;

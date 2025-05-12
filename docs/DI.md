@@ -24,7 +24,7 @@ This enables constructor injection for DTOs that need context-aware services lik
 
 ---
 
-## 🧷 Property Injection via `#[Inject]`
+## 🧷 Property Injection via `#[Inject]` (DTOs and Casters)
 
 You can also mark typed properties with `#[Inject]`. These will be populated by calling `$dto->inject()` or `$caster->inject()` on classes that use the `IsInjectable` trait.
 
@@ -47,12 +47,13 @@ This is especially useful for caster Attributes, which are instantiated via refl
 
 ---
 
-## 📦 Centralized Instantiation with `newInstance()`
+## 📦 Centralized DTO Instantiation with `newInstance()`
 
 DTOs extending `BaseDto` can use the static method `newInstance()` to create a fresh instance of themselves. This method automatically handles:
 
-- Resolving the instance via `ContainerBridge::get()` if the class is marked with `#[Inject]`
-- Falling back to `new static()` if not
+- Resolving the instance
+    - via `ContainerBridge::get()` if the class is marked with `#[Inject]`
+    - Falling back to `new static()` if not
 - Calling `$dto->inject()` for DTOs that implement `Injectable`
 - Calling `$dto->boot()` for DTOs that implement `Bootable`
 
@@ -74,16 +75,20 @@ You usually won’t need to call `newInstance()` directly — it’s used intern
 
 The class `ContainerBridge` is the central entry point for dependency injection in DTO Toolkit. It supports:
 
-- Setting a PSR-11 container
+- Setting a PSR-11 container (`setContainer($container)`)
 - Registering fallback bindings manually
 - Returning bound singletons, results from closures, or autoinstantiating zero-arg classes
 
 ```php
-ContainerBridge::register(ServiceInterface::class, SomeService::class);
-ContainerBridge::register(OtherService::class, new OtherService());
+// will auto-instanciate SomeSerivce (zero-arg constructor)
+ContainerBridge::register(abstract: ServiceInterface::class, concrete: SomeService::class);
+// register an OtherService singleton
+ContainerBridge::register(abstract: OtherService::class, concrete: new OtherService());
+// register a factory Closure (new MyService intance returned each time)
+ContainerBridge::register(abstract: MyService::class, concrete: fn() => new MyService());
 ```
 
-If no container has been configured and no binding was registered, `ContainerBridge::get()` will attempt to instantiate the class via reflection — but only if the constructor requires no arguments.
+If no container has been configured and no binding was registered, `ContainerBridge::get(SomeClass::class)` will attempt to instantiate `SomeClass` via reflection — but only if the constructor requires no arguments.
 
 ---
 
@@ -92,7 +97,7 @@ If no container has been configured and no binding was registered, `ContainerBri
 If you’re using Symfony, Laravel, or another PSR-11-compatible container:
 
 ```php
-ContainerBridge::setContainer($container);
+ContainerBridge::setContainer(ContainerInterface $container);
 ```
 
 From that point forward, DTOs and casters will be able to pull dependencies from the shared application container — while still allowing you to override or register test bindings manually.

@@ -97,6 +97,30 @@ class CasterChain implements CasterChainNodeInterface
         return $chain ?? fn (mixed $value): mixed => $value;
     }
 
+    /**
+     * Recursively walks all nested chain elements and applies a callback
+     * to those matching the given type (if provided).
+     *
+     * @template T of object
+     *
+     * @param \Closure(CasterChainNodeInterface):void $callback   a function that receives each matching element
+     * @param class-string<T>|null                    $typeFilter only elements matching this type will be passed to the callback
+     */
+    public function recursiveWalk(callable $callback, ?string $typeFilter = null): void
+    {
+        foreach ($this->chainElements as $element) {
+            // If it matches the type filter, apply callback
+            if (null === $typeFilter || is_a($element, $typeFilter)) {
+                $callback($element);
+            }
+
+            // If the element is a nested chain, recurse
+            if ($element instanceof self) {
+                $element->recursiveWalk($callback, $typeFilter);
+            }
+        }
+    }
+
     #[\Override]
     public function __invoke(mixed $value): mixed
     {

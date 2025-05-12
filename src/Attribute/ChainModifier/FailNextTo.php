@@ -36,7 +36,7 @@ class FailNextTo extends FailTo
 
                 return function (mixed $value) use ($upstreamChain, $subchain, $handler, $dto): mixed {
                     // get the value from upstream (exceptions thrown there are not the concern of this modifier)
-                    if ($upstreamChain) {
+                    if (null !== $upstreamChain) {
                         $value = $upstreamChain($value);
                     }
 

@@ -7,6 +7,8 @@ use Nandan108\DtoToolkit\Enum\Phase;
 
 /**
  * @method static static withGroups(array|string $all = [], array|string $inbound = [], array|string $inboundCast = [], array|string $outbound = [], array|string $outboundCast = [], array|string $validation = [])
+ *
+ * $this trait implements the HasGroupsInterface and ScopedPropertyAccessInterface
  */
 trait UsesGroups // user must implement HasGroupsInterface, ScopedPropertyAccessInterface
 {
@@ -14,13 +16,14 @@ trait UsesGroups // user must implement HasGroupsInterface, ScopedPropertyAccess
 
     /**
      * Create a new DTO instance with the given groups.
+     * implements HasGroupsInterface.
      *
      * @param array|string $inbound      group names to filter properties for loading data (inbound.io phase)
      * @param array|string $inboundCast  sequences of group name(s) for scope-aware (inbound.cast phase)
      * @param array|string $outboundCast sequences of group name(s) for scope-aware (outbound.cast phase)
      * @param array|string $outbound     group names to filter properties for loading data (outbound.io phase)
      */
-    #[\Override] // implements HasGroupsInterface
+    #[\Override]
     public function _withGroups(array|string $all = [], array|string $inbound = [], array|string $inboundCast = [], array|string $outbound = [], array|string $outboundCast = [], array|string $validation = []): static
     {
         foreach ([$all, $inbound, $inboundCast, $outbound, $outboundCast, $validation] as &$groups) {
@@ -66,20 +69,34 @@ trait UsesGroups // user must implement HasGroupsInterface, ScopedPropertyAccess
         return $groupsByPropname;
     }
 
+    /**
+     * @return string[] list of groups in the scope of the given phase
+     *                  implements HasGroupsInterface
+     **/
     #[\Override]
     public function getActiveGroups(Phase $phase): array
     {
         return (array) $this->getContext('groups.'.$phase->value, []);
     }
 
+    /**
+     * @return bool true if at least one of the given groups is in scope for the given phase,
+     *              or if no groups are given (i.e. no group filtering is required)
+     *
+     * implements HasGroupsInterface
+     **/
     #[\Override]
     public function groupsAreInScope(Phase $phase, array $groups): bool
     {
         return !$groups || array_intersect($this->getActiveGroups($phase), $groups);
     }
 
-    /** @psalm-suppress LessSpecificImplementedReturnType */
-    #[\Override] // ScopedPropertyAccessInterface
+    /**
+     * implements ScopedPropertyAccessInterface.
+     *
+     * @psalm-suppress LessSpecificImplementedReturnType
+     **/
+    #[\Override]
     public function getPropertiesInScope(Phase $phase): array
     {
         $propGroupsForPhase = $this->getPropGroups($phase);

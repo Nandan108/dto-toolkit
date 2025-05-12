@@ -2,6 +2,7 @@
 
 namespace Nandan108\DtoToolkit\CastTo;
 
+use Nandan108\DtoToolkit\Contracts\BootsOnDtoInterface;
 use Nandan108\DtoToolkit\Contracts\CasterInterface;
 use Nandan108\DtoToolkit\Core\CastBase;
 use Nandan108\DtoToolkit\Exception\CastingException;
@@ -27,7 +28,7 @@ use Nandan108\DtoToolkit\Traits\UsesLocaleResolver;
  * @psalm-api
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
-final class LocalizedCurrency extends CastBase implements CasterInterface
+final class LocalizedCurrency extends CastBase implements CasterInterface, BootsOnDtoInterface
 {
     use UsesLocaleResolver;
 
@@ -35,21 +36,30 @@ final class LocalizedCurrency extends CastBase implements CasterInterface
         string $currency,
         ?string $locale = null,
     ) {
-        $this->resolveLocaleProvider($locale);
+        $this->throwIfExtensionNotLoaded('intl');
 
-        parent::__construct([$currency, $locale]);
+        parent::__construct(args: [$currency], constructorArgs: ['locale' => $locale]);
+    }
+
+    /**
+     * This function will be called once per (caster+ctorArgs)+dto.
+     */
+    #[\Override]
+    public function bootOnDto(): void
+    {
+        $this->configureLocaleResolver();
     }
 
     #[\Override]
     public function cast(mixed $value, array $args): string
     {
-        [$currency, $localeOrProviderClass] = $args;
+        [$currency] = $args;
 
         if (!is_numeric($value)) {
             throw CastingException::castingFailure(static::class, $value, 'Value is not numeric.');
         }
 
-        $locale = $this->getLocale($value, $localeOrProviderClass);
+        $locale = $this->resolveParam('locale', $value);
 
         $formatter = new \NumberFormatter($locale, \NumberFormatter::CURRENCY);
 

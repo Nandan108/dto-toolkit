@@ -9,19 +9,27 @@ use PHPUnit\Framework\TestCase;
 
 final class DateTimeFromLocalizedTest extends TestCase
 {
+    #[\Override]
+    public function setUp(): void
+    {
+        if (!extension_loaded('intl')) {
+            $this->markTestSkipped('intl extension not available');
+        }
+    }
+
     public function testParsesStandardLocaleShortStyle(): void
     {
-        extension_loaded('intl') or $this->markTestSkipped('intl extension not available');
-
         $dtoClass = new class extends FullDto {
             #[DateTimeFromLocalized(locale: 'fr_CH')]
             public \DateTimeInterface|string|null $dt = null;
         };
 
         foreach (['04.05.2025', '04.05.25'] as $date) {
-            $dto = $dtoClass::fromArray(['dt' => "$date 14:30"]);
-            $this->assertInstanceOf(\DateTimeImmutable::class, $dto->dt);
-            $this->assertSame('2025-05-04 14:30', $dto->dt->format('Y-m-d H:i'));
+            $dt = $dtoClass::fromArray(['dt' => "$date 14:30"])->dt;
+            if (is_string($dt)) {
+                $this->fail('Expected a DateTimeInterface, got string');
+            }
+            $this->assertSame('2025-05-04 14:30', $dt?->format('Y-m-d H:i'));
         }
     }
 
@@ -32,8 +40,11 @@ final class DateTimeFromLocalizedTest extends TestCase
             public \DateTimeInterface|string|null $dt = null;
         };
 
-        $dto = $dtoClass::fromArray(['dt' => '04.05.2025 14:30']);
-        $this->assertSame('2025-05-04 14:30', $dto->dt->format('Y-m-d H:i'));
+        $dt = $dtoClass::fromArray(['dt' => '04.05.2025 14:30'])->dt;
+        if (is_string($dt)) {
+            $this->fail('Expected a DateTimeInterface, got string');
+        }
+        $this->assertSame('2025-05-04 14:30', $dt?->format('Y-m-d H:i'));
     }
 
     public function testParsesWithTimezoneOverride(): void
@@ -43,8 +54,12 @@ final class DateTimeFromLocalizedTest extends TestCase
             public \DateTimeInterface|string|null $dt = null;
         };
 
-        $dto = $dtoClass::fromArray(['dt' => '04.05.25 14:30']);
-        $this->assertSame('Europe/Paris', $dto->dt->getTimezone()->getName());
+        $dt = $dtoClass::fromArray(['dt' => '04.05.25 14:30'])->dt;
+
+        if (is_string($dt)) {
+            $this->fail('Expected a DateTimeInterface, got string');
+        }
+        $this->assertSame('Europe/Paris', $dt?->getTimezone()?->getName());
     }
 
     public function testThrowsOnEmptyString(): void

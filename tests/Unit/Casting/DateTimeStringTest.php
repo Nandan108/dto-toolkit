@@ -36,7 +36,7 @@ final class DateTimeStringTest extends TestCase
     public function testUsesCustomPattern(): void
     {
         $dtoClass = new class extends FullDto {
-            #[DateTimeString(pattern: 'd.m.Y H:i')]
+            #[DateTimeString(format: 'd.m.Y H:i')]
             public \DateTimeInterface|string|null $dt = null;
         };
 

@@ -7,7 +7,7 @@ use Nandan108\DtoToolkit\Exception\CastingException;
 
 /** @psalm-api */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
-final class ToJson extends CastBase
+final class Json extends CastBase
 {
     public function __construct(int $flags = 0, int $depth = 512)
     {
@@ -19,15 +19,15 @@ final class ToJson extends CastBase
     {
         /** @var int $flags */
         [$flags, $depth] = $args;
-        $flags = $flags & ~JSON_THROW_ON_ERROR;
 
-        $json = json_encode($value, $flags, $depth);
-
-        if (false === $json) {
-            $error = json_last_error_msg();
-            throw CastingException::castingFailure(className: static::class, operand: $value, messageOverride: "Failed to cast value to JSON: $error");
+        try {
+            return json_encode($value, $flags | JSON_THROW_ON_ERROR, $depth);
+        } catch (\JsonException $e) {
+            throw CastingException::castingFailure(
+                className: static::class,
+                operand: $value,
+                messageOverride: 'Failed to cast value to JSON: '.$e->getMessage(),
+            );
         }
-
-        return $json;
     }
 }

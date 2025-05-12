@@ -2,9 +2,9 @@
 
 namespace Nandan108\DtoToolkit\CastTo;
 
+use Nandan108\DtoToolkit\Contracts\BootsOnDtoInterface;
 use Nandan108\DtoToolkit\Contracts\CasterInterface;
 use Nandan108\DtoToolkit\Core\CastBase;
-use Nandan108\DtoToolkit\Exception\CastingException;
 use Nandan108\DtoToolkit\Traits\UsesLocaleResolver;
 
 /**
@@ -26,7 +26,7 @@ use Nandan108\DtoToolkit\Traits\UsesLocaleResolver;
  * @psalm-api
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
-final class LocalizedNumber extends CastBase implements CasterInterface
+final class LocalizedNumber extends CastBase implements CasterInterface, BootsOnDtoInterface
 {
     use UsesLocaleResolver;
 
@@ -35,25 +35,32 @@ final class LocalizedNumber extends CastBase implements CasterInterface
         int $precision = 2,
         ?string $locale = null,
     ) {
-        $this->resolveLocaleProvider($locale);
-
+        $this->throwIfExtensionNotLoaded('intl');
         if ($precision < 0) {
             throw new \InvalidArgumentException('Precision must be a non-negative integer.');
         }
 
-        parent::__construct([$locale, $style, $precision]);
+        // locale goes to constructorArgs because it needs to be part of the caster's instance cache key
+        parent::__construct(args: [$style, $precision], constructorArgs: ['locale' => $locale]);
+    }
+
+    /**
+     * This function will be called once per caster+ctorArgs+dto.
+     */
+    #[\Override]
+    public function bootOnDto(): void
+    {
+        $this->configureLocaleResolver();
     }
 
     #[\Override]
     public function cast(mixed $value, array $args): string
     {
-        [$localeOrProviderClass, $style, $fractionDigits] = $args;
+        [$style, $fractionDigits] = $args;
 
-        if (!is_numeric($value)) {
-            throw CastingException::castingFailure(static::class, $value, 'Value is not numeric.');
-        }
+        $this->throwIfNotNumeric($value);
 
-        $locale = $this->getLocale($value, $localeOrProviderClass);
+        $locale = $this->resolveParam('locale', $value);
 
         $formatter = new \NumberFormatter($locale, $style);
         $formatter->setAttribute(\NumberFormatter::FRACTION_DIGITS, $fractionDigits);

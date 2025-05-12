@@ -2,7 +2,6 @@
 
 namespace Nandan108\DtoToolkit\Core;
 
-use Attribute;
 use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Contracts\CasterInterface;
 use Nandan108\DtoToolkit\Contracts\Injectable;
@@ -23,11 +22,12 @@ abstract class CastBase extends CastTo implements CasterInterface, Injectable
      *
      * @psalm-suppress PossiblyUnusedParam
      */
-    public function __construct(array $args = [])
+    public function __construct(array $args = [], array $constructorArgs = [])
     {
         parent::__construct(
             methodOrClass: static::class,
             args: $args,
+            constructorArgs: $constructorArgs,
         );
     }
 
@@ -46,13 +46,46 @@ abstract class CastBase extends CastTo implements CasterInterface, Injectable
      *
      * @param string $expected the expected type
      */
-    protected function throwIfNotStringable(mixed $value, string $expected = 'numeric, string or Stringable'): string
+    protected function throwIfNotStringable(mixed $value, string $expected = 'numeric, string or Stringable', bool $expectNonEmpty = false): string
     {
+        $expected = "Expected: $expected (got ".gettype($value).')';
+
         if ($this->is_stringable($value)) {
-            return (string) $value;
+            $value = (string) $value;
+            if ($expectNonEmpty && '' === trim($value)) {
+                throw CastingException::castingFailure(className: $this::class, operand: $value, messageOverride: $expected);
+            }
+
+            return $value;
         }
 
         throw CastingException::castingFailure(className: $this::class, operand: $value, messageOverride: "Expected: $expected, but got ".gettype($value));
+    }
+
+    /**
+     * Utility function: Throw if the value is not numeric.
+     *
+     * @return numeric
+     */
+    protected function throwIfNotNumeric(mixed $value, string $expected = 'numeric'): mixed
+    {
+        if (is_numeric($value)) {
+            return $value;
+        }
+
+        throw CastingException::castingFailure(className: $this::class, operand: $value, messageOverride: "Expected: $expected, but got non-numeric ".gettype($value));
+    }
+
+    /**
+     * Utility function for use in caster constructors.
+     * Throws if the value is not a DateTimeInterface.
+     *
+     * @throws \RuntimeException
+     */
+    protected function throwIfExtensionNotLoaded(string $extensionName): void
+    {
+        $classShortName = fn (): string => (new \ReflectionClass(static::class))->getShortName();
+        extension_loaded($extensionName) || throw new \RuntimeException("Extension $extensionName is required for ".$classShortName());
     }
 
     /**

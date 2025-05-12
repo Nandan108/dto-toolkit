@@ -30,7 +30,7 @@ class FailTo extends ChainModifierBase
 
         return new CasterChain(queue: $queue, dto: $dto, count: 0, class: 'FailTo',
             buildCasterClosure: function (array $chainElements, ?callable $upstreamChain) use ($handler, $dto): \Closure {
-                if (!$upstreamChain) {
+                if (null === $upstreamChain) {
                     // If there is no upstream chain, we can't catch exceptions
                     throw new \LogicException('FailTo modifier catches failures that may be thrown by previous Casters, therefore it should not be used as the first element of a chain. Use FailNextTo instead.');
                 }

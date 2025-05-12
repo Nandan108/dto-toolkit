@@ -2,12 +2,17 @@
 
 ## Product Backlog Items
 
-- **[053]** Add Caster LocalizedNumber, with trait UsesLocaleResolver. See if we can share resolution/injection logic with CastTo
 - **[069]** Add  #[WithDefaultGroups(...)] class attribute, takes same params as UsesGrops::_withGroups() and auto-applies them after instanciation
+- **[056]** Support multi-step casting by making withGroups(inboundCast: ...) take a sequence of group(s)
+  Then apply each step in sequence. Same with outboundCast.
 - **[046]** Add modifier `#[SkipIfMatch(mixed $values, $return=null)]`, allows short-circuitting following caster(s) by returning \$return if input === \$values or input in $values.
 - **[049]** Add `#[Collect(count: N)]` and #[Wrap(N)] (`#[NoOp]` = sugar for #[Wrap(0)]). Aggregate the result of the next N subchains into an array.
   E.g.: `#[Collect(3), NoOp, Wrap(2), CastTo\Rounded(1), CastTo\NumericString(2,','), CastTo\CurrencyVal('USD')]` => cast("2.42") Returns: `["2.42", "2,40", CurrencyVal object]`
 - **[059]** Add #[Wrap(N)] chain modifier that does nothing but wraps a subchain. Could be useful with #[Collect(N)]
+- **[065]** Add FirstSuccess chain modifier: #[FirstSuccess($count)]
+  - Wraps next $count suchains as candidates and attemps each one in sequence
+  - Return the result of the first successful chain, or throw if none succeeds.
+  - Enables graceful branching on multi-type or multi-format inputs
 - **[051]** Add modifier `#[ApplyIfTruthy(check, count=1, negate=false)]` (and suggar `#[ApplyIfNot]` )
   - E.g.: `#[ApplyIfTruthy('isAdmin', count(2))]` (or `#[ApplyIf]`?) would result in applying the next 2 casters only if one of the following returns truthy:
     - `$dto->isAdmin()` (if available), or
@@ -28,8 +33,6 @@
 - **[028]** Add nested DTO support with `CastTo\Dto(class, groups: 'api')` (from array or object), recursive normalization and validation
 - **[045]** Add support for validation [See details](#PBI-045)
   The mapping source will be different for inbound and outbound casting, this needs reflexion.
-- **[056]** Support multi-step casting by making withGroups(inboundCast: ...) take a sequence of group(s)
-  Then apply each step in sequence. Same with outboundCast.
   **[058]** Add a doc about FullDto and making one's own slimmed-down version if not all features are needed
 - **[063]** Add validation attributes as part of caster chains
   - E.g., #[Valid\Range(min, max)], #[Valid\StrLength()]
@@ -42,10 +45,9 @@
   - This enables seamless integration with Laravel and Symfony's validation error handling mechanisms
   - Keep validation logic and error reporting fully pluggable and framework-agnostic
   - Consider a "ValidationErrorMapperInterface" for adapter overrides (optional future enhancement)
-- **[065]** Add FirstSuccess chain modifier: #[FirstSuccess($count)]
-  - Wraps next $count suchains as candidates and attemps each one in sequence
-  - Return the result of the first successful chain, or throw if none succeeds.
-  - Enables graceful branching on multi-type or multi-format inputs
+- **[070]** Create new exception (CastingSetupException ?)
+  - To be thrown when encountering errors during chain building/boot/instanciation, etc...
+  - These exceptions won't have translations, while cast-time exceptions (CastingExceptions) will allow message l10n in the future
 ---
 
 ## Completed PBIs
@@ -92,6 +94,8 @@
 - [061] let DtoBase use IsInjectable, make sure $dto->inject() is called after new instanciation
 - [068] Add casters to convert input to camelCase, kebab-case, PascalCase and snake_case
 - [067] Fix to/fromEntity getEntityGetters() and setEntitySetters() to also check for camelCase methods for snake_cased properties
+- [053] Add trait UsesLocaleResolver, CastTo\LocalizedNumericString, LocalizedCurrency, LocalizedDateTime.
+
 
 ---
 

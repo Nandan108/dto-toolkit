@@ -10,10 +10,10 @@ final class Floating extends CastBase
 {
     /**
      * @param string|null $decimalPoint
-     *                                  Decimal point character to use for parsing the value.
-     *                                  If null, parsing will be done using the default decimal point character ('.').
-     *                                  If provided (including '.'), the value will first be normalized to keep only digits,
-     *                                  an optional leading minus sign, and the provided decimal point character.
+     * Decimal point character to use for parsing the value.
+     * If null, parsing will be done using the default decimal point character ('.').
+     * If provided (including '.'), the value will first be normalized to keep only digits,
+     * an optional leading minus sign, and the provided decimal point character.
      *
      * @psalm-suppress NullableProperty
      * @psalm-suppress PossiblyUnusedProperty

@@ -6,7 +6,7 @@ use Nandan108\DtoToolkit\Core\CastBase;
 
 /** @psalm-api */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
-final class Base64Encode extends CastBase
+final class Base64 extends CastBase
 {
     #[\Override]
     public function cast(mixed $value, array $args): string

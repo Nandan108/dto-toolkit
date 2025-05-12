@@ -3,6 +3,34 @@
 All notable changes to this project will be documented in this file.
 
 ---
+
+## [Unreleased]
+
+
+### Enhanced Parameter Resolution Logic
+
+* Added `UsesParamResolver` (and derived `UsesLocaleResolver` and `UsersTimezoneResolver`) to support dynamic caster parameter resolution.
+Parameters wired up via these traits can receive a value from various sources (e.g. `#[CastTo\Caster(locale: source)]`), with examples sources:
+  * `"fr_CH"` — uses the value directly
+  * `"<dto"` — uses `$dto->get{ParamName}()`
+  * `"<context"` — uses `$dto->getContext('{paramName}')`
+  * `MyClass::class` — uses static callables like `MyClass::method($value, $prop, $dto)`
+* Updated resolution logic to normalize and dispatch these dynamically during `bootOnDto()`
+* Updated documentation with a full resolution priority table reflecting new syntax
+* Preserves backward compatibility with string values, nulls, and class-based providers
+
+This enhancement makes caster attributes more expressive and better aligned with real-world localization, context, and service-based configurations.
+
+### Some other changes
+
+* add DateTime ↔︎ string casting via standard formats and timezone overrides
+* add DateTimeFromLocalized caster, returns DateTimeImmutable
+* add $decimalPoint param to Floating caster, allows robust parsing of numeric strings
+* introduce locale-aware casting with multi-source locale resolution
+* add documentation for all new casters
+
+---
+
 ## [0.4.2] - 2025-05-05
 
 ### Added
@@ -69,12 +97,12 @@ All notable changes to this project will be documented in this file.
 - **New core casters**:
   - `#[CastTo\RegexReplace]`
   - `#[CastTo\RemoveDiacritics]`
-  - `#[CastTo\FromJson]`
-  - `#[CastTo\JsonExtract]`
+  - `#[CastTo\FromJson]` * needs documenting
+  - `#[CastTo\JsonExtract]` * needs documenting
   - `#[CastTo\NumericString]`
-  - `#[CastTo\Base64Encode]`
-  - `#[CastTo\Base64Decode]`
-  - `#[CastTo\RegexSplit]`
+  - `#[CastTo\Base64]` * needs documenting
+  - `#[CastTo\Base64Decode]` * needs documenting
+  - `#[CastTo\RegexSplit]` * needs documenting
 - **Magic method helpers**:
   - DTOs now support dynamic `from*` / `with*` method forwarding via `__call` and `__callStatic`
 - **Extended DTO construction methods**:

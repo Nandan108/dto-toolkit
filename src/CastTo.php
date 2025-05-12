@@ -3,6 +3,7 @@
 namespace Nandan108\DtoToolkit;
 
 use Nandan108\DtoToolkit\Contracts\Bootable;
+use Nandan108\DtoToolkit\Contracts\BootsOnDtoInterface;
 use Nandan108\DtoToolkit\Contracts\CasterInterface;
 use Nandan108\DtoToolkit\Contracts\CasterResolverInterface;
 use Nandan108\DtoToolkit\Contracts\HasGroupsInterface;
@@ -264,10 +265,13 @@ class CastTo implements PhaseAwareInterface
     public static function getCastingClosureMap(BaseDto $dto, bool $outbound = false): array
     {
         static $cache = [];
-
+        self::$currentDto = $dto;
         $reflection = new \ReflectionClass($dto);
         $dtoClass = $reflection->getName();
         $casts = &$cache[$dtoClass];
+
+        // static cache to keep track of which DTOs have been booted
+        static $dtoBootCache = new \WeakMap();
 
         $phase = Phase::fromComponents($outbound, false);
 
@@ -285,15 +289,40 @@ class CastTo implements PhaseAwareInterface
 
             $attrInstancesByProp = ($dto::class)::loadPropertyMetadata($phase, 'attr');
 
+            // build caster chains
             foreach (array_filter($attrInstancesByProp) as $propName => $attrInstances) {
                 $chain = new CasterChain(new \ArrayIterator($attrInstances), $dto);
                 $casts[$phaseKey][$propName] = $chain;
             }
         }
 
-        // return the cast/ers for the requested phase
+        $map = $casts[$phaseKey] ?? [];
 
-        return $casts[$phaseKey] ?? [];
+        // Boot chain elements on DTO (recursively), if needed
+        if (!isset($dtoBootCache[$dto])) {
+            // use a WeakMap for its object de-duplication properties
+            $instances = new \WeakMap();
+            // gather all instances of BootsOnDtoInterface, from all chains (both phases)
+            foreach ($casts as $map) {
+                foreach ($map as $chain) {
+                    /** @psalm-suppress ArgumentTypeCoercion */
+                    /** @var CasterChain $chain */
+                    $chain->recursiveWalk(function (CasterMeta $meta) use ($instances) {
+                        if ($meta->instance instanceof BootsOnDtoInterface) {
+                            $instances[$meta->instance] ??= $meta->instance;
+                        }
+                    }, CasterMeta::class);
+                }
+            }
+            // on each instance, run $instance->bootOnDto()
+            foreach ($instances as $instance) {
+                $instance->bootOnDto();
+            }
+            $dtoBootCache[$dto] = true;
+        }
+
+        // return the cast/ers for the requested phase
+        return $map;
     }
 
     /**
@@ -301,9 +330,28 @@ class CastTo implements PhaseAwareInterface
      *
      * @param string $propName The name of the property being cast
      */
-    public static function setCurrentCastingContext(?string $propName, ?BaseDto $dto): void
+    public static function setCurrentPropName(?string $propName): void
     {
         self::$currentPropName = $propName;
+    }
+
+    public static function setCurrentDto(?BaseDto $dto): void
+    {
         self::$currentDto = $dto;
+    }
+
+    /**
+     * Get the current $dto instance.
+     *
+     * @throws \RuntimeException if the dto is not set
+     */
+    protected static function getCurrentDto(): BaseDto
+    {
+        // Can't use this trait without being a CastTo
+        if (null === static::$currentDto) {
+            throw new \RuntimeException('Cannot resolve parameter without a DTO (CastTo::$currentDto is null)');
+        }
+
+        return static::$currentDto;
     }
 }

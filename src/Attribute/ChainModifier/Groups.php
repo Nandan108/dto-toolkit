@@ -37,7 +37,7 @@ final class Groups extends ChainModifierBase
         );
     }
 
-    protected function inPhase(BaseDto $dto): bool
+    protected function inPhase(HasGroupsInterface $dto): bool
     {
         return $dto->groupsAreInScope($this->getPhase(), (array) $this->groups);
     }

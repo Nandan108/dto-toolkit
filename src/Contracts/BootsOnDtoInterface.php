@@ -1,0 +1,18 @@
+<?php
+
+namespace Nandan108\DtoToolkit\Contracts;
+
+/**
+ * This interface is used to check if a DTO is valid.
+ */
+interface BootsOnDtoInterface
+{
+    /**
+     * Prepare caster as needed, and verify that DTO is valid.
+     * This method will be called once per Caster-instance/DTO,
+     * immediately after chain building, only for casters implementing this interface.
+     *
+     * @throws \InvalidArgumentException if the DTO is not valid
+     */
+    public function bootOnDto(): void;
+}
