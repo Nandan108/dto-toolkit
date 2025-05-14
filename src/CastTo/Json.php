@@ -21,13 +21,10 @@ final class Json extends CastBase
         [$flags, $depth] = $args;
 
         try {
+            /** @var string */
             return json_encode($value, $flags | JSON_THROW_ON_ERROR, $depth);
         } catch (\JsonException $e) {
-            throw CastingException::castingFailure(
-                className: static::class,
-                operand: $value,
-                messageOverride: 'Failed to cast value to JSON: '.$e->getMessage(),
-            );
+            throw CastingException::castingFailure(className: static::class, operand: $value, messageOverride: 'Failed to cast value to JSON: '.$e->getMessage());
         }
     }
 }

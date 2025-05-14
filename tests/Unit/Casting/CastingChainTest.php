@@ -2,8 +2,7 @@
 
 namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
-use Nandan108\DtoToolkit\Attribute\ChainModifier\FailNextTo;
-use Nandan108\DtoToolkit\Attribute\ChainModifier\PerItem;
+use Nandan108\DtoToolkit\Attribute\ChainModifier as Mod;
 use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\CastTo\RegexReplace;
 use Nandan108\DtoToolkit\Contracts\NormalizesInterface;
@@ -42,7 +41,7 @@ final class CastingChainTest extends TestCase
             use NormalizesFromAttributes;
             #[CastTo\Trimmed('-')] // trim dashes
             #[CastTo\Split('/')] // split into an array
-            #[PerItem(3)] // Apply next 3 casters on the value's array elements instead of whole value
+            #[Mod\PerItem(3)] // Apply next 3 casters on the value's array elements instead of whole value
             #[CastTo\Trimmed('X ')] // trim whitespace
             #[CastTo\Rounded(2)] // round to 2 decimals
             #[RegexReplace('/^/', '$')] // add prefix (implicit cast to string)
@@ -67,7 +66,7 @@ final class CastingChainTest extends TestCase
             use NormalizesFromAttributes;
             #[CastTo\Trimmed('-')] // trim dashes
             // #[CastTo\Split('/')] // FORGET to split into an array
-            #[PerItem(3)] // Apply next 3 casters on the value's array elements instead of whole value
+            #[Mod\PerItem(3)] // Apply next 3 casters on the value's array elements instead of whole value
             /* - */ #[CastTo\Trimmed('X ')] // trim whitespace
             /* - */ #[CastTo\Rounded(2)] // round to 2 decimals
             /* - */ #[RegexReplace('/^/', '$')] // add $ prefix (implicit cast to string)
@@ -91,8 +90,8 @@ final class CastingChainTest extends TestCase
         /** @psalm-suppress ExtensionRequirementViolation */
         $dto = new class extends BaseDto implements NormalizesInterface {
             use NormalizesFromAttributes;
-            #[PerItem]
-            /* - */ #[FailNextTo('n/a')]
+            #[Mod\PerItem]
+            /* - */ #[Mod\FailNextTo('n/a')]
             /* ----- */ #[CastTo\Integer]
             #[CastTo\Join('/')]
             public array|string|int|null $someProp = null;
@@ -131,7 +130,7 @@ final class CastingChainTest extends TestCase
             use NormalizesFromAttributes;
             #[CastTo\Trimmed('-')] // trim dashes
             #[CastTo\Split('/')] // split into an array
-            #[PerItem(3)] // Apply next 3 casters on the value's array elements instead of whole value
+            #[Mod\PerItem(3)] // Apply next 3 casters on the value's array elements instead of whole value
             #[CastTo\Trimmed('X ')] // trim whitespace
             #[CastTo\Rounded(2)] // round to 2 decimals
             // #[Prefix('$')] // add prefix (implicit cast to string)
@@ -144,7 +143,7 @@ final class CastingChainTest extends TestCase
             $dto->normalizeInbound();
             $this->fail('Expected CastingException not thrown');
         } catch (\LogicException $e) {
-            $this->assertStringStartsWith('#[PerItem] expected 3 cast chains, but only found 2', $e->getMessage());
+            $this->assertStringStartsWith('#[PerItem] expected 3 child nodes, but only found 2', $e->getMessage());
         }
         $this->assertTrue(true);
     }

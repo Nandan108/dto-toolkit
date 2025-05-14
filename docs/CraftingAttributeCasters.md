@@ -113,9 +113,11 @@ $locale = $this->resolveParam('locale', $value);
 
 ## 🎯 Use `UsesLocaleResolver` or `UsesTimeZoneResolver`
 
-For common param types, shortcut traits are available:
+Shortcut traits for locale and timezone resolution are built-in to DTO Core:
 
 ```php
+use Nandan108\DtoToolkit\Traits\UsesTimeZoneResolver;
+
 class MyCaster extends CastBase implements CasterInterface, BootsOnDtoInterface
 {
     use UsesTimeZoneResolver;

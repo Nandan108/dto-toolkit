@@ -4,49 +4,70 @@ All notable changes to this project will be documented in this file.
 
 ---
 
-## [Unreleased]
+## [v0.5.0] - 2025-05-14
 
+### ✨ Flexible Parameter Resolution System
 
-### Enhanced Parameter Resolution Logic
+- Introduced `UsesParamResolver`, a general-purpose mechanism for resolving caster parameters dynamically from:
+  - Literal values (e.g. `'fr_CH'`)
+  - DTO methods (`<dto.locale>` → `$dto->getLocale()`)
+  - DTO context (`<context.locale>` → `$dto->getContext('locale')`)
+  - Static callables (`MyClass::getLocale($value, $prop, $dto)`)
+  - Optional fallback closures
+- Added traits: `UsesLocaleResolver`, `UsesTimeZoneResolver` (both built on `UsesParamResolver`)
+- New interface: `BootsOnDtoInterface` enables casters to initialize themselves per DTO via `bootOnDto()`
+- Casters like `LocalizedNumber`, `LocalizedCurrency`, `LocalizedDateTime`, etc. now support dynamic resolution
 
-* Added `UsesParamResolver` (and derived `UsesLocaleResolver` and `UsersTimezoneResolver`) to support dynamic caster parameter resolution.
-Parameters wired up via these traits can receive a value from various sources (e.g. `#[CastTo\Caster(locale: source)]`), with examples sources:
-  * `"fr_CH"` — uses the value directly
-  * `"<dto"` — uses `$dto->get{ParamName}()`
-  * `"<context"` — uses `$dto->getContext('{paramName}')`
-  * `MyClass::class` — uses static callables like `MyClass::method($value, $prop, $dto)`
-* Updated resolution logic to normalize and dispatch these dynamically during `bootOnDto()`
-* Updated documentation with a full resolution priority table reflecting new syntax
-* Preserves backward compatibility with string values, nulls, and class-based providers
-
-This enhancement makes caster attributes more expressive and better aligned with real-world localization, context, and service-based configurations.
-
-### Some other changes
-
-* add DateTime ↔︎ string casting via standard formats and timezone overrides
-* add DateTimeFromLocalized caster, returns DateTimeImmutable
-* add $decimalPoint param to Floating caster, allows robust parsing of numeric strings
-* introduce locale-aware casting with multi-source locale resolution
-* add documentation for all new casters
+> See the new `CraftingAttributeCasters.md` guide for instructions on authoring custom casters using this system.
 
 ---
 
-## [0.4.2] - 2025-05-05
+### 🧱 Caster Chain Architecture Refactor
 
-### Added
-- Locale-aware casting support:
-  - `CastTo\LocalizedNumber`
-  - `CastTo\LocalizedCurrency`
-  - `CastTo\LocalizedDateTime`
-- New trait `UsesLocaleResolver` for flexible locale resolution:
-  1. Locale string (e.g. `'fr_CH'`) or provider class passed as caster attribute argument
-  2. Registered `LocaleProviderInterface` instance from container (via `ContainerBridge`)
-  3. Locale-aware DTO, with method `getLocale($value, $propName)`
-  4. Context key via `withContext(['locale' => 'xx_XX'])`
-  5. Fallback to `locale_get_default()` if `intl` extension is loaded
+- Replaced the static `CasterChainBuilder` with a dynamic, recursive `CasterChain` class
+- Chain elements are now composed of structured nodes:
+  - `CasterMeta` (leaf nodes)
+  - `CasterChain` (nested chains from modifiers)
+- Chain modifiers (`PerItem`, `FailTo`, etc.) now return structured `CasterChain` objects
+- New interface: `CasterChainNodeInterface` unifies chain node behavior
+- Method `CasterChain::recursiveWalk()` enables inspection and conditional operations on full chain trees
+- Caster instances are preserved for introspection, debugging, and `bootOnDto()` application
 
-- `LocaleProviderInterface` allows centralized or dynamic resolution strategies
-- Test coverage for all fallback and error paths
+---
+
+### 🧪 Built-in Casters
+
+#### New casters
+- `CastTo\DateTimeFromLocalized` – parses locale-formatted strings into `DateTimeImmutable`
+- `CastTo\DateTimeString` – formats `DateTimeInterface` as string using pattern or enum
+- `CastTo\LocalizedCurrency`, `LocalizedNumber`, `LocalizedDateTime` – format numbers/dates with dynamic locale
+
+#### Casters updated or renamed for consistency
+- `CastTo\Floating` ➔ now supports parsing localized numeric strings via `decimalPoint` arg
+- `CastTo\Base64Encode` ➔ `CastTo\Base64`
+- `CastTo\Base64Decode` ➔ `CastTo\FromBase64`
+- `CastTo\ToJson` ➔ `CastTo\Json`
+
+---
+
+### 📚 Documentation Updates
+
+- Major expansion of `BuiltInCasters.md` to cover all core and new casters with usage details
+- New section on parameter resolution with syntax table and priority rules
+- Added `CraftingAttributeCasters.md` with guidance for writing custom caster attributes
+
+---
+
+### 🧪 Testing & Validation
+
+- New test coverage for:
+  - Locale resolution fallback paths
+  - Caster booting (`bootOnDto`)
+  - Localized formatting (`Intl`-based casters)
+  - Caster chain modifier structure and behavior
+
+---
+
 
 ## [0.4.1] - 2025-05-04
 
@@ -118,7 +139,7 @@ This enhancement makes caster attributes more expressive and better aligned with
   - CastModifier ➔ ChainModifier (namespace, interface, and base class)
   - Casters `ArrayFromCsv` ➔ `Split`, `CsvFromArray` ➔ `Join`
   - namespace `Attribute\CastModifier` ➔ `Attribute\ChainModifier`
-  - contract `Contracts\CastModifierInterface` ➔ `Contracts\ChainModifierInterface`
+  - contract `Contracts\CastModifierInterface` ➔ `Contracts\CasterChainNodeProducerInterface`
 - **Merged**:
   - `NormalizesInboundInterface` and `NormalizedOutboundInterface` into `NormalizesInterface`
 - **Renamed**:

@@ -45,7 +45,7 @@ class DateTime extends CastBase implements CasterInterface, BootsOnDtoInterface
     #[\Override]
     public function bootOnDto(): void
     {
-        $this->configureTimezoneResolver(allowNull: true);
+        $this->configureTimezoneResolver();
     }
 
     #[\Override]

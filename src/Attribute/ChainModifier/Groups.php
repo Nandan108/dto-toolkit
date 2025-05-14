@@ -17,13 +17,13 @@ final class Groups extends ChainModifierBase
     }
 
     #[\Override]
-    public function getModifier(\ArrayIterator $queue, BaseDto $dto): CasterChain
+    public function getCasterChainNode(BaseDto $dto, ?\ArrayIterator $queue): CasterChain
     {
         if (!$dto instanceof HasGroupsInterface) {
             throw new \LogicException('To use #[Groups], DTO must use UsesGroups trait or implement HasGroupsInterface');
         }
 
-        // consume the subchain, whether it'll be applied or not
+        // consume the subchain, whether it'll be applied or not, decide application at cast-time
         return new CasterChain($queue, $dto, $this->count, 'PerItem',
             buildCasterClosure: function (array $chainElements, ?\Closure $upstreamChain) use ($dto): callable {
                 // apply the subchain only if the groups are in scope

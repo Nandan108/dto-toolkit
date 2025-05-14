@@ -78,8 +78,8 @@ These provide a convenient, framework-free entry point with all standard functio
 
 ## 🧩 Adapter Packages
 
-- Laravel Adapter: [`nandan108/dto-toolkit-laravel`](https://github.com/nandan108/dto-toolkit-laravel) *(planned, not started yet)*
-- Symfony Adapter: [`nandan108/dto-toolkit-symfony`](https://github.com/nandan108/dto-toolkit-symfony) *(in progress)*
+- Laravel Adapter: [`nandan108/dto-toolkit-laravel`](https://github.com/nandan108/dto-toolkit-laravel) *(planned)*
+- Symfony Adapter: [`nandan108/dto-toolkit-symfony`](https://github.com/nandan108/dto-toolkit-symfony) *(planned)*
 
 Adapters will provide support for:
 - Validation using framework services

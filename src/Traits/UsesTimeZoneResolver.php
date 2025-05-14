@@ -11,7 +11,7 @@ trait UsesTimeZoneResolver
     /** @var array<string, \DateTimeZone|false> */
     protected static array $timezoneCache = [];
 
-    public function configureTimezoneResolver(?string $timezoneOrProvider = null, bool $allowNull = true, string $paramName = 'timezone'): void
+    public function configureTimezoneResolver(?string $timezoneOrProvider = null, string $paramName = 'timezone'): void
     {
         // checking with new DateTimeZone() + throwing exception is expensive, so we cache the result.
 
@@ -20,14 +20,11 @@ trait UsesTimeZoneResolver
         $this->configureParamResolver(
             paramName: $paramName,
             valueOrProvider: $timezoneOrProvider ?? $this->constructorArgs[$paramName] ?? null,
-            checkValid: function (mixed $tz) use ($allowNull): bool {
-                if ($allowNull && null === $tz) {
+            checkValid: function (?string $tz): bool {
+                if (null === $tz || '' === $tz) {
                     return true;
                 }
-                // If the timezone is not a string, it can't be valid
-                if (!is_string($tz) || '' === ($tz = trim($tz))) {
-                    return false;
-                }
+
                 // If we have already checked this timezone, return the cached result
                 if (isset(static::$timezoneCache[$tz])) {
                     return false !== static::$timezoneCache[$tz];
@@ -51,7 +48,7 @@ trait UsesTimeZoneResolver
             // we can use the cached value from the checkValid function, since checkValid() is always
             // called before hydrate()
             /** @psalm-suppress InvalidFalsableReturnType */
-            hydrate: fn (?string $tz): ?\DateTimeZone => (null !== $tz) ? (static::$timezoneCache[$tz] ?: null) : null,
+            hydrate: fn (?string $tz): ?\DateTimeZone => (null === $tz || '' === $tz) ? null : (static::$timezoneCache[$tz] ?: null),
         );
     }
 }

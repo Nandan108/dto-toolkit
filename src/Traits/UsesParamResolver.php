@@ -7,27 +7,13 @@ use Nandan108\DtoToolkit\Contracts\HasContextInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Exception\CastingException;
 
-/*
-Problem I want to resolve:
-- I want to be able to use a parameter in the constructor of a Caster, and have it resolved at runtime.
-- I want four resolution modes:
-    1. Value directly provided (e.g., 'fr_FR' for locale or 'USD' for currency)
-    2. Provider class provided (e.g., \App\Locale\UserLocaleProvider::class::getLocale())
-    3. From a getter method on the DTO. E.g. $dto->getLocale()
-    4. From the context. E.g. $dto->getContext('locale')
-    5. If the valueOrProvider is null, I want to be able to auto-resolve the value
-        - via the getter method on the DTO, if available
-        - via the context, if available
-        - via a fallback provider (e.g., \App\Locale\UserLocaleProvider::getLocale())
-- I want to be able to use a fallback provider that is called if the value is not found in the above four modes.
-- I want the parameter(s) to be configurable in one call per param, in the caster's bootOnDto() method.
-    - The configuration should be an array of options:
-        - 'valueOrProvider' => value | \App\Locale\UserLocaleProvider::class | '<dto' | '<context' | null
-        - 'checkValid' => function (mixed $value): bool
-        - 'fallback' => function (): mixed // last resort if all else fails
-- I want the resolver Closures to be cached
-*/
-
+/**
+ * This trait provides a way to resolve caster parameters for DTOs.
+ *
+ * It allows you to configure a parameter resolver for a DTO, and then resolve the parameter at cast time.
+ *
+ * @psalm-suppress UndefinedDocblockClass
+ */
 trait UsesParamResolver
 {
     /** @var \WeakMap<BaseDto, ParamResolverConfig[]> */
@@ -46,11 +32,9 @@ trait UsesParamResolver
         $resolverConfigs = static::$paramProvidersMap[$dto];
 
         $config = $resolverConfigs[$paramName] ?? null;
+
         // Config should be set up in the bootOnDto() method. If it's not, something went wrong - throw an exception.
-        if (null === $config) {
-            // if the config is not set, and we don't want to make a new one, throw an exception
-            throw new \RuntimeException("Parameter '$paramName' has not been configured by configureParamResolver().");
-        }
+        $config or throw new \RuntimeException("Parameter '$paramName' has not been configured by configureParamResolver().");
 
         return $config;
     }
@@ -63,9 +47,9 @@ trait UsesParamResolver
      *
      * @psalm-suppress UndefinedDocblockClass
      */
-    protected function resolveParamProvider(string $paramName, ?string $paramValueOrProviderClass, BaseDto $dto): \Closure
+    protected function resolveParamProvider(ParamResolverConfig $config, ?string $paramValueOrProviderClass, BaseDto $dto): \Closure
     {
-        $config = $this->getParamResolverConfig($paramName);
+        // $config = $this->getParamResolverConfig($paramName);
 
         /** @var \Closure|null $provider */
         /** @psalm-suppress UnsupportedPropertyReferenceUsage */
@@ -74,6 +58,7 @@ trait UsesParamResolver
             return $provider;
         }
 
+        $paramName = $config->paramName;
         $paramGetter = 'get'.ucfirst($paramName);
 
         // 1. Declared DTO source ? Return a provider that calls $dto->get$paramName()
@@ -94,7 +79,7 @@ trait UsesParamResolver
                 throw new \RuntimeException("To use '<context' as a parameter value, the DTO must implement HasContextInterface.");
             }
             if (!$dto->hasContext($paramName)) {
-                throw new \RuntimeException("Cannot resolve $paramName (no context set) for ".static::class);
+                throw new \RuntimeException("Cannot resolve $paramName (no context set) for caster ".static::class);
             }
 
             return $provider = function (mixed $value, ?string $prop, BaseDto&HasContextInterface $dto) use ($paramName, $config): mixed {
@@ -113,7 +98,7 @@ trait UsesParamResolver
         }
 
         // 3. Valid value directly provided ? Return a provider that returns this value.
-        if (($config->checkValid)($paramValueOrProviderClass, $paramName)) {
+        if (null !== $paramValueOrProviderClass && ($config->checkValid)($paramValueOrProviderClass, $paramName)) {
             return $provider = fn (): mixed => $paramValueOrProviderClass;
         }
 
@@ -148,18 +133,17 @@ trait UsesParamResolver
                 $source = 'fallback provider';
             }
 
-            if (isset($source)) {
-                if (($config->checkValid)($paramValue, $paramName)) {
-                    return $paramValue;
-                }
+            // this syntax is used to allow full coverage without the incovenience of having to test the sad path separately
+            isset($source) or throw new \RuntimeException("No value or provider given, unable to resolve $paramName for ".static::class);
 
-                // if the value is not valid, throw an exception
-                /** @psalm-suppress RiskyTruthyFalsyComparison */
-                $paramValue = json_encode($paramValue) ?: '';
-                throw CastingException::castingFailure(static::class, $paramValue, messageOverride: "$source returned an invalid $paramName $paramValue for ".static::class);
+            if (($config->checkValid)($paramValue, $paramName)) {
+                return $paramValue;
             }
 
-            throw new \RuntimeException("No value or provider given, unable to resolve $paramName for ".static::class);
+            // if the value is not valid, throw an exception
+            /** @psalm-suppress RiskyTruthyFalsyComparison */
+            $paramValue = json_encode($paramValue) ?: '';
+            throw CastingException::castingFailure(static::class, $paramValue, messageOverride: "$source returned an invalid value $paramValue for ".static::class);
         };
     }
 
@@ -177,12 +161,12 @@ trait UsesParamResolver
             static::$paramProvidersMap[$dto] = [];
         }
 
-        $config = new ParamResolverConfig($checkValid, $fallback, $hydrate);
+        $config = new ParamResolverConfig($paramName, $checkValid, $fallback, $hydrate);
 
         /** @psalm-suppress InvalidArgument */
         static::$paramProvidersMap[$dto][$paramName] = $config;
 
-        $this->resolveParamProvider($paramName, $valueOrProvider, $dto);
+        $this->resolveParamProvider($config, $valueOrProvider, $dto);
     }
 
     /**
@@ -194,31 +178,36 @@ trait UsesParamResolver
      */
     protected function resolveParam(string $paramName, mixed $value, ?string $localeOrProviderClass = null): mixed
     {
+        $config = $this->getParamResolverConfig($paramName);
+
         // if no $localeOrProviderClass is passed, check for a constructorArg with the same name as the parameter to resolve
         $localeOrProviderClass ??= $this->constructorArgs[$paramName] ?? null;
 
         /** @var CastTo|UsesParamResolver $this */
         $dto = static::$currentDto;
-        if (null === $dto) {
-            throw new \RuntimeException('Cannot resolve parameter without a DTO (CastTo::$currentDto is null)');
-        }
+        $dto or throw new \RuntimeException('Cannot resolve parameter without a DTO (CastTo::$currentDto is null)');
 
-        $provider = $this->resolveParamProvider($paramName, $localeOrProviderClass, $dto);
+        $provider = $this->resolveParamProvider($config, $localeOrProviderClass, $dto);
 
         $paramValue = $provider($value, static::$currentPropName, $dto);
 
-        $hydrate = $this->getParamResolverConfig($paramName)->hydrate;
+        $hydrate = $config->hydrate;
 
         return $hydrate ? $hydrate($paramValue) : $paramValue;
     }
 }
 
-class ParamResolverConfig
+/**
+ * @internal Internal class to hold the configuration for a parameter resolver.
+ * This class is not intended to be used directly by users of the library.
+ */
+final class ParamResolverConfig
 {
     /** @var \Closure[] */
     public array $providers = [];
 
     public function __construct(
+        public string $paramName,
         public \Closure $checkValid,
         public ?\Closure $fallback,
         public ?\Closure $hydrate,

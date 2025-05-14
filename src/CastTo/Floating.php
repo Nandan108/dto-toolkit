@@ -10,6 +10,7 @@ final class Floating extends CastBase
 {
     /**
      * @param string|null $decimalPoint
+     *
      * Decimal point character to use for parsing the value.
      * If null, parsing will be done using the default decimal point character ('.').
      * If provided (including '.'), the value will first be normalized to keep only digits,
@@ -51,22 +52,31 @@ final class Floating extends CastBase
     public function normalizeNumberString(string $input, string $decimalPoint): string
     {
         // Keep only digits, minus signs and decimal point characters
-        $clean = preg_replace("/[^-0-9{$decimalPoint}]/", '', $input);
-        if (null === $clean) {
-            throw CastingException::castingFailure(className: $this::class, operand: $input, messageOverride: 'Failed to normalize number string');
-        }
+        $cleaned = $this->cleanUp($input, "/[^-0-9{$decimalPoint}]/");
 
         // Normalize decimal
         if ('.' !== $decimalPoint) {
-            $clean = str_replace($decimalPoint, '.', $clean);
+            $cleaned = str_replace($decimalPoint, '.', $cleaned);
         }
 
         // remove extra minus signs, and keep only last decimal point
-        $clean = preg_replace('/(?!^)-|\.(?=.*\.)/', '', $clean);
-        if (null === $clean) {
-            throw CastingException::castingFailure(className: $this::class, operand: $input, messageOverride: 'Failed to normalize number string');
-        }
+        return $this->cleanUp($cleaned, '/(?!^)-|\.(?=.*\.)/');
+    }
 
-        return $clean;
+    /**
+     * Applies a regex replacement to the input string and returns the result.
+     * Throws an exception if the result is null.
+     *
+     * @param non-empty-string $pattern
+     *
+     * @throws CastingException
+     */
+    private function cleanUp(string $input, string $pattern, string $replacement = ''): string
+    {
+        $cleaned = preg_replace($pattern, $replacement, $input);
+        // What $input could make $cleaned null? Unlikely, but just in case...
+        null !== $cleaned or throw CastingException::castingFailure(className: $this::class, operand: $input, messageOverride: 'Failed to normalize number string');
+
+        return $cleaned;
     }
 }

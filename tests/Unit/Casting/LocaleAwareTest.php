@@ -4,8 +4,6 @@ namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
 use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\CastTo\LocalizedNumber;
-use Nandan108\DtoToolkit\Contracts\LocaleProviderInterface;
-use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Core\FullDto;
 use Nandan108\DtoToolkit\Exception\CastingException;
 use Nandan108\DtoToolkit\Tests\Traits\CanTestCasterClassesAndMethods;
@@ -225,7 +223,7 @@ final class LocaleAwareTest extends TestCase
             $dto->unfill()->setContext('locale', 'bad-locale')->fromArray(['amount' => 1234.56]);
             $this->fail('Expected CastingException');
         } catch (\RuntimeException $e) {
-            $this->assertStringStartsWith('$dto->getContext(\'locale\') returned an invalid locale "bad-locale"', $e->getMessage());
+            $this->assertStringStartsWith('$dto->getContext(\'locale\') returned an invalid value "bad-locale"', $e->getMessage());
         }
     }
 
@@ -296,10 +294,10 @@ final class LocaleAwareTest extends TestCase
     }
 }
 
-final class LocaleAwareTest_DeLocaleProvider implements LocaleProviderInterface
+final class LocaleAwareTest_DeLocaleProvider
 {
-    #[\Override]
-    public static function getLocale(mixed $value, string $propName, BaseDto $dto): string
+    /** @psalm-suppress PossiblyUnusedMethod */
+    public static function getLocale(): string
     {
         // This is a mock implementation. In a real scenario, you would return the appropriate
         // locale based on the value or context.
@@ -309,28 +307,27 @@ final class LocaleAwareTest_DeLocaleProvider implements LocaleProviderInterface
     }
 }
 
-final class LocalAwareTestLocaleProvider_FR implements LocaleProviderInterface
+final class LocalAwareTestLocaleProvider_FR
 {
-    #[\Override]
-    public static function getLocale(mixed $value, string $propName, BaseDto $dto): string
+    public static function getLocale(): string
     {
         return 'fr_FR';
     }
 }
 
-final class LocalAwareTestLocaleProvider_ValueDependent implements LocaleProviderInterface
+final class LocalAwareTestLocaleProvider_ValueDependent
 {
-    #[\Override]
-    public static function getLocale(mixed $value, string $propName, BaseDto $dto): string
+    /** @psalm-suppress PossiblyUnusedMethod */
+    public static function getLocale(mixed $value): string
     {
         return $value > 10 ? 'fr_FR' : 'en_US';
     }
 }
 
-final class LocalAwareTestLocaleProvider_PropNameDependent implements LocaleProviderInterface
+final class LocalAwareTestLocaleProvider_PropNameDependent
 {
-    #[\Override]
-    public static function getLocale(mixed $value, string $propName, BaseDto $dto): string
+    /** @psalm-suppress PossiblyUnusedMethod, UnusedParam */
+    public static function getLocale(mixed $value, string $propName): string
     {
         if (preg_match('/_([a-z]{2}(_[A-Z]{2})?)$/', $propName, $matches)) {
             return $matches[1];

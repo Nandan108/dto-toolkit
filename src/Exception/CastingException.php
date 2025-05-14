@@ -2,8 +2,8 @@
 
 namespace Nandan108\DtoToolkit\Exception;
 
+use Nandan108\DtoToolkit\Contracts\CasterChainNodeProducerInterface;
 use Nandan108\DtoToolkit\Contracts\CasterInterface;
-use Nandan108\DtoToolkit\Contracts\ChainModifierInterface;
 
 final class CastingException extends \RuntimeException
 {
@@ -41,9 +41,9 @@ final class CastingException extends \RuntimeException
     public static function castingFailure(string $className, mixed $operand, ?string $methodName = null, array $args = [], ?string $messageOverride = null): self
     {
         $type = match (true) {
-            is_a($className, CasterInterface::class, true)        => 'Caster',
-            is_a($className, ChainModifierInterface::class, true) => 'Cast modifier',
-            default                                               => 'Class',
+            is_a($className, CasterInterface::class, true)                  => 'Caster',
+            is_a($className, CasterChainNodeProducerInterface::class, true) => 'Cast modifier',
+            default                                                         => 'Class',
         };
 
         $caster = $className;

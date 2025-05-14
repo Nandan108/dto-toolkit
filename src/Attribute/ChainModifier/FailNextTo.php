@@ -26,7 +26,7 @@ class FailNextTo extends FailTo
     }
 
     #[\Override]
-    public function getModifier(\ArrayIterator $queue, BaseDto $dto): CasterChain
+    public function getCasterChainNode(BaseDto $dto, ?\ArrayIterator $queue): CasterChain
     {
         $handler = $this->resolveHandler($dto);
 

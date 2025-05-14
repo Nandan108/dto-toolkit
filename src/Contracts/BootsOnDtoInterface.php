@@ -13,6 +13,8 @@ interface BootsOnDtoInterface
      * immediately after chain building, only for casters implementing this interface.
      *
      * @throws \InvalidArgumentException if the DTO is not valid
+     *
+     * @psalm-suppress PossiblyUnusedMethod
      */
     public function bootOnDto(): void;
 }

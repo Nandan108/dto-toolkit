@@ -4,6 +4,7 @@ namespace Nandan108\DtoToolkit;
 
 use Nandan108\DtoToolkit\Contracts\Bootable;
 use Nandan108\DtoToolkit\Contracts\BootsOnDtoInterface;
+use Nandan108\DtoToolkit\Contracts\CasterChainNodeProducerInterface;
 use Nandan108\DtoToolkit\Contracts\CasterInterface;
 use Nandan108\DtoToolkit\Contracts\CasterResolverInterface;
 use Nandan108\DtoToolkit\Contracts\HasGroupsInterface;
@@ -21,7 +22,7 @@ use Nandan108\DtoToolkit\Internal\CasterMeta;
  * @psalm-api
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
-class CastTo implements PhaseAwareInterface
+class CastTo implements PhaseAwareInterface, CasterChainNodeProducerInterface
 {
     use Traits\HasPhase;
 
@@ -56,14 +57,8 @@ class CastTo implements PhaseAwareInterface
         self::$onCastResolved ??= static function (): void {};
     }
 
-    /**
-     * Create a caster closure for the given method.
-     *
-     * @param mixed $dto The DTO instance
-     *
-     * @throws \LogicException If the method does not exist
-     */
-    public function getCaster(BaseDto $dto): CasterMeta
+    #[\Override]
+    public function getCasterChainNode(BaseDto $dto, ?\ArrayIterator $queue = null): CasterMeta
     {
         $cache = static::$globalMemoizedCasters;
         $args = $this->args;
@@ -305,7 +300,7 @@ class CastTo implements PhaseAwareInterface
             // gather all instances of BootsOnDtoInterface, from all chains (both phases)
             foreach ($casts as $map) {
                 foreach ($map as $chain) {
-                    /** @psalm-suppress ArgumentTypeCoercion */
+                    /** @psalm-suppress ArgumentTypeCoercion, UnnecessaryVarAnnotation */
                     /** @var CasterChain $chain */
                     $chain->recursiveWalk(function (CasterMeta $meta) use ($instances) {
                         if ($meta->instance instanceof BootsOnDtoInterface) {
@@ -347,10 +342,8 @@ class CastTo implements PhaseAwareInterface
      */
     protected static function getCurrentDto(): BaseDto
     {
-        // Can't use this trait without being a CastTo
-        if (null === static::$currentDto) {
-            throw new \RuntimeException('Cannot resolve parameter without a DTO (CastTo::$currentDto is null)');
-        }
+        // Can't use this trait without being a CastTo, but this should never happen under normal circumstances
+        static::$currentDto or throw new \RuntimeException('Cannot resolve parameter without a DTO (CastTo::$currentDto is null)');
 
         return static::$currentDto;
     }

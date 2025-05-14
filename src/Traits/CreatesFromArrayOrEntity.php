@@ -83,7 +83,7 @@ trait CreatesFromArrayOrEntity
      *
      * @throws \LogicException
      *
-     * @psalm-suppress PossiblyUnusedMethod
+     * @psalm-suppress PossiblyUnusedMethod, MethodSignatureMismatch
      */
     public function _fromArrayLoose(array $input): static
     {
@@ -92,7 +92,7 @@ trait CreatesFromArrayOrEntity
     }
 
     /**
-     * @psalm-suppress PossiblyUnusedMethod
+     * @psalm-suppress PossiblyUnusedMethod, MethodSignatureMismatch
      */
     public function _fromEntity(object $entity, bool $ignoreInaccessibleProps = true): static
     {

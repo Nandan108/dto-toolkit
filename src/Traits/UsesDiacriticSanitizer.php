@@ -30,16 +30,12 @@ trait UsesDiacriticSanitizer
     {
         $transliterator = static::getIntlTransliterator();
 
-        set_error_handler(function ($errno, $errstr) use ($value) {
-            // very difficult to cover this line with a test
-            throw CastingException::castingFailure(static::class, $value, "Transliterator failed to remove diacritics: $errstr");
-        });
+        $result = $transliterator->transliterate($value);
 
-        try {
-            return $transliterator->transliterate($value);
-        } finally {
-            restore_error_handler();
-        }
+        // Transliteration failure is very unlikely to happen, but if it does, we throw an exception
+        false !== $result or throw CastingException::castingFailure(static::class, $value, 'Failed to transliterate string with Intl extension');
+
+        return $result;
     }
 
     protected static function getIntlTransliterator(): \Transliterator

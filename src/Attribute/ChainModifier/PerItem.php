@@ -26,7 +26,7 @@ class PerItem extends ChainModifierBase
      * @return CasterChain A closure that applies the composed caster on each element of the passed array value
      */
     #[\Override]
-    public function getModifier(\ArrayIterator $queue, BaseDto $dto): CasterChain
+    public function getCasterChainNode(BaseDto $dto, ?\ArrayIterator $queue): CasterChain
     {
         // Grab a subchain made of the next $this->count CastTo attributes from the queue
         return new CasterChain($queue, $dto, $this->count, 'PerItem',

@@ -167,7 +167,7 @@ final class InjectIntoCastBaseTest extends TestCase
 
         $attr = new CastTo(get_class($casterClass), args: [], constructorArgs: ['X']);
         $dto = new class extends BaseDto {};
-        $caster = $attr->getCaster($dto);
+        $caster = $attr->getCasterChainNode($dto);
         $this->assertSame('Xfoo', $caster('foo'));
     }
 }

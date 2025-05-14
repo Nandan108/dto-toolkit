@@ -25,7 +25,7 @@ final class CasterInterfaceTest extends TestCase
         $this->expectExceptionMessage("Caster 'FakeClass' could not be resolved");
         $dto = new class extends BaseDto {};
         $attr = new CastTo('FakeClass');
-        $attr->getCaster($dto);
+        $attr->getCasterChainNode($dto);
     }
 
     public function testThrowsIfClassDoesNotImplementInterface(): void
@@ -35,7 +35,7 @@ final class CasterInterfaceTest extends TestCase
         $attr = new CastTo($className = get_class($classNotImplementingCasterInterface));
         $this->expectException(CastingException::class);
         $this->expectExceptionMessage("Class '{$className}' does not implement the CasterInterface.");
-        $attr->getCaster($dto);
+        $attr->getCasterChainNode($dto);
     }
 
     public function testInstantiatesWithConstructorArgs(): void
@@ -54,7 +54,7 @@ final class CasterInterfaceTest extends TestCase
 
         $attr = new CastTo(get_class($casterClass), args: [], constructorArgs: ['X']);
         $dto = new class extends BaseDto {};
-        $caster = $attr->getCaster($dto);
+        $caster = $attr->getCasterChainNode($dto);
         $this->assertSame('Xfoo', $caster('foo'));
     }
 
@@ -70,7 +70,7 @@ final class CasterInterfaceTest extends TestCase
 
         $attr = new CastTo(get_class($casterClass));
         $dto = new class extends BaseDto {};
-        $caster = $attr->getCaster($dto);
+        $caster = $attr->getCasterChainNode($dto);
         $this->assertSame('FOO', $caster('foo'));
     }
 
@@ -103,7 +103,7 @@ final class CasterInterfaceTest extends TestCase
 
         $attr = new $castToSublass($casterClass);
         $dto = new class extends BaseDto {};
-        $caster = $attr->getCaster($dto);
+        $caster = $attr->getCasterChainNode($dto);
         $this->assertSame('\SomeNameSpace\MyClass:42', $caster('42'));
     }
 
@@ -127,7 +127,7 @@ final class CasterInterfaceTest extends TestCase
 
         $this->expectException(\LogicException::class);
         $this->expectExceptionMessage('requires constructor args');
-        $attr->getCaster($dto);
+        $attr->getCasterChainNode($dto);
     }
 
     public function testReusesCachedInstanceAndClosure(): void
@@ -149,9 +149,9 @@ final class CasterInterfaceTest extends TestCase
         $attr2 = new CastTo($casterClass, args: ['a']);
         $attr3 = new CastTo($casterClass, args: ['b']);
 
-        $caster1 = $attr1->getCaster($dto);
-        $caster2 = $attr2->getCaster($dto);
-        $caster3 = $attr3->getCaster($dto);
+        $caster1 = $attr1->getCasterChainNode($dto);
+        $caster2 = $attr2->getCasterChainNode($dto);
+        $caster3 = $attr3->getCasterChainNode($dto);
 
         $this->assertSame('1:foo', $caster1('foo'));
         $this->assertSame('2:bar', $caster2('bar')); // reuses closure
@@ -184,7 +184,7 @@ final class CasterInterfaceTest extends TestCase
             }
         };
 
-        $casterClosure = $attr->getCaster($dto);
+        $casterClosure = $attr->getCasterChainNode($dto);
         $castResult = $casterClosure('val');
         $this->assertSame(
             "executing $className(...[\"bar\"])->cast(...[\"val\",[\"foo\",\"baz\"]])",
@@ -231,7 +231,7 @@ final class CasterInterfaceTest extends TestCase
         $attr::_clearCasterMetadata();
         $this->assertObjectNotHasProperty($className, $getMeta());
 
-        $casterClosure = $attr->getCaster($dto);
+        $casterClosure = $attr->getCasterChainNode($dto);
         $this->assertSame(
             "->cast() executing $className(...[\"bar\"])->cast(...[\"val\",[\"foo\",\"baz\"]])",
             $casterClosure('val'),
@@ -245,7 +245,7 @@ final class CasterInterfaceTest extends TestCase
         $this->assertObjectNotHasProperty($className, $getMeta());
 
         // get the caster again, which will re-fill the caster cache
-        $attr->getCaster($dto);
+        $attr->getCasterChainNode($dto);
         // this time, we use getCasterMetadata() with an argument (different code path)
         /** @var array $casterMeta */
         /** @psalm-suppress InternalMethod */

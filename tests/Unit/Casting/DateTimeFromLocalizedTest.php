@@ -73,6 +73,18 @@ final class DateTimeFromLocalizedTest extends TestCase
         $dtoClass::fromArray(['dt' => '']);
     }
 
+    public function testThrowsOnInvalidDateStyle(): void
+    {
+        $dtoClass = new class extends FullDto {
+            #[DateTimeFromLocalized(locale: 'fr_CH', dateStyle: 99999)]
+            public \DateTimeInterface|string|null $dt = null;
+        };
+
+        $this->expectException(CastingException::class);
+        $this->expectExceptionMessageMatches('/Invalid date formater arguments/');
+        $dtoClass::fromArray(['dt' => '2023-10-05 14:30']);
+    }
+
     public function testThrowsOnMalformedString(): void
     {
         $dtoClass = new class extends FullDto {

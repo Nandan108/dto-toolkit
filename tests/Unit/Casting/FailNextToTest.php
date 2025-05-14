@@ -13,14 +13,20 @@ final class FailNextToTest extends TestCase
     public function testFallbackValueIsUsedOnFailure(): void
     {
         $dto = new class extends FullDto {
+            #[CastTo\ReplaceIf('foo', ['bar'], )]
             #[FailNextTo('fallback')]
             #[CastTo\Str]
             public mixed $value = null;
         };
 
-        $dto->fill(['value' => new \stdClass()]);
-        $dto->normalizeInbound();
+        // 'foo' gets replaced by 'bar' and then fails to be cast to string, falling back to 'fallback'
+        $dto->fill(['value' => 'foo'])->normalizeInbound();
         $this->assertSame('fallback', $dto->value);
+
+        // 'bar' doesn't get replaced and is cast to string successfully
+        $dto->fill(['value' => 'bar'])->normalizeInbound();
+        /** @psalm-suppress DocblockTypeContradiction */
+        $this->assertSame('bar', $dto->value);
     }
 
     public function testThrowsIfFailNextToCountIsLessThanOne(): void

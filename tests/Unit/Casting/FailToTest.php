@@ -77,6 +77,22 @@ final class FailToTest extends TestCase
         // use a \stdClass since casting it to a string will throw
         $dto->normalizeInbound();
     }
+
+    public function testBadUsageAsFirstInChain(): void
+    {
+        $dto = new class extends FullDto {
+            #[FailTo(fallback: 'failback')]
+            #[CastTo\Str]
+            public mixed $value_fail = null;
+        };
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage('should not be used as the first element');
+
+        // use a \stdClass since casting it to a string will throw
+        $dto->fill(['value_fail' => new \stdClass()]);
+        $dto->normalizeInbound();
+    }
 }
 
 final class FailTo_CastFailureHandler

@@ -17,12 +17,12 @@ final class FromJson extends CastBase
     #[\Override]
     public function cast(mixed $value, array $args): array|object
     {
-        [$asAssoc] = $args;
-
         $value = $this->throwIfNotStringable($value);
 
         try {
-            return json_decode($value, $asAssoc, 512, JSON_THROW_ON_ERROR);
+            $asAssocFlag = $args[0] ? JSON_OBJECT_AS_ARRAY : 0;
+
+            return json_decode($value, true, 512, JSON_THROW_ON_ERROR | $asAssocFlag);
         } catch (\JsonException $e) {
             throw CastingException::castingFailure(className: static::class, operand: $value, messageOverride: 'JSON decode error: '.$e->getMessage());
         }

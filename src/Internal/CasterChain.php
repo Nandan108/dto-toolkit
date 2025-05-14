@@ -2,15 +2,14 @@
 
 namespace Nandan108\DtoToolkit\Internal;
 
-use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Contracts\CasterChainNodeInterface;
-use Nandan108\DtoToolkit\Contracts\ChainModifierInterface;
+use Nandan108\DtoToolkit\Contracts\CasterChainNodeProducerInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 
-class CasterChain implements CasterChainNodeInterface
+final class CasterChain implements CasterChainNodeInterface
 {
     /** @var CasterChainNodeInterface[] */
-    private array $chainElements = [];
+    private array $childNodes = [];
 
     private ?\Closure $compiled = null;
 
@@ -23,20 +22,35 @@ class CasterChain implements CasterChainNodeInterface
      */
     public $buildCasterClosure;
 
+    /**
+     * CasterChain constructor.
+     *
+     * @param ?\ArrayIterator<int, CasterChainNodeProducerInterface> $queue
+     * @param int                                                    $count              The number of elements (sub-nodes) to include in this chain node
+     * @param string                                                 $class              Debugging info: name of the class that's creating this chain
+     * @param ?callable                                              $buildCasterClosure A callable that builds the final casting chain from consumed nodes.
+     *                                                                                   Defaults to [$this, 'composeFromNodes'] unless overridden (e.g. by chain modifiers).
+     *
+     * @throws \LogicException
+     */
     public function __construct(
-        \ArrayIterator $queue,
-        private BaseDto $dto,
+        ?\ArrayIterator $queue,
+        BaseDto $dto,
         int $count = -1,
         string $class = 'Caster',
         /** @var ?callable $buildCasterClosure */
         ?callable $buildCasterClosure = null,
     ) {
+        $queue ??= new \ArrayIterator();
         for ($i = $count; 0 !== $i && $queue->valid(); --$i) {
             // Recursively consume the next logical chain
-            $this->chainElements[] = $this->buildNextChainElement($queue);
+            /** @var CasterChainNodeProducerInterface */
+            $current = $queue->current();
+            $queue->next();
+            $this->childNodes[] = $current->getCasterChainNode($dto, $queue);
         }
         if ($i > 0) {
-            throw new \LogicException("#[$class] expected $count cast chains, but only found ".count($this->chainElements).'.');
+            throw new \LogicException("#[$class] expected $count child nodes, but only found ".count($this->childNodes).'.');
         }
 
         $this->buildCasterClosure = $buildCasterClosure ?? [$this, 'composeFromNodes'];
@@ -51,33 +65,7 @@ class CasterChain implements CasterChainNodeInterface
     #[\Override]
     public function getBuiltClosure(?callable $upstream = null): callable
     {
-        return $this->compiled ??= ($this->buildCasterClosure)($this->chainElements, $upstream);
-    }
-
-    /**
-     * @psalm-suppress PossiblyUnusedMethod
-     *
-     * @return CasterChainNodeInterface[]
-     **/
-    public function getChainElements(): array
-    {
-        return $this->chainElements;
-    }
-
-    private function buildNextChainElement(\ArrayIterator $queue): CasterChainNodeInterface
-    {
-        $current = $queue->current();
-        $queue->next();
-
-        if ($current instanceof ChainModifierInterface) {
-            return $current->getModifier($queue, $this->dto);
-        }
-
-        if ($current instanceof CastTo) {
-            return $current->getCaster($this->dto); // returns CasterMeta
-        }
-
-        throw new \LogicException('Unexpected attribute in caster queue: '.get_debug_type($current));
+        return $this->compiled ??= ($this->buildCasterClosure)($this->childNodes, $upstream);
     }
 
     /**
@@ -105,18 +93,19 @@ class CasterChain implements CasterChainNodeInterface
      *
      * @param \Closure(CasterChainNodeInterface):void $callback   a function that receives each matching element
      * @param class-string<T>|null                    $typeFilter only elements matching this type will be passed to the callback
+     * @param int                                     $maxDepth   maximum recursion depth (default -1 = unlimited)
      */
-    public function recursiveWalk(callable $callback, ?string $typeFilter = null): void
+    public function recursiveWalk(callable $callback, ?string $typeFilter = null, int $maxDepth = -1): void
     {
-        foreach ($this->chainElements as $element) {
+        foreach ($this->childNodes as $element) {
             // If it matches the type filter, apply callback
             if (null === $typeFilter || is_a($element, $typeFilter)) {
                 $callback($element);
             }
 
             // If the element is a nested chain, recurse
-            if ($element instanceof self) {
-                $element->recursiveWalk($callback, $typeFilter);
+            if ($element instanceof self && 0 !== $maxDepth) {
+                $element->recursiveWalk($callback, $typeFilter, $maxDepth - 1);
             }
         }
     }

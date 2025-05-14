@@ -5,15 +5,17 @@ namespace Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Exception\CastingException;
 
 /**
- * Returns date formatted according to given format.
+ * Casts a DateTimeInterface object into a formatted string.
  *
  * @see https://secure.php.net/manual/en/datetime.format.php
+ *
+ * @psalm-suppress UnusedClass
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class DateTimeString extends DateTime
 {
     #[\Override]
-    public function cast(mixed $value, array $args): mixed
+    public function cast(mixed $value, array $args): string
     {
         if (!($value instanceof \DateTimeImmutable || $value instanceof \DateTime)) {
             throw CastingException::castingFailure(static::class, $value, messageOverride: 'Expected a DateTime or DateTimeImmutable instance');

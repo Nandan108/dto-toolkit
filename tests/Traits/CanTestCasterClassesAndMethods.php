@@ -27,9 +27,9 @@ trait CanTestCasterClassesAndMethods
         // create caster Attribute using static helper method, and from it get the caster Closure
         if (is_string($method)) {
             $casterAttribute = new CastTo($method, args: $args);
-            $caster = $casterAttribute->getCaster($dto);
+            $caster = $casterAttribute->getCasterChainNode($dto);
         } elseif ($method instanceof CastTo) {
-            $caster = $method->getCaster($dto);
+            $caster = $method->getCasterChainNode($dto);
         } else {
             $this->fail('Invalid method type: '.gettype($method));
         }

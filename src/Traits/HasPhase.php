@@ -9,12 +9,14 @@ trait HasPhase // implements PhaseAwareInterface
     protected bool $isIoBound = false;
     protected bool $isOutbound = false;
 
+    /** @psalm-suppress PossiblyUnusedMethod, InvalidOverride */
     #[\Override]
     public function setOutbound(bool $isOutbound): void
     {
         $this->isOutbound = $isOutbound;
     }
 
+    /** @psalm-suppress InvalidOverride */
     #[\Override]
     public function getPhase(): Phase
     {

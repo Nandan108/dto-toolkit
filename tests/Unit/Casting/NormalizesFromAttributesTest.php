@@ -103,6 +103,6 @@ final class NormalizesFromAttributesTest extends TestCase
         $this->expectException(CastingException::class);
         $this->expectExceptionMessage("Caster 'FakeClassOrMethod' could not be resolved");
 
-        $cast->getCaster($dto);
+        $cast->getCasterChainNode($dto);
     }
 }

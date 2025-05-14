@@ -96,8 +96,8 @@ final class CanCastBasicValuesTest extends TestCase
             'ReplaceIf:match-mismatch'        => [new CastTo\ReplaceIf(['a', 'b'], 'R'), 'q', 'q'],
             'ReplaceIf:array-strict-match'    => [new CastTo\ReplaceIf(['1', '3'], 'foo', strict: true), 3, 3],
             'ReplaceIf:array-lose-match'      => [new CastTo\ReplaceIf(['1', '3'], 'foo', strict: false), 3, 'foo'],
-            'Base64Decode'                    => [new CastTo\Base64Decode(), base64_encode($someString), $someString],
-            'Base64Decode:invalid'            => [new CastTo\Base64Decode(), ' invalid string ', CastingException::class],
+            'FromBase64'                      => [new CastTo\FromBase64(), base64_encode($someString), $someString],
+            'FromBase64:invalid'              => [new CastTo\FromBase64(), ' invalid string ', CastingException::class],
             'Base64Encode'                    => [new CastTo\Base64(), $someString, base64_encode($someString)],
             'Base64Encode:invalid'            => [new CastTo\Base64(), [], CastingException::class],
         ];

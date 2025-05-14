@@ -7,7 +7,7 @@ use Nandan108\DtoToolkit\Exception\CastingException;
 
 /** @psalm-api */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
-final class Base64Decode extends CastBase
+final class FromBase64 extends CastBase
 {
     #[\Override]
     public function cast(mixed $value, array $args): string

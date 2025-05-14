@@ -64,16 +64,12 @@ abstract class CastBase extends CastTo implements CasterInterface, Injectable
 
     /**
      * Utility function: Throw if the value is not numeric.
-     *
-     * @return numeric
      */
-    protected function throwIfNotNumeric(mixed $value, string $expected = 'numeric'): mixed
+    protected function throwIfNotNumeric(mixed $value, string $expected = 'numeric'): void
     {
-        if (is_numeric($value)) {
-            return $value;
+        if (!is_numeric($value)) {
+            throw CastingException::castingFailure(className: $this::class, operand: $value, messageOverride: "Expected: $expected, but got non-numeric ".gettype($value));
         }
-
-        throw CastingException::castingFailure(className: $this::class, operand: $value, messageOverride: "Expected: $expected, but got non-numeric ".gettype($value));
     }
 
     /**

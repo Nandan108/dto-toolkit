@@ -57,7 +57,7 @@ Throws a `CastingException` if the input is not stringable.
 
 ---
 
-### CastTo\Base64Decode
+### CastTo\FromBase64
 
 **Arguments:** `bool $strict = false`
 
@@ -268,6 +268,16 @@ Throws a `CastingException` if the regex operation fails or if input is not stri
 
 ---
 
+### CastTo\RegexSplit
+
+**Arguments:** `string $pattern`, `int $limit = -1`
+
+Splits a string using a regular expression.
+Returns an array of substrings.
+Throws a `CastingException` if input is not stringable or if the regex fails.
+
+---
+
 ### CastTo\RemoveDiacritics
 
 **Arguments:** `bool $useIntlExtension = true`
@@ -279,7 +289,7 @@ Uses Transliterator if available, or falls back to a basic ASCII transliteration
 
 ### CastTo\ReplaceIf
 
-**Arguments:** `mixed $when, mixed $then = null`
+**Arguments:** `mixed $when`, `mixed $then = null`
 
 If the input matches `$when`, replaces it with `$then`.
 
