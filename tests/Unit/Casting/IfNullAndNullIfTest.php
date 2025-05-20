@@ -24,9 +24,9 @@ final class IfNullAndNullIfTest extends TestCase
             #[CastTo\Json]
             public string|int|null $bar = null;
 
-            #[CastTo\ReplaceIf([1, 2], 'A')]
-            #[CastTo\ReplaceIf(3, 'a')]
-            #[CastTo\ReplaceIf(['a', 'b', [1, 2]], 'c')]
+            #[CastTo\ReplaceWhen([1, 2], 'A')]
+            #[CastTo\ReplaceWhen(3, 'a')]
+            #[CastTo\ReplaceWhen(['a', 'b', [1, 2]], 'c')]
             public mixed $baz = null;
         };
 

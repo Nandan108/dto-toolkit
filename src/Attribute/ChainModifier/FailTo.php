@@ -28,7 +28,7 @@ class FailTo extends ChainModifierBase
     {
         $handler = $this->resolveHandler($dto);
 
-        return new CasterChain(queue: $queue, dto: $dto, count: 0, class: 'FailTo',
+        return new CasterChain(queue: $queue, dto: $dto, count: 0, className: 'FailTo',
             buildCasterClosure: function (array $chainElements, ?callable $upstreamChain) use ($handler, $dto): \Closure {
                 if (null === $upstreamChain) {
                     // If there is no upstream chain, we can't catch exceptions

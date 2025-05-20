@@ -16,8 +16,8 @@ Use `MapFrom` to specify one or more raw input fields that should map to a given
 #[MapFrom('postal_code')]
 public string $zip;
 
-#[MapFrom(['zip_code', 'city'])]
-#[CastTo(AddressCast::class)]
+#[MapFrom(['zip' => 'postal_code', 'city' => 'city'])]
+#[CastTo\newInstance(Address::class)]
 public Address $address;
 ```
 
@@ -27,11 +27,19 @@ This allows separation of *input field names* from *internal DTO structure* and 
 
 ## 🔄 `#[MapTo(...)]` (Outbound Mapping)
 
-Use `MapTo` to control how DTO properties are mapped to output formats or entities during transformation.
+Use `MapTo` to control how DTO properties are mapped to specific output properties.
 
 ### 💡 Syntax
 
 ```php
+class MapTo {
+    public function __construct(
+        ?string $target = null,
+        ?string $setter = null,
+        bool $silentFail = false
+    ) { ... }
+}
+
 #[MapTo('targetField', setter: 'customSetter')]
 public string $sourceField;
 ```
@@ -40,10 +48,12 @@ public string $sourceField;
 
 | Form                                      | Behavior                                                                 |
 |------------------------------------------|--------------------------------------------------------------------------|
-| `#[MapTo('field', setter: 'assignX')]`    | Try `$target->assignX($value)`, then `$target->field = $value`, then throw.|
-| `#[MapTo(setter: 'assignX')]`             | Try `$target->assignX($value)` only — throw if not found                 |
-| `#[MapTo('field')]`                       | Try `$target->setField($value)`, then `$target->field = $value`, then throw |
+| `#[MapTo('field', setter: 'assignX')]`    | Try `$target->assignX($value)`, then `$target->field = $value`, then throw*.|
+| `#[MapTo(setter: 'assignX')]`             | Try `$target->assignX($value)` only — throw if not found*                 |
+| `#[MapTo('field')]`                       | Try `$target->setField($value)`, then `$target->field = $value`, then throw* |
 | `#[MapTo(null)]`                          | Discards the property entirely during outbound transformation            |
+
+*If `$silentFail` is true, it will not throw an error when unable to set.
 
 This offers granular control for both structured output and DTO → Entity hydration.
 
@@ -65,12 +75,12 @@ class AddressDto extends FullDto
 {
     #[MapFrom('zip_code')]
     #[MapTo('postalCode')]
-    public string $zip;
+    public ?string $zip;
 
-    #[MapFrom(['zip', 'city'])]
+    #[MapFrom(['address', 'zip', 'city'])]
     #[CastTo(AddressCast::class)]
     #[MapTo(setter: 'assignAddress')]
-    public Address $address;
+    public null|array|Address $address;
 
     #[MapTo(null)]
     public ?string $debugInfo = null;

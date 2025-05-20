@@ -282,7 +282,7 @@ class CastTo implements PhaseAwareInterface, CasterChainNodeProducerInterface
         if (!isset($casts[$phaseKey])) {
             $casts = [];
 
-            $attrInstancesByProp = ($dto::class)::loadPropertyMetadata($phase, 'attr');
+            $attrInstancesByProp = ($dto::class)::loadPhaseAwarePropMeta($phase, 'attr', CasterChainNodeProducerInterface::class);
 
             // build caster chains
             foreach (array_filter($attrInstancesByProp) as $propName => $attrInstances) {
@@ -338,13 +338,33 @@ class CastTo implements PhaseAwareInterface, CasterChainNodeProducerInterface
     /**
      * Get the current $dto instance.
      *
-     * @throws \RuntimeException if the dto is not set
+     * @throws \RuntimeException if the $currentDto is not set
+     *
+     * @internal
      */
-    protected static function getCurrentDto(): BaseDto
+    public static function getCurrentDto(): BaseDto
     {
         // Can't use this trait without being a CastTo, but this should never happen under normal circumstances
-        static::$currentDto or throw new \RuntimeException('Cannot resolve parameter without a DTO (CastTo::$currentDto is null)');
+        static::$currentDto or throw new \RuntimeException('Casting context is not set: CastTo::$currentDto is null');
 
         return static::$currentDto;
+    }
+
+    /**
+     * Get the name of the property currently being cast.
+     *
+     * @return non-empty-string
+     *
+     * @throws \RuntimeException if $currentPropName is not set
+     *
+     * @internal
+     */
+    public static function getCurrentPropName(): string
+    {
+        // Can't use this trait without being a CastTo, but this should never happen under normal circumstances
+        /** @psalm-suppress RiskyTruthyFalsyComparison */
+        static::$currentPropName or throw new \RuntimeException('Casting context is not set: CastTo::$currentPropName is null');
+
+        return static::$currentPropName;
     }
 }

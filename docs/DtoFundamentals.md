@@ -38,12 +38,12 @@ DTOs shine when:
 
 ## ✅ Benefits of DTOs
 
-| Benefit                  | Description                                          |
-|--------------------------|------------------------------------------------------|
+| Benefit                  | Description                                         |
+|--------------------------|-----------------------------------------------------|
 | **Type safety**          | Declares and enforces data shape                    |
 | **Explicit mapping**     | Prevents accidental data leakage or inconsistencies |
-| **Testable and predictable** | Easy to unit test, serialize, and reason about |
-| **Framework-agnostic***   | Can outlive or move between frameworks              |
+| **Testable and predictable** | Easy to unit test, serialize, and reason about  |
+| **Framework-agnostic***  | Not relying on a framework, can be used with any or none  |
 | **Input/output symmetry**| DTOs can represent both incoming and outgoing data  |
 
 \*Subject to implementation — see [Comparison of DTO libraries](Comparison.md)

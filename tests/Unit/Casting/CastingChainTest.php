@@ -91,7 +91,7 @@ final class CastingChainTest extends TestCase
         $dto = new class extends BaseDto implements NormalizesInterface {
             use NormalizesFromAttributes;
             #[Mod\PerItem]
-            /* - */ #[Mod\FailNextTo('n/a')]
+            /* - */ #[Mod\FailNextTo('n/a', count: 1)]
             /* ----- */ #[CastTo\Integer]
             #[CastTo\Join('/')]
             public array|string|int|null $someProp = null;
@@ -132,7 +132,7 @@ final class CastingChainTest extends TestCase
             #[CastTo\Split('/')] // split into an array
             #[Mod\PerItem(3)] // Apply next 3 casters on the value's array elements instead of whole value
             #[CastTo\Trimmed('X ')] // trim whitespace
-            #[CastTo\Rounded(2)] // round to 2 decimals
+            #[Mod\FailNextTo('N/A'), CastTo\Rounded(2)] // round to 2 decimals
             // #[Prefix('$')] // add prefix (implicit cast to string)
             // #[CastTo\Join(', ')] // (default separator is ',')
             public string|array|null $prices = null; // default value provided for the example
@@ -143,8 +143,27 @@ final class CastingChainTest extends TestCase
             $dto->normalizeInbound();
             $this->fail('Expected CastingException not thrown');
         } catch (\LogicException $e) {
-            $this->assertStringStartsWith('#[PerItem] expected 3 child nodes, but only found 2', $e->getMessage());
+            $msg = $e->getMessage();
+            $this->assertStringStartsWith('#[PerItem] expected 3 child nodes, but found only 2: [Trimmed, FailNextTo]', $msg);
         }
-        $this->assertTrue(true);
+
+        /** @psalm-suppress ExtensionRequirementViolation */
+        $dto = new class extends BaseDto implements NormalizesInterface {
+            use NormalizesFromAttributes;
+            #[CastTo\Trimmed('-')] // trim dashes
+            #[Mod\PerItem(3)] // Apply next 3 casters on the value's array elements instead of whole value
+            // #[Prefix('$')] // add prefix (implicit cast to string)
+            // #[CastTo\Join(', ')] // (default separator is ',')
+            public string|array|null $prices = null; // default value provided for the example
+        };
+
+        $dto->fill(['prices' => '---  X 6.196/  0.99/X2.00001/XX 3.5  /XX4.57   --']);
+        try {
+            $dto->normalizeInbound();
+            $this->fail('Expected CastingException not thrown');
+        } catch (\LogicException $e) {
+            $msg = $e->getMessage();
+            $this->assertStringStartsWith('#[PerItem] expected 3 child nodes, but found none', $msg);
+        }
     }
 }

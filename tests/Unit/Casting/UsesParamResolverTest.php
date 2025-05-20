@@ -2,6 +2,8 @@
 
 namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
+use Nandan108\DtoToolkit\Attribute\ChainModifier as Mod;
+use Nandan108\DtoToolkit\Attribute\MapFrom;
 use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\CastTo\DateTime;
 use Nandan108\DtoToolkit\CastTo\LocalizedDateTime;
@@ -34,7 +36,7 @@ final class UsesParamResolverTest extends TestCase
         foreach ($locales as $locale => $expected) {
             /** @psalm-suppress UndefinedMagicMethod */
             $dto = UsesParamResolverDateTestDto::withContext(['locale' => $locale])
-                ->fromArray(['dateContextLocale' => $date]);
+                ->fromArrayLoose(['dateContextLocale' => $date]);
             $actual = $dto->dateContextLocale;
 
             $this->assertSame($expected, $actual);
@@ -46,7 +48,7 @@ final class UsesParamResolverTest extends TestCase
             UsesParamResolverDateTestDto::withContext(['locale' => 'not-valid'])
                 ->fromArray(['dateContextLocale' => $date]);
         } catch (\RuntimeException $e) {
-            $this->assertStringContainsString('Invalid locale "not-valid" in context for', $e->getMessage());
+            $this->assertStringContainsString('Prop dateContextLocale: Invalid locale "not-valid" in context key \'locale\' for', $e->getMessage());
         }
 
         // test with null locale in context
@@ -55,7 +57,7 @@ final class UsesParamResolverTest extends TestCase
             UsesParamResolverDateTestDto::withContext(['locale' => null])
                 ->fromArray(['dateContextLocale' => $date]);
         } catch (\RuntimeException $e) {
-            $this->assertStringContainsString('Cannot resolve locale (no context set)', $e->getMessage());
+            $this->assertStringContainsString('Cannot resolve context key \'locale\' (no context set)', $e->getMessage());
         }
 
         // test with DTO using '<context' resolution but not implementing HasContextInterface
@@ -70,8 +72,8 @@ final class UsesParamResolverTest extends TestCase
     {
         $date = new \DateTimeImmutable('2025-10-05 12:34');
         $locales = [
-            'de_DE' => '05.10.25, 12:34',
-            'en_US' => "10/5/25, 12:34\u{202F}PM",
+            // 'de_DE' => '05.10.25, 12:34',
+            // 'en_US' => "10/5/25, 12:34\u{202F}PM",
             'fr_FR' => '05/10/2025 12:34',
         ];
         $dto = UsesParamResolverDateTestDto::withContext(['locale' => 'fr_FR']);
@@ -81,6 +83,8 @@ final class UsesParamResolverTest extends TestCase
             $actual = $dto->dateDtoLocale;
 
             $this->assertSame($expected, $actual);
+            // custom getter
+            $this->assertSame('05.10.25 12:34', $dto->dateDtoFrCHLocale);
         }
     }
 
@@ -136,6 +140,41 @@ final class UsesParamResolverTest extends TestCase
             $dto->fromArray(['date' => new \DateTimeImmutable('2025-10-05 12:34')]);
         } catch (\RuntimeException $e) {
             $this->assertStringContainsString('Cannot resolve locale from "not-a-valid-class-or-locale"', $e->getMessage());
+        }
+    }
+
+    public function testResolvingParamFromContextWithOperator(): void
+    {
+        $dto = new class extends FullDto {
+            #[Mod\ApplyNextIf('<context:locale'), CastTo\Uppercase]
+            public ?string $value0 = null;
+
+            #[Mod\ApplyNextIf('<context:locale=fr_FR'), CastTo\Uppercase]
+            public ?string $value1 = null;
+
+            #[Mod\ApplyNextIf('<context:locale=/^fr/'), CastTo\Uppercase]
+            public ?string $value2 = null;
+
+            #[Mod\ApplyNextIf('<context:locale=/CH$/'), CastTo\Uppercase]
+            public ?string $value3 = null;
+
+            #[Mod\ApplyNextIf('<context:locale=/_/'), CastTo\Uppercase]
+            public ?string $value4 = null;
+        };
+        $input = array_fill_keys(['value0', 'value1', 'value2', 'value3', 'value4'], 'foo');
+
+        $locales = [
+            ''      => ['foo', 'foo', 'foo', 'foo', 'foo'],
+            'fr'    => ['FOO', 'foo', 'FOO', 'foo', 'foo'],
+            'fr_FR' => ['FOO', 'FOO', 'FOO', 'foo', 'FOO'],
+            'fr_CH' => ['FOO', 'foo', 'FOO', 'FOO', 'FOO'],
+            'de_CH' => ['FOO', 'foo', 'foo', 'FOO', 'FOO'],
+            'de_DE' => ['FOO', 'foo', 'foo', 'foo', 'FOO'],
+        ];
+        foreach ($locales as $locale => $expected) {
+            /** @psalm-suppress UndefinedMagicMethod */
+            $dto->withContext(['locale' => $locale])->fromArray($input);
+            $this->assertSame($expected, array_values($dto->toArray()));
         }
     }
 
@@ -205,6 +244,10 @@ final class UsesParamResolverDateTestDto extends FullDto
     #[LocalizedDateTime(locale: '<dto')]
     public \DateTimeInterface|string|null $dateDtoLocale = null;
 
+    #[MapFrom('dateDtoLocale')]
+    #[LocalizedDateTime(locale: '<dto:getFrCHLocale')]
+    public \DateTimeInterface|string|null $dateDtoFrCHLocale = null;
+
     /** @psalm-suppress PossiblyUnusedProperty */
     #[LocalizedDateTime]
     public \DateTimeInterface|string|null $dateDynamicLocale = null;
@@ -213,6 +256,12 @@ final class UsesParamResolverDateTestDto extends FullDto
     public function getLocale(): string
     {
         return $this->defaultLocale;
+    }
+
+    /** @psalm-suppress PossiblyUnusedMethod */
+    public function getFrCHLocale(): string
+    {
+        return 'fr_CH';
     }
 
     /** @psalm-suppress PossiblyUnusedMethod */

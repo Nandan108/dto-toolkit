@@ -65,7 +65,7 @@ Note that that PHP Attribute parameters may only contain scalars, arrays, consta
 Define reusable casting logic in your own class.
 
 In some cases, the built-in casters may be insufficient, even composed together, to transform or sanitize exactly as you wish. In such cases you may define your own casters, to be used either
-- As an attribute (see previous syntax), by extending `Core\CastBase` and annotating your class with `#[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]` , or
+- As an attribute (see previous syntax), by extending `Core\CastBase` or `Core\CastBaseNoArgs` and annotating your class with `#[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]`, or
 - By passing your classe's name to CastTo(), in which case it only needs to implement `Contracts\CasterInterface`.
 
 

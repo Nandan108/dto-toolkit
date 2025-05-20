@@ -11,7 +11,7 @@ trait HasPhase // implements PhaseAwareInterface
 
     /** @psalm-suppress PossiblyUnusedMethod, InvalidOverride */
     #[\Override]
-    public function setOutbound(bool $isOutbound): void
+    public function setOutbound(bool $isOutbound = true): void
     {
         $this->isOutbound = $isOutbound;
     }

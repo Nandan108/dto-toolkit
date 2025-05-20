@@ -22,8 +22,8 @@ trait UsesParamResolver
     protected function getParamResolverConfig(string $paramName): ParamResolverConfig
     {
         // Can't use this trait without being a CastTo
-        $this instanceof CastTo or throw new \RuntimeException('Caster must implement CastTo to use UsesLocaleResolver');
-        $dto = static::getCurrentDto();
+        // $this instanceof CastTo or throw new \RuntimeException('Caster must implement CastTo to use UsesLocaleResolver');
+        $dto = CastTo::getCurrentDto();
 
         if (!isset(static::$paramProvidersMap) || !isset(static::$paramProvidersMap[$dto])) {
             throw new \RuntimeException('Please call configureParamResolver() before resolveParamProvider()');
@@ -59,64 +59,111 @@ trait UsesParamResolver
         }
 
         $paramName = $config->paramName;
-        $paramGetter = 'get'.ucfirst($paramName);
+        $defaultParamGetter = 'get'.ucfirst($paramName);
 
-        // 1. Declared DTO source ? Return a provider that calls $dto->get$paramName()
-        if ('<dto' === $paramValueOrProviderClass) {
-            if (!method_exists($dto, $paramGetter)) {
-                throw new \BadMethodCallException("DTO does not have a $paramGetter() method.");
+        $attemptJsonDecode = function (?string $value): mixed {
+            if (null === $value) {
+                return null;
+            }
+            $decoded = json_decode($value, true);
+            if (JSON_ERROR_NONE !== json_last_error()) {
+                return $value;
             }
 
-            return $provider = function (mixed $value, ?string $prop, BaseDto $dto) use ($paramGetter): mixed {
-                return [$dto, $paramGetter]($value, $prop);
-            };
-        }
+            return $decoded;
+        };
 
-        // 2. Declared context source ? Return a provider that calls $dto->getContext($paramName)
-        if ('<context' === $paramValueOrProviderClass) {
-            // if the value is '<context', return a provider that gets the value from the context
-            if (!$dto instanceof HasContextInterface) {
-                throw new \RuntimeException("To use '<context' as a parameter value, the DTO must implement HasContextInterface.");
-            }
-            if (!$dto->hasContext($paramName)) {
-                throw new \RuntimeException("Cannot resolve $paramName (no context set) for caster ".static::class);
-            }
-
-            return $provider = function (mixed $value, ?string $prop, BaseDto&HasContextInterface $dto) use ($paramName, $config): mixed {
-                // attempt to get the parameter value from the context
-
-                $paramValue = $dto->getContext($paramName);
-                if (!($config->checkValid)($paramValue, $paramName)) {
-                    // if the value is not valid, throw an exception
-                    /** @psalm-suppress RiskyTruthyFalsyComparison */
-                    $paramValue = json_encode($paramValue) ?: '(type: '.get_debug_type($paramValue).')';
-                    throw new \RuntimeException("Invalid $paramName $paramValue in context for ".static::class);
-                }
-
-                return $paramValue;
-            };
-        }
-
-        // 3. Valid value directly provided ? Return a provider that returns this value.
-        if (null !== $paramValueOrProviderClass && ($config->checkValid)($paramValueOrProviderClass, $paramName)) {
-            return $provider = fn (): mixed => $paramValueOrProviderClass;
-        }
-
-        // 4. Valid provider class provided ? Return a provider that static-calls it.
+        // A value was provided
         if (null !== $paramValueOrProviderClass) {
-            if (class_exists($paramValueOrProviderClass)) {
-                if (method_exists($paramValueOrProviderClass, $paramGetter)) {
-                    // if the class has a method that matches the getter, use it
-                    return $provider = fn (mixed $value, ?string $prop): mixed => [$paramValueOrProviderClass, $paramGetter]($value, $prop, $dto);
+            // 1. Declared DTO source ? Return a provider that calls $dto->get$paramName()
+            if (preg_match('/^<dto(:([a-zA-Z0-9_]+)(?::(.*))?)?$/', $paramValueOrProviderClass, $matches)) {
+                $paramGetter = $matches[2] ?? $defaultParamGetter;
+                $extraParam = $attemptJsonDecode($matches[3] ?? null);
+
+                if (!method_exists($dto, $paramGetter)) {
+                    throw new \BadMethodCallException("DTO does not have a $paramGetter() method.");
                 }
-                throw new \InvalidArgumentException("Class $paramValueOrProviderClass does not have a $paramGetter() method.");
+
+                return $provider = function (mixed $value, ?string $prop, BaseDto $dto) use ($paramGetter, $extraParam): mixed {
+                    return [$dto, $paramGetter]($value, $prop, $extraParam);
+                };
             }
+
+            // 2. Declared context source ? Return a provider that calls $dto->getContext($paramName) and returns the value (context-val) cast as a boolean.
+            // If a css selector is added (e.g. "<context:myKeyName~=someVal"), return the selector's result rather than (bool)context-val.
+            if (preg_match('/^<context(?::([-.a-z0-9_]+)(?:=([^=].*))?)?$/ix', $paramValueOrProviderClass, $matches)) {
+                $contextKey = $matches[1] ?? $paramName;
+                $compareVal = $matches[2] ?? null;
+
+                // Determine if it's a regex comparison
+                $checkClosure = null;
+
+                if (null !== $compareVal) {
+                    if (preg_match('#^/(.*)/([a-z]*)$#', $compareVal, $regexParts)) {
+                        [, $pattern, $flags] = $regexParts;
+                        $delimitedPattern = "/$pattern/$flags";
+                        $checkClosure = fn (mixed $value): bool => is_string($value) && 1 === preg_match($delimitedPattern, $value);
+                    } else {
+                        $checkClosure = fn (mixed $value): bool => $value === $compareVal;
+                    }
+                }
+
+                //  ?? fn ($value) => is_string($value)
+                //         && is_bool($val = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE))
+                //             ? $val
+                //             : (bool) $value;
+
+                // if the value is '<context', return a provider that gets the value from the context
+                if (!$dto instanceof HasContextInterface) {
+                    throw new \RuntimeException("To use '<context' as a parameter value, the DTO must implement HasContextInterface.");
+                }
+
+                if (!$dto->hasContext($contextKey)) {
+                    throw new \RuntimeException("Cannot resolve context key '$contextKey' (no context set) for caster ".static::class);
+                }
+
+                return $provider = function (mixed $value, ?string $prop, BaseDto&HasContextInterface $dto) use ($contextKey, $checkClosure, $paramName, $config): mixed {
+                    // attempt to get the parameter value from the context
+                    $paramValue = $dto->getContext($contextKey);
+
+                    if (null !== $paramValue && null !== $checkClosure) {
+                        $paramValue = $checkClosure($paramValue);
+                    }
+
+                    if ($config->checkValid && !($config->checkValid)($paramValue, $paramName)) {
+                        // if the value is not valid, throw an exception
+                        /** @psalm-suppress RiskyTruthyFalsyComparison */
+                        $paramValue = json_encode($paramValue) ?: '(type: '.get_debug_type($paramValue).')';
+                        throw new \RuntimeException("Prop $prop: Invalid $paramName $paramValue in context key '$contextKey' for ".static::class);
+                    }
+
+                    return $paramValue;
+                };
+            }
+
+            // 3. It's a valid provider class ? Return a provider that static-calls it.
+            [$classProvider, $paramGetter] = explode('::', $paramValueOrProviderClass, 2) + [null, $defaultParamGetter];
+            if (class_exists($classProvider)) {
+                if (method_exists($classProvider, $paramGetter)) {
+                    // if the class has a method that matches the getter, use it
+                    return $provider = fn (mixed $value, ?string $prop): mixed => [$classProvider, $paramGetter]($value, $prop, $dto);
+                }
+                throw new \InvalidArgumentException("Class $classProvider does not have a $paramGetter() method.");
+            }
+
+            // 4. If we have a validity checker and the value passes
+            if ($config->checkValid && ($config->checkValid)($paramValueOrProviderClass, $paramName)) {
+                // if the value directly provided is valid, return a provider that returns this value.
+                return $provider = fn () => $paramValueOrProviderClass;
+            }
+
             throw new \RuntimeException("Cannot resolve $paramName from \"$paramValueOrProviderClass\" for ".static::class);
         }
 
-        // Null value provided ? Return a late-binding provider that runs at cast time, and checks in order:
+        // Null value provided or non-null but not early-resolvable?
+        // Return a late-binding provider that runs at cast time, and checks in order:
         // 1. $dto->get$paramName(), 2. $dto->getContext($paramName), 3. fallback provider.
-        return $provider = function (mixed $value, ?string $prop, BaseDto $dto) use ($paramName, $paramGetter, $config): mixed {
+        return $provider = function (mixed $value, ?string $prop, BaseDto $dto) use ($paramName, $defaultParamGetter, $config): mixed {
             // initializing $paramValue to keep psalm happy
             $paramValue = null;
 
@@ -124,10 +171,10 @@ trait UsesParamResolver
                 // attempt to get the parameter value from the context
                 $paramValue = $dto->getContext($paramName);
                 $source = "\$dto->getContext('$paramName')";
-            } elseif (method_exists($dto, $paramGetter)) {
+            } elseif (method_exists($dto, $defaultParamGetter)) {
                 // attempt resolution via $dto->{"get$paramName"}()
-                $paramValue = [$dto, $paramGetter]($value, $prop);
-                $source = "\$dto->$paramGetter()";
+                $paramValue = [$dto, $defaultParamGetter]($value, $prop);
+                $source = "\$dto->$defaultParamGetter()";
             } elseif (isset($config->fallback)) {
                 $paramValue = ($config->fallback)($value, $dto);
                 $source = 'fallback provider';
@@ -136,20 +183,20 @@ trait UsesParamResolver
             // this syntax is used to allow full coverage without the incovenience of having to test the sad path separately
             isset($source) or throw new \RuntimeException("No value or provider given, unable to resolve $paramName for ".static::class);
 
-            if (($config->checkValid)($paramValue, $paramName)) {
-                return $paramValue;
+            // if checkValid is set, check the value and throw if invalid
+            if ($config->checkValid && !($config->checkValid)($paramValue, $paramName)) {
+                /** @psalm-suppress RiskyTruthyFalsyComparison */
+                $paramValue = json_encode($paramValue) ?: '';
+                throw CastingException::castingFailure(static::class, $paramValue, messageOverride: "$source returned an invalid value $paramValue for ".static::class);
             }
 
-            // if the value is not valid, throw an exception
-            /** @psalm-suppress RiskyTruthyFalsyComparison */
-            $paramValue = json_encode($paramValue) ?: '';
-            throw CastingException::castingFailure(static::class, $paramValue, messageOverride: "$source returned an invalid value $paramValue for ".static::class);
+            return $paramValue;
         };
     }
 
-    protected function configureParamResolver(string $paramName, mixed $valueOrProvider, \Closure $checkValid, ?\Closure $hydrate = null, ?\Closure $fallback = null): void
+    protected function configureParamResolver(string $paramName, mixed $valueOrProvider, ?\Closure $checkValid = null, ?\Closure $hydrate = null, ?\Closure $fallback = null): void
     {
-        $dto = static::getCurrentDto();
+        $dto = CastTo::getCurrentDto();
 
         // Can't use ??= here, because psalm complains about type coersion
         if (null === static::$paramProvidersMap) {
@@ -176,20 +223,19 @@ trait UsesParamResolver
      *
      * @psalm-suppress UndefinedDocblockClass
      */
-    protected function resolveParam(string $paramName, mixed $value, ?string $localeOrProviderClass = null): mixed
+    protected function resolveParam(string $paramName, mixed $value, ?string $paramValueOrProviderClass = null): mixed
     {
         $config = $this->getParamResolverConfig($paramName);
 
-        // if no $localeOrProviderClass is passed, check for a constructorArg with the same name as the parameter to resolve
-        $localeOrProviderClass ??= $this->constructorArgs[$paramName] ?? null;
+        // if no $paramValueOrProviderClass is passed, check for a constructorArg with the same name as the parameter to resolve
+        $paramValueOrProviderClass ??= $this->constructorArgs[$paramName] ?? null;
+
+        $dto = CastTo::getCurrentDto();
 
         /** @var CastTo|UsesParamResolver $this */
-        $dto = static::$currentDto;
-        $dto or throw new \RuntimeException('Cannot resolve parameter without a DTO (CastTo::$currentDto is null)');
+        $provider = $this->resolveParamProvider($config, $paramValueOrProviderClass, $dto);
 
-        $provider = $this->resolveParamProvider($config, $localeOrProviderClass, $dto);
-
-        $paramValue = $provider($value, static::$currentPropName, $dto);
+        $paramValue = $provider($value, CastTo::getCurrentPropName(), $dto);
 
         $hydrate = $config->hydrate;
 
@@ -208,7 +254,7 @@ final class ParamResolverConfig
 
     public function __construct(
         public string $paramName,
-        public \Closure $checkValid,
+        public ?\Closure $checkValid,
         public ?\Closure $fallback,
         public ?\Closure $hydrate,
     ) {

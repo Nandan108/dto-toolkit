@@ -26,7 +26,9 @@ Create a caster when you need to:
 
 ## 🧱 Minimal Caster Structure
 
-To write a custom caster, extend `CastBase` and implement `CasterInterface`:
+To write a custom caster, implement `CasterInterface` and :
+- Extend `CastBase` if it expects arguments, and pass them to `parent::__construct()` in the constructor.
+- Extend `CastBaseNoArgs` otherwise (no need for a constructor).
 
 ```php
 use Nandan108\DtoToolkit\Core\CastBase;
@@ -35,14 +37,24 @@ use Nandan108\DtoToolkit\Contracts\CasterInterface;
 #[\Attribute(\Attribute::TARGET_PROPERTY)]
 final class MyCustomCaster extends CastBase implements CasterInterface
 {
+    public function __construct($foo, $bar, $baz = null) {
+        parent::__construct(
+            // will be passed to each call to cast($value, $args)
+            args: [$foo, $bar],
+            // will be available at $this->constructorArgs
+            // will be used to construct instance-cache key
+            constructorArgs: ['baz' => $baz]
+        )
+    }
+
     public function cast(mixed $value, array $args): mixed
     {
         // transform $value and return it
         // You can access:
-        // - $args (positional args passed to the attribute)
-        // - static::$currentDto (the DTO instance)
-        // - static::$currentPropName (name of the property)
-        // - $this->constructorArgs (named args used for caching & booting)
+        // - [$foo, $bar] = $args;
+        // - ['baz' => $baz] = $this->constructorArgs;
+        // - static::getCurrentDto() (the DTO instance)
+        // - static::getCurrentPropName() (name of the property being cast)
     }
 }
 ```
@@ -56,7 +68,7 @@ If your caster needs per-DTO setup (e.g., to precompute values or access config)
 ```php
 use Nandan108\DtoToolkit\Contracts\BootsOnDtoInterface;
 
-class MyCaster extends CastBase implements CasterInterface, BootsOnDtoInterface
+class MyCaster extends CastBaseNoArgs implements CasterInterface, BootsOnDtoInterface
 {
     public function bootOnDto(): void
     {
@@ -144,15 +156,18 @@ class MyCaster extends CastBase implements CasterInterface, BootsOnDtoInterface
 
 ## 📊 Resolution Priority (for valueOrProvider)
 
-| Case                     | Resolved from                                                  |
-|--------------------------|-----------------------------------------------------------------|
-| `'fr_CH'` (string)       | Used directly                                                   |
-| `Provider::class`        | Calls `Provider::getXyz($value, $prop, $dto)`                   |
-| `'<dto'` string          | Calls `$dto->getXyz()`                                          |
-| `'<context'` string      | Calls `$dto->getContext('xyz')`                                 |
-| `null`                   | Fallback order:<br>1. context → 2. dto getter → 3. fallback()   |
-
-> Pass value to `constructorArgs`, not `$args`, if you want it memoized and bootable.
+| Example for `$locale` argument               | Resolved from                                                  |
+|--------------------|-----------------------------------------------------------------|
+| `Provider::class`  | `Provider::getXyz($value, $prop, $dto)`                   |
+| `'<dto'`           | `$dto->getXyz($value, $prop)`                                          |
+| `'<dto:aMethod'`   | `$dto->aMethod($value, $prop)`                                         |
+| `'<dto:aMethod:{"foo":[1,2]}'`<br>*json-formatted extra parameter* | `$dto->aMethod($value, $prop, ['foo' => [1, 2]])`                                         |
+| `'<context'`       | `$dto->getContext($paramName)`                                 |
+| `'<context:key'`       | `$dto->getContext('key')`                                 |
+| `'<context:key=val'`   | `$dto->getContext('key') === 'val'` (returns a bool)                    |
+| `'<context:key=/regexp/i'`   | `preg_match('/regexp/i', $dto->getContext('key'))` (returns a bool)                    |
+| `'fr_CH'` (string) | Used directly if value is deemed valid by that particular resolver (timezone, locale or other) |
+| `null`                 | Fallback order:<br>1. `$dto->getContext($paramName)` (if context key exists)<br>2. `$dto->{"get$ParamName"}` (if method exists)<br>3. resolver's `fallback($value, $dto)`   |
 
 ---
 

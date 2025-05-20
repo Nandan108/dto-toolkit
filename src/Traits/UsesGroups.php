@@ -26,18 +26,18 @@ trait UsesGroups // user must implement HasGroupsInterface, ScopedPropertyAccess
     #[\Override]
     public function _withGroups(array|string $all = [], array|string $inbound = [], array|string $inboundCast = [], array|string $outbound = [], array|string $outboundCast = [], array|string $validation = []): static
     {
-        foreach ([$all, $inbound, $inboundCast, $outbound, $outboundCast, $validation] as &$groups) {
+        foreach ([&$all, &$inbound, &$inboundCast, &$outbound, &$outboundCast, &$validation] as &$groups) {
             if (is_string($groups)) {
                 $groups = [$groups];
             }
         }
 
         return $this->_withContext([
-            'groups.inbound.io'    => $inbound ?: $all,
-            'groups.inbound.valid' => $validation ?: $all,
-            'groups.inbound.cast'  => $inboundCast ?: $inbound ?: $all,
-            'groups.outbound.io'   => $outbound ?: $all,
-            'groups.outbound.cast' => $outboundCast ?: $outbound ?: $all,
+            'groups.inbound.io'       => $inbound ?: $all,
+            'groups.inbound.validate' => $validation ?: $all,
+            'groups.inbound.cast'     => $inboundCast ?: $inbound ?: $all,
+            'groups.outbound.io'      => $outbound ?: $all,
+            'groups.outbound.cast'    => $outboundCast ?: $outbound ?: $all,
         ]);
     }
 
@@ -48,25 +48,21 @@ trait UsesGroups // user must implement HasGroupsInterface, ScopedPropertyAccess
      */
     public function getPropGroups(Phase $phase): array
     {
-        $meta = static::loadPropertyMetadata($phase);
-        $groupsByPropname = [];
+        /** @var array<string, PropGroups[]> $groupAttrByProp */
+        $groupAttrByProp = static::loadPhaseAwarePropMeta($phase, 'attr', PropGroups::class);
 
-        foreach ($meta as $propName => &$propMeta) {
-            if (!isset($propMeta['groups'])) {
-                $groups = [];
-
-                foreach ($propMeta['attr'] ?? [] as $attr) {
-                    if ($attr instanceof PropGroups) {
-                        $groups[] = (array) $attr->groups;
-                    }
-                }
-
-                $propMeta['groups'] = array_merge(...$groups);
-            }
-            $groupsByPropname[$propName] = $propMeta['groups'];
+        // Since Groups may be applied to both inbound and outbound phases, it is a repeatable attribute.
+        // Therefore, there may be multiple PropGroups attributes for the same property (even in the same phase).
+        // So for each property, we need to merge the groups from all PropGroups attributes.
+        foreach ($groupAttrByProp as &$propGroups) {
+            $propGroups = array_reduce(
+                array: array_map(fn ($g): array => (array) $g->groups, $propGroups),
+                callback: 'array_merge',
+                initial: [],
+            );
         }
 
-        return $groupsByPropname;
+        return $groupAttrByProp;
     }
 
     /**

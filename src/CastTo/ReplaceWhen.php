@@ -6,7 +6,7 @@ use Nandan108\DtoToolkit\Core\CastBase;
 
 /** @psalm-api */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
-class ReplaceIf extends CastBase
+class ReplaceWhen extends CastBase
 {
     public function __construct(mixed $when, mixed $then = null, bool $strict = true)
     {

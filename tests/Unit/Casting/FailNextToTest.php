@@ -13,7 +13,7 @@ final class FailNextToTest extends TestCase
     public function testFallbackValueIsUsedOnFailure(): void
     {
         $dto = new class extends FullDto {
-            #[CastTo\ReplaceIf('foo', ['bar'], )]
+            #[CastTo\ReplaceWhen('foo', ['bar'], )]
             #[FailNextTo('fallback')]
             #[CastTo\Str]
             public mixed $value = null;
@@ -38,7 +38,7 @@ final class FailNextToTest extends TestCase
         };
 
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('FailNextTo: $count must be greater than or equal to 1.');
+        $this->expectExceptionMessage('FailNextTo: $count cannot be zero.');
 
         $dto->fill(['value' => new \stdClass()]);
         $dto->normalizeInbound();
@@ -48,12 +48,12 @@ final class FailNextToTest extends TestCase
     {
         $dto = new class extends FullDto {
             public array $context = [];
-            #[FailNextTo(fallback: 'fallback', handler: 'handleFail')]
+            #[FailNextTo(fallback: 'fallback', handler: 'handleFail', count: 1)]
             #[CastTo\Str]
             #[CastTo\Uppercase]
             public mixed $value_1 = null;
 
-            #[FailNextTo(fallback: 'backfall', handler: [FailNextTo_CastFailureHandler::class, 'handleFail'])]
+            #[FailNextTo(fallback: 'backfall', handler: [FailNextTo_CastFailureHandler::class, 'handleFail'], count: 1)]
             #[CastTo\Str]
             #[CastTo\Uppercase]
             public mixed $value_2 = null;

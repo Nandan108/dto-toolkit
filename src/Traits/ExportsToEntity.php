@@ -3,7 +3,7 @@
 namespace Nandan108\DtoToolkit\Traits;
 
 use Nandan108\DtoToolkit\Core\BaseDto;
-use Nandan108\DtoToolkit\Support\CaseConverter;
+use Nandan108\DtoToolkit\Support\EntityAccessorHelper;
 
 /**
  * @psalm-require-extends BaseDto
@@ -58,9 +58,10 @@ trait ExportsToEntity
         }
 
         /** @psalm-suppress UndefinedMagicMethod */
-        $setters = $this->getEntitySetterMap($entity, array_keys($propsToSet));
+        $setters = EntityAccessorHelper::getEntitySetterMap($entity, array_keys($propsToSet));
 
         foreach ($propsToSet as $prop => $value) {
+            /** @psalm-suppress InvalidFunctionCall */
             $setters[$prop]($value);
         }
 
@@ -98,64 +99,5 @@ trait ExportsToEntity
         // TODO: run inject() after instanciation if instance is injectable
 
         return [$entity, false];
-    }
-
-    /**
-     * Get a map of closure setters for the given properties.
-     *
-     * @return \Closure[]
-     *
-     * @throws \LogicException
-     */
-    protected function getEntitySetterMap(object $entity, array $propNames): array
-    {
-        $entityReflection = new \ReflectionClass($entity);
-        $entityClass = $entityReflection->getName();
-
-        static $setterMap = [];
-        $classSetters = $setterMap[$entityClass] ??= [];
-
-        $map = [];
-        foreach ($propNames as $prop) {
-            if (isset($classSetters[$prop])) {
-                $map[$prop] = $classSetters[$prop];
-                continue;
-            }
-
-            // If we can find a setter method for the property, make a setter closure that uses it
-            try {
-                // Here we assume that DTO and entity have the same property names
-                // and that the entity has a setter for each property
-
-                // make a setter name in camelCase from potentially snake_case $prop name
-                $setter = 'set'.CaseConverter::toPascal($prop);
-
-                if ($entityReflection->getMethod($setter)->isPublic()) {
-                    $setterMap[$entityClass][$prop] = $map[$prop] =
-                        static function (mixed $value) use ($entity, $setter): void {
-                            $entity->$setter($value);
-                        };
-                    continue;
-                }
-            } catch (\ReflectionException $e) {
-            }
-
-            // No setter found, but the property is public? Make a setter closure that assigns directly.
-            try {
-                if ($entityReflection->getProperty($prop)->isPublic()) {
-                    $setterMap[$entityClass][$prop] = $map[$prop] =
-                        static function (mixed $value) use ($entity, $prop): void {
-                            $entity->$prop = $value;
-                        };
-                    continue;
-                }
-            } catch (\ReflectionException $e) {
-            }
-
-            // No setter or public property found, throw an exception
-            throw new \LogicException("No public setter or property found for '{$prop}' in ".$entityClass);
-        }
-
-        return $map;
     }
 }

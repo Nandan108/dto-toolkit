@@ -27,7 +27,7 @@ final class CasterChain implements CasterChainNodeInterface
      *
      * @param ?\ArrayIterator<int, CasterChainNodeProducerInterface> $queue
      * @param int                                                    $count              The number of elements (sub-nodes) to include in this chain node
-     * @param string                                                 $class              Debugging info: name of the class that's creating this chain
+     * @param string                                                 $className          Debugging info: name of the class that's creating this chain
      * @param ?callable                                              $buildCasterClosure A callable that builds the final casting chain from consumed nodes.
      *                                                                                   Defaults to [$this, 'composeFromNodes'] unless overridden (e.g. by chain modifiers).
      *
@@ -37,7 +37,7 @@ final class CasterChain implements CasterChainNodeInterface
         ?\ArrayIterator $queue,
         BaseDto $dto,
         int $count = -1,
-        string $class = 'Caster',
+        public string $className = 'Caster',
         /** @var ?callable $buildCasterClosure */
         ?callable $buildCasterClosure = null,
     ) {
@@ -50,7 +50,20 @@ final class CasterChain implements CasterChainNodeInterface
             $this->childNodes[] = $current->getCasterChainNode($dto, $queue);
         }
         if ($i > 0) {
-            throw new \LogicException("#[$class] expected $count child nodes, but only found ".count($this->childNodes).'.');
+            $getClassName = function (CasterChainNodeInterface $node): string {
+                if ($node instanceof CasterChain) {
+                    return $node->className;
+                }
+                $class = $node instanceof CasterMeta ? $node->instance::class : $node::class;
+                $i = strrpos($class, '\\');
+
+                return false === $i ? $class : substr($class, $i + 1);
+            };
+
+            $childNodesNames = $this->childNodes
+                ? 'only '.count($this->childNodes).': ['.implode(', ', array_map($getClassName, $this->childNodes)).']'
+                : 'none';
+            throw new \LogicException("#[$className] expected $count child nodes, but found $childNodesNames.");
         }
 
         $this->buildCasterClosure = $buildCasterClosure ?? [$this, 'composeFromNodes'];

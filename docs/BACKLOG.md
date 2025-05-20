@@ -2,23 +2,10 @@
 
 ## Product Backlog Items
 
-- **[069]** Add  #[WithDefaultGroups(...)] class attribute, takes same params as UsesGrops::_withGroups() and auto-applies them after instanciation
+- **[071]** Add `#[CastTo\Coalesce(array $ignore = [null])]` - takes an array and return first element not in $ignore list.
+- **[046]** Add modifier `#[SkipIfMatch(mixed $values, $return=null)]`, allows short-circuitting following caster(s) by returning \$return if input === \$values or input in $values.
 - **[056]** Support multi-step casting by making withGroups(inboundCast: ...) take a sequence of group(s)
   Then apply each step in sequence. Same with outboundCast.
-- **[046]** Add modifier `#[SkipIfMatch(mixed $values, $return=null)]`, allows short-circuitting following caster(s) by returning \$return if input === \$values or input in $values.
-- **[049]** Add `#[Collect(count: N)]` and #[Wrap(N)] (`#[NoOp]` = sugar for #[Wrap(0)]). Aggregate the result of the next N subchains into an array.
-  E.g.: `#[Collect(3), NoOp, Wrap(2), CastTo\Rounded(1), CastTo\NumericString(2,','), CastTo\CurrencyVal('USD')]` => cast("2.42") Returns: `["2.42", "2,40", CurrencyVal object]`
-- **[059]** Add #[Wrap(N)] chain modifier that does nothing but wraps a subchain. Could be useful with #[Collect(N)]
-- **[065]** Add FirstSuccess chain modifier: #[FirstSuccess($count)]
-  - Wraps next $count suchains as candidates and attemps each one in sequence
-  - Return the result of the first successful chain, or throw if none succeeds.
-  - Enables graceful branching on multi-type or multi-format inputs
-- **[051]** Add modifier `#[ApplyIfTruthy(check, count=1, negate=false)]` (and suggar `#[ApplyIfNot]` )
-  - E.g.: `#[ApplyIfTruthy('isAdmin', count(2))]` (or `#[ApplyIf]`?) would result in applying the next 2 casters only if one of the following returns truthy:
-    - `$dto->isAdmin()` (if available), or
-    - `$dto->isAdmin` (if property exists), or
-    - `$context['isAdmin']` (would requires $dto instanceof HasContextInterface).
-- **[040]** Add `#[MapFrom(string|array $fields)]`
 - **[020]** Add `#[MapTo(...)]` Attribute [See details](Mapping.md)
 - **[055]** Add `#[MapFromInternal(string|array $fields)]` to allow mapping from one or more internal properties or values already cast in a previous step, rather than external input.
 - **[044]** Add support for DTO transforms (`\$dto->toDto($otherDtoClass)`) [See details](#PBI-044)
@@ -95,6 +82,12 @@
 - [068] Add casters to convert input to camelCase, kebab-case, PascalCase and snake_case
 - [067] Fix to/fromEntity getEntityGetters() and setEntitySetters() to also check for camelCase methods for snake_cased properties
 - [053] Add trait UsesLocaleResolver, CastTo\LocalizedNumericString, LocalizedCurrency, LocalizedDateTime.
+- [049] Add `#[Collect(count: N)]` and #[Wrap(N)] (`#[NoOp]` = sugar for #[Wrap(0)]). Aggregate the result of the next N subchains into an array.
+- [059] Add #[Wrap(N)] chain modifier that does nothing but wraps a subchain. Could be useful with #[Collect(N)]
+- [051] Add modifier `#[ApplyIf(condition, count=1, negate=false)]` (and suggar `#[SkipNextIf]` )
+- [065] Add FirstSuccess chain modifier: #[FirstSuccess($count)]
+- [040] Add `#[MapFrom(string|array $fields)]`
+- [069] Add  #[WithDefaultGroups(...)] class attribute, takes same params as UsesGroups::_withGroups() and auto-applies them after instanciation
 
 
 ---

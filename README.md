@@ -71,8 +71,8 @@ These provide a convenient, framework-free entry point with all standard functio
 - [Built-In Casters](docs/BuiltInCasters.md) — Full list of available `CastTo\*` casters
 - [Built-In Modifiers](docs/BuiltInModifiers.md) — Full list of available `Mod\*` chain modifiers
 - [Dependency Injection](docs/DI.md)
-- Validation *(coming soon)*
-- Writing Adapters *(coming soon)*
+- Validation *(planned)*
+- Writing Adapters *(planned)*
 
 ---
 

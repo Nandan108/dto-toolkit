@@ -81,6 +81,12 @@ final class InjectIntoDtoTest extends TestCase
 
         // testing boot
         $this->assertSame($dto->valueFilledAtBootTime, 'hello world');
+
+        // instanciate a new Inject attribute instance, just for the heck of having 100% code coverage
+        // without this, the #[\Attribute] line of Inject class is marked as not covered instead of n/a.
+        (new \ReflectionClass($dto))
+            ->getProperty('slugger')
+            ->getAttributes(Inject::class)[0]->newInstance();
     }
 
     public function testCasterMarkedWithInjectAttrIsInjected(): void

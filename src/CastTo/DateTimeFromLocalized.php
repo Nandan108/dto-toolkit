@@ -16,6 +16,15 @@ final class DateTimeFromLocalized extends CastBase implements CasterInterface, B
     use UsesLocaleResolver;
     use UsesTimeZoneResolver;
 
+    /**
+     * Caster to transform a localized date string into a DateTimeImmutable object.
+     *
+     * @param mixed $locale    Locale string (e.g. 'en_US', 'fr_FR'). If null, resolution via dto method or context is attempted.
+     * @param int   $dateStyle Date style constant (IntlDateFormatter::NONE, ::SHORT, ::MEDIUM, ::LONG, ::FULL)
+     * @param int   $timeStyle Time style constant (IntlDateFormatter::NONE, ::SHORT, ::MEDIUM, ::LONG, ::FULL)
+     * @param mixed $pattern   Custom pattern (overrides $dateStyle and $timeStyle). For syntax, see https://unicode-org.github.io/icu/userguide/format_parse/datetime/#datetime-format-syntax
+     * @param mixed $timezone
+     */
     public function __construct(
         ?string $locale = null,
         int $dateStyle = \IntlDateFormatter::SHORT,

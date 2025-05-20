@@ -4,6 +4,44 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [v0.6.0]
+
+### ✨ New Features
+
+- **Chain Modifiers:** Added new built-in modifiers:
+  - `ApplyNextIf` and `SkipNextIf`: Conditionally apply or skip the next N casters based on a resolved condition.
+  - `FailIf`: Throws a casting exception if a condition is met (can be used as a simple validator).
+  - `FirstSuccess`: Tries the next N casters/subchains and returns the first successful result.
+  - `Wrap`: Groups the next N casters into a subchain (for grouping/branching).
+  - `NoOp`: No-op modifier, useful as a placeholder or for conditional chains.
+  - `Collect`: Runs input through multiple parallel subchains and collects their outputs.
+- **Mapping:** Introduced `MapFrom` attribute for inbound mapping of input fields to DTO properties.
+- **Groups:** Added `WithDefaultGroups` class attribute to set default groups in context upon instantiation.
+
+### 🛠 Improvements
+
+- **CastTo\Extract:** Renamed from `JsonExtract` to `Extract`. Now supports extracting values from both arrays and objects (using getter maps), and no longer performs `json_decode`.
+- **Param Resolver:** `UsesParamResolver` now supports:
+  - Method name and extra param value as JSON (e.g. `<dto:method:{"foo":1}>`)
+  - Context key checks with equality or regex comparison
+- **Entity Accessors:** Extracted entity getter/setter logic into `EntityAccessorMap`.
+- **Error Reporting:** Improved error messages in `CasterChain` when fewer nodes are available than requested.
+- **Casters:** All casters that require no arguments now extend `CastBaseNoArgs`.
+- **Public API:** Made `getCurrentPropName()` and `getCurrentDto()` public in `CastTo`.
+
+### 📚 Documentation
+
+- Expanded `BuiltInModifiers.md` to cover all new modifiers with usage examples.
+- Updated `Mapping.md` for `MapFrom` attribute.
+- Added/updated docs for `WithDefaultGroups` and group scoping.
+- Minor clarifications and doc cleanups.
+
+### 🧪 Testing
+
+- Added/updated tests for new modifiers, mapping, group scoping, and param resolver features.
+
+---
+
 ## [v0.5.0] - 2025-05-14
 
 ### ✨ Flexible Parameter Resolution System

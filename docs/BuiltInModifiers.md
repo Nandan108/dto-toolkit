@@ -22,39 +22,56 @@ Modifiers allow building powerful, fine-grained, and safe transformation chains.
 
 ## 🧩 Available ChainModifier Attributes
 
-### Mod\PerItem
+---
 
-**Arguments:** `int $count = 1`
+### Mod\ApplyNextIf
 
-Applies the next `$count` casters (or wrapped subchains) individually to **each item** in an array.
+**Arguments:** `mixed $condition, int $count = 1, bool $negate = false`
+
+Conditionally applies the next `$count` casters if the given `$condition` is true (or false if `negate` is true). The condition can be a value, a context key, or a method reference.
 
 **Example:**
 
 ```php
-#[CastTo\Split]
-#[Mod\PerItem(1)]
-#[CastTo\Integer]
-public ?array $ages;
+#[Mod\ApplyNextIf('<dto:shouldCast', 2)]
+#[CastTo\Trimmed]
+#[CastTo\Uppercase]
+public ?string $name;
 ```
 
 ---
 
-### Mod\FailNextTo
+### Mod\Collect
 
-**Arguments:** `mixed $fallback = null, string|array|null $handler = null, int $count = 1`
+**Arguments:** `array|int $countOrKeys`
 
-Wraps the next `$count` casters in a try/catch block.
+Runs input through multiple parallel subchains and collects their outputs.
 
-If casting fails in this subchain:
-- If `$handler` is provided, calls `$handler($value, $fallback, $exception, $dto)`
-- Otherwise returns `$fallback`
+If keys are provided, returns an associative array.
 
 **Example:**
 
 ```php
-#[FailNextTo('N/A')]
-#[CastTo\Slug]
-public ?string $slug;
+#[Collect(keys: ['original', 'pascal', 'kebab'])]
+#[Mod\NoOp]
+#[CastTo\PascalCase]
+#[CastTo\KebabCase]
+public ?array $identifier;
+```
+
+---
+
+### Mod\FailIf
+
+**Arguments:** `mixed $condition, bool $negate = false`
+
+Throws a casting exception if the `$condition` is true (or false if `negate` is true). Can be used as a simple validator.
+
+**Example:**
+
+```php
+#[Mod\FailIf('<dto:isInvalid')]
+public ?string $field;
 ```
 
 ---
@@ -78,17 +95,59 @@ public ?string $slug;
 
 ---
 
-### Mod\Groups
+### Mod\FailNextTo
 
-**Arguments:** `string|array $groups`
+**Arguments:** `mixed $fallback = null, string|array|null $handler = null, int $count = -1`
 
-Activates or skips the next chain segment based on active context groups.
+Wraps the following casters in a try/catch block.
+- If `$count` < 0 (default), `FailNextTo` will wrap as many casters as are available after it.
+- If `$count` > 0, `FailNextTo` will wrap extactly `$count` casters (or chain nodes) following it, and throw if less are available.
+- If f `$count` = 0, throws an InvalidArgumentException.
+
+If casting fails in this subchain:
+- If `$handler` is provided, calls `$handler($value, $fallback, $exception, $dto)`
+- Otherwise returns `$fallback`
 
 **Example:**
 
 ```php
-#[Groups('api')]
-#[CastTo\Trimmed]
+#[FailNextTo('N/A')]
+#[CastTo\Slug]
+public ?string $slug;
+```
+
+---
+
+### Mod\FirstSuccess
+
+**Arguments:** `int $count`
+
+Tries the next `$count` casters/subchains in order and returns the result of the first one that succeeds. Throws if all fail.
+
+**Example:**
+
+```php
+#[Mod\FirstSuccess(3)]
+#[CastTo\DateTimeFromLocalized(pattern: 'yyyy-MM-dd')]
+#[CastTo\DateTimeFromLocalized(dateStyle: \IntlDateFormatter::SHORT)]
+#[CastTo\DateTimeFromLocalized(dateStyle: \IntlDateFormatter::LONG)]
+public null|string|DateTimeInterface $date;
+```
+
+---
+
+### Mod\Groups
+
+**Arguments:** `string|array $groups, int $count = 1`
+
+Activates or skips the wrapped node(s) based on active context groups.
+
+In the following example, the `Trimmed` caster will only be applied if the group 'api' is "in scope". E.g. `MyDTO::withGroups('api')->fromArray(...)`
+
+**Example:**
+
+```php
+#[Groups('api'), CastTo\Trimmed]
 #[CastTo\Slug]
 public ?string $slug;
 ```
@@ -101,48 +160,79 @@ public ?string $slug;
 
 Groups the next `$count` casters into a single subchain treated as one unit.
 
-Useful when modifiers (like PerItem) expect grouped casters.
+Useful when modifiers (like FirstSuccess) expect grouped casters.
 
 **Example:**
 
 ```php
-#[Wrap(2)]
-#[CastTo\Integer]
-#[Valid\Range(0, 99)]
+#[FirstSuccess(2)]
+#[Wrap(3), Valid\Integer, CastTo\Integer, Valid\Range(0, 100)]
+#[Wrap(2), CastTo\Floating, Valid\Range(0, 1)]
+null|int|float $percent;
 ```
 
 ---
 
-### Mod\Collect
+### Mod\PerItem
 
-**Arguments:** `int $count, array $keys = []`
+**Arguments:** `int $count = 1`
 
-Runs input through multiple parallel subchains and collects their outputs.
-
-If keys are provided, returns an associative array.
+Applies the next `$count` casters (or wrapped subchains) individually to **each item** in an array.
 
 **Example:**
 
 ```php
-#[Collect(2, keys: ['min', 'max'])]
+#[CastTo\Split]
+#[Mod\PerItem(1)]
 #[CastTo\Integer]
-#[CastTo\Integer]
-public ?array $bounds;
+public ?array $ages;
 ```
 
 ---
 
-### Mod\SkipIfMatch
+### Mod\NoOp
 
-**Arguments:** `array $values, mixed $return`
+**Arguments:** _none_
 
-Short-circuits the chain if the input matches one of the provided values.
+A no-op modifier. Equivalent to `Wrap(0)`. Useful for conditional chains or as a placeholder.
 
 **Example:**
 
 ```php
-#[SkipIfMatch(['', null], return: 'default')]
-public ?string $description;
+#[Mod\NoOp]
+public mixed $value;
+```
+---
+
+### Mod\SkipNextIf
+
+**Arguments:** `mixed $condition, int $count = 1`
+
+Skips the next `$count` casters if the given `$condition` is true. Syntactic sugar for `ApplyNextIf(..., negate: true)`.
+
+**Example:**
+
+```php
+#[Mod\SkipNextIf('<context:isAdmin')]
+#[CastTo\Trimmed]
+public ?string $comment;
+```
+
+---
+
+### Mod\Wrap
+
+**Arguments:** `int $count`
+
+Groups the next `$count` casters into a subchain. Does not alter behavior, but is useful for grouping with other modifiers.
+
+**Example:**
+
+```php
+#[Mod\Wrap(2)]
+#[CastTo\Trimmed]
+#[CastTo\Uppercase]
+public ?string $name;
 ```
 
 ---

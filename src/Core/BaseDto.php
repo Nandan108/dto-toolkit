@@ -4,6 +4,7 @@ namespace Nandan108\DtoToolkit\Core;
 
 use Nandan108\DtoToolkit\Attribute\Inject;
 use Nandan108\DtoToolkit\Attribute\Outbound;
+use Nandan108\DtoToolkit\Attribute\WithDefaultGroups;
 use Nandan108\DtoToolkit\Contracts\Bootable;
 use Nandan108\DtoToolkit\Contracts\Injectable;
 use Nandan108\DtoToolkit\Contracts\NormalizesInterface;
@@ -32,7 +33,13 @@ abstract class BaseDto
     // full metadata cache per class (static)
     private static array $_propertyMetadataCache = [];
 
-    public static function loadPropertyMetadata(Phase $phase, ?string $metaDataName = null): array
+    /**
+     * Load the metadata for the given phase.
+     *
+     * @param mixed                      $metaDataName
+     * @param \Closure|class-string|null $filter
+     */
+    public static function loadPhaseAwarePropMeta(Phase $phase, string $metaDataName, \Closure|string|null $filter): array
     {
         if (!isset(self::$_propertyMetadataCache[static::class])) {
             $cache = [];
@@ -73,16 +80,29 @@ abstract class BaseDto
         /** @var array $meta */
         $meta = self::$_propertyMetadataCache[static::class][$phase->value] ?? [];
 
-        if (null === $metaDataName) {
-            return $meta;
-        }
-
-        return array_map(
+        $metaByName = array_map(
             static function (array $propMeta) use ($metaDataName) {
-                return $propMeta[$metaDataName] ?? null;
+                return $propMeta[$metaDataName] ?? [];
             },
             $meta,
         );
+
+        // if filter is null, we keep all attributes
+        $filter ??= static fn (): bool => true;
+
+        // if $filter is a string, it's an class name, and we keep only instances of that class
+        if (is_string($filter)) {
+            $filter = static function (object $attr) use ($filter): bool {
+                return $attr instanceof $filter;
+            };
+        }
+
+        foreach ($metaByName as &$meta) {
+            /** @psalm-suppress TooManyArguments */
+            $meta = array_filter($meta, $filter);
+        }
+
+        return $metaByName;
     }
 
     /**
@@ -267,8 +287,12 @@ abstract class BaseDto
         /** @var bool[] $isInjectable */
         static $isInjectable = [];
 
+        // we should cache all relevant attributes in a static array
+
+        $classRef = static::getClassRef();
+
         $shouldUseContainer = $isInjectable[static::class] ??=
-            (bool) static::getClassRef()->getAttributes(Inject::class);
+            (bool) $classRef->getAttributes(Inject::class);
 
         // make a new instance of the class,
         /** @psalm-suppress UnsafeInstantiation */
@@ -286,6 +310,11 @@ abstract class BaseDto
         if ($instance instanceof Bootable) {
             /** @psalm-suppress UnusedMethodCall */
             $instance->boot();
+        }
+
+        $defaultGroupsRef = $classRef->getAttributes(WithDefaultGroups::class)[0] ?? null;
+        if ($defaultGroupsRef) {
+            $defaultGroupsRef->newInstance()->applyToDto($instance);
         }
 
         /** @var static $instance */

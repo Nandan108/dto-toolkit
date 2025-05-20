@@ -2,13 +2,12 @@
 
 namespace Nandan108\DtoToolkit\Traits;
 
+use Nandan108\DtoToolkit\Attribute\MapFrom;
 use Nandan108\DtoToolkit\Contracts\NormalizesInterface;
 use Nandan108\DtoToolkit\Contracts\ScopedPropertyAccessInterface;
-// use Nandan108\DtoToolkit\Contracts\CreatesFromArrayInterface;
 use Nandan108\DtoToolkit\Contracts\ValidatesInputInterface;
-use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Enum\Phase;
-use Nandan108\DtoToolkit\Support\CaseConverter;
+use Nandan108\DtoToolkit\Support\EntityAccessorHelper;
 
 /**
  * @method static static fromArray(array $input, bool $ignoreUnknownProps = false)
@@ -17,9 +16,6 @@ use Nandan108\DtoToolkit\Support\CaseConverter;
  *
  * These methods are dynamically routed via __call() and __callStatic() to their corresponding instance methods.
  * Static analyzers require the above annotations to avoid false positives.
- *
- * @psalm-require-extends BaseDto
- *
  **/
 trait CreatesFromArrayOrEntity
 {
@@ -53,8 +49,19 @@ trait CreatesFromArrayOrEntity
             $toBeFilled = array_intersect($fillables, $propsInScope);
         }
 
-        // get actual data to be filled
+        // get mappers for the properties to be filled
+        $mappers = MapFrom::getMappers($this, $toBeFilled);
+
         $inputToBeFilled = array_intersect_key($input, array_flip($toBeFilled));
+
+        // Get data from mappers. Only fill if we actually get a value.
+        foreach ($mappers as $prop => $mapper) {
+            $value = $mapper($input, $this) ?? $inputToBeFilled[$prop] ?? null;
+            if (null !== $value) {
+                $inputToBeFilled[$prop] = $value;
+            }
+        }
+
         // and fill the DTO
         $this->fill($inputToBeFilled);
 
@@ -98,73 +105,15 @@ trait CreatesFromArrayOrEntity
     {
         $inputData = [];
 
-        foreach ($this->getEntityGetters($entity, $this->getFillable(), $ignoreInaccessibleProps) as $prop => $getFrom) {
+        $getterMap = EntityAccessorHelper::getEntityGetterMap(
+            entity: $entity,
+            propNames: $this->getFillable(),
+            ignoreInaccessibleProps: $ignoreInaccessibleProps
+        );
+        foreach ($getterMap as $prop => $getFrom) {
             $inputData[$prop] = $getFrom($entity);
         }
 
         return $this->_fromArray($inputData, true);
-    }
-
-    /**
-     * Get the per-property list of getters defined for the given entity.
-     * For each property, a closure is created that calls the getter method, or sets
-     * the property directly if no getter is found the prop is public.
-     *
-     * @param bool $ignoreInaccessibleProps If false and no getter is found, an exception is thrown
-     *
-     * @throws \LogicException
-     */
-    protected function getEntityGetters(object $entity, array $propNames, bool $ignoreInaccessibleProps = true): array
-    {
-        $entityReflection = null;
-        $entityClass = $entity::class;
-
-        static $getterMap = [];
-        $classGetters = $getterMap[$entityClass] ??= [];
-
-        $map = [];
-        foreach ($propNames as $prop) {
-            if (isset($classGetters[$prop])) {
-                $map[$prop] = $classGetters[$prop];
-                continue;
-            }
-
-            // If we can find a getter method for the property, make a getter closure that uses it
-            $entityReflection ??= new \ReflectionClass($entity);
-            try {
-                // make a setter name in camelCase from potentially snake_case $prop name
-                $getter = 'get'.CaseConverter::toPascal($prop);
-
-                // Here we assume that DTO and entity have the same property names
-                // and that the entity has a getter for each property
-                if ($entityReflection->getMethod($getter)->isPublic()) {
-                    $getterMap[$entityClass][$prop] = $map[$prop] =
-                        static function (object $entity) use ($getter): mixed {
-                            return $entity->$getter();
-                        };
-                    continue;
-                }
-            } catch (\ReflectionException $e) {
-            }
-
-            // No getter found, but the property is public? Make a getter closure that reads directly.
-            try {
-                if ($entityReflection->getProperty($prop)->isPublic()) {
-                    $getterMap[$entityClass][$prop] = $map[$prop] =
-                        static function (object $entity) use ($prop): mixed {
-                            return $entity->$prop;
-                        };
-                    continue;
-                }
-            } catch (\ReflectionException $e) {
-            }
-
-            if (!$ignoreInaccessibleProps) {
-                // No getter or public property found, throw an exception
-                throw new \LogicException("No public getter or property found for '{$prop}' in ".$entityClass);
-            }
-        }
-
-        return $map;
     }
 }
