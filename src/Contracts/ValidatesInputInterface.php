@@ -11,5 +11,5 @@ interface ValidatesInputInterface
      *
      * @psalm-suppress PossiblyUnusedMethod, PossiblyUnusedReturnValue
      */
-    public function validate(array $args = []): static;
+    public function validate(): static;
 }

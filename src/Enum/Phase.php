@@ -5,6 +5,7 @@ namespace Nandan108\DtoToolkit\Enum;
 enum Phase: string
 {
     case InboundLoad = 'inbound.io';      // loading raw data
+    case Validation = 'inbound.validate'; // validation phase
     case InboundCast = 'inbound.cast';       // casting to types
     case OutboundCast = 'outbound.cast';     // casting during export
     case OutboundExport = 'outbound.io'; // final field export

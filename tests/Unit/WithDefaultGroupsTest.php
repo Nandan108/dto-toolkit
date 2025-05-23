@@ -24,7 +24,7 @@ final class WithDefaultGroupsTest extends TestCase
         $this->assertSame($dto->getActiveGroups(Phase::InboundCast), ['baz']);
         $this->assertSame($dto->getActiveGroups(Phase::OutboundCast), ['foo']);
         $this->assertSame($dto->getActiveGroups(Phase::OutboundExport), ['foo']);
-        $this->assertSame($dto->getContext('groups.inbound.validate'), ['foo']);
+        $this->assertSame($dto->getActiveGroups(Phase::Validation), ['foo']);
     }
 
     public function testUsingWithDefaultGroupsOnClassNotImplementingHasGroupsInterfaceThrowsException(): void
