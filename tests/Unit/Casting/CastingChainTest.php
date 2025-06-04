@@ -79,7 +79,7 @@ final class CastingChainTest extends TestCase
             $dto->normalizeInbound();
             $this->fail('Expected CastingException not thrown');
         } catch (CastingException $e) {
-            $this->assertStringStartsWith('PerItem modifier expected an array value, received string', $e->getMessage());
+            $this->assertStringStartsWith('Prop `prices`: PerItem modifier expected an array value, received string', $e->getMessage());
             $this->assertSame(3, $e->args['count']);
         }
     }

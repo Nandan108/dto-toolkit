@@ -2,6 +2,7 @@
 
 namespace Nandan108\DtoToolkit\Attribute\ChainModifier;
 
+use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Contracts\CasterChainNodeInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Exception\CastingException;
@@ -59,10 +60,19 @@ class Collect extends ChainModifierBase
                 $closures = array_map(fn ($node): callable => $node->getBuiltClosure($upstreamChain), $chainElements);
 
                 return function (mixed $value) use ($closures): array {
-                    return array_combine(
-                        $this->keys,
-                        array_map(fn ($closure): mixed => $closure($value), $closures),
-                    ) ?: [];
+                    $result = [];
+
+                    foreach ($closures as $i => $closure) {
+                        CastTo::pushPropPath($this->keys[$i]);
+
+                        try {
+                            $result[$this->keys[$i]] = $closure($value);
+                        } finally {
+                            CastTo::popPropPath();
+                        }
+                    }
+
+                    return $result;
                 };
             }
         );

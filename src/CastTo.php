@@ -31,7 +31,7 @@ class CastTo implements PhaseAwareInterface, CasterChainNodeProducerInterface
     protected static ?\stdClass $globalMemoizedCasters = null;
     protected static array $injectables = [];
 
-    protected static ?string $currentPropName = null;
+    protected static array $currentPropPath = [];
     protected static ?BaseDto $currentDto = null;
 
     /**
@@ -327,7 +327,27 @@ class CastTo implements PhaseAwareInterface, CasterChainNodeProducerInterface
      */
     public static function setCurrentPropName(?string $propName): void
     {
-        self::$currentPropName = $propName;
+        self::$currentPropPath = ($propName ?? '') ? [$propName] : [];
+    }
+
+    public static function pushPropPath(int|string $segment): void
+    {
+        self::$currentPropPath[] = $segment;
+    }
+
+    public static function popPropPath(): void
+    {
+        array_pop(self::$currentPropPath);
+    }
+
+    public static function getPropPath(): ?string
+    {
+        $propPath = '';
+        foreach (self::$currentPropPath as $segment) {
+            $propPath .= is_int($segment) ? "[$segment]" : ".$segment";
+        }
+
+        return ltrim($propPath, '.') ?: null;
     }
 
     public static function setCurrentDto(?BaseDto $dto): void
@@ -345,7 +365,7 @@ class CastTo implements PhaseAwareInterface, CasterChainNodeProducerInterface
     public static function getCurrentDto(): BaseDto
     {
         // Can't use this trait without being a CastTo, but this should never happen under normal circumstances
-        static::$currentDto or throw new \RuntimeException('Casting context is not set: CastTo::$currentDto is null');
+        static::$currentDto or throw new CastingException('Casting context is not set: CastTo::$currentDto is null');
 
         return static::$currentDto;
     }
@@ -361,10 +381,11 @@ class CastTo implements PhaseAwareInterface, CasterChainNodeProducerInterface
      */
     public static function getCurrentPropName(): string
     {
-        // Can't use this trait without being a CastTo, but this should never happen under normal circumstances
-        /** @psalm-suppress RiskyTruthyFalsyComparison */
-        static::$currentPropName or throw new \RuntimeException('Casting context is not set: CastTo::$currentPropName is null');
+        /** @var string $propName */
+        $propName = static::$currentPropPath[0] ?? '';
+        $propName > '' or throw new CastingException('Casting context is not set');
 
-        return static::$currentPropName;
+        /** @var non-empty-string $propName */
+        return $propName;
     }
 }

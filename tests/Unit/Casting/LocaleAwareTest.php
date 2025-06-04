@@ -119,7 +119,7 @@ final class LocaleAwareTest extends TestCase
 
             $this->fail('Expected CastingException');
         } catch (CastingException $e) {
-            $this->assertStringStartsWith('Expected numeric, but got string:', $e->getMessage());
+            $this->assertStringStartsWith('Prop `number_fr`: Expected numeric, but got string:', $e->getMessage());
         }
 
         try {
@@ -157,7 +157,7 @@ final class LocaleAwareTest extends TestCase
             $this->fail('Expected CastingException');
         } catch (CastingException $e) {
             // $this->assertStringStartsWith('$dto->getContext(\'locale\') returned an invalid locale "bad-locale"', $e->getMessage());
-            $this->assertStringStartsWith('Expected: numeric, but got non-numeric string', $e->getMessage());
+            $this->assertStringStartsWith('Prop `number`: Expected: numeric, but got non-numeric string', $e->getMessage());
         }
     }
 
@@ -223,7 +223,7 @@ final class LocaleAwareTest extends TestCase
             $dto->unfill()->setContext('locale', 'bad-locale')->fromArray(['amount' => 1234.56]);
             $this->fail('Expected CastingException');
         } catch (\RuntimeException $e) {
-            $this->assertStringStartsWith('$dto->getContext(\'locale\') returned an invalid value "bad-locale"', $e->getMessage());
+            $this->assertStringStartsWith('Prop `amount`: $dto->getContext(\'locale\') returned an invalid value "bad-locale"', $e->getMessage());
         }
     }
 

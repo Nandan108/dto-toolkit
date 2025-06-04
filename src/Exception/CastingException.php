@@ -2,29 +2,36 @@
 
 namespace Nandan108\DtoToolkit\Exception;
 
+use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Contracts\CasterChainNodeProducerInterface;
 use Nandan108\DtoToolkit\Contracts\CasterInterface;
 
 final class CastingException extends \RuntimeException
 {
-    /** @psalm-suppress PossiblyUnusedProperty */
-    public ?string $method = null;
+    public ?string $propertyPath;
 
     /** @psalm-suppress PossiblyUnusedProperty */
-    public array $args = [];
+    public ?string $methodName;
 
-    /** @psalm-suppress PossiblyUnusedProperty */
-    public ?string $className = null;
-
-    /** @psalm-suppress PossiblyUnusedProperty */
-    public mixed $operand = null;
+    public function __construct(
+        string $message,
+        public ?string $className = null,
+        public mixed $operand = null,
+        ?string $methodName = null,
+        public array $args = [],
+        ?int $code = null,
+    ) {
+        parent::__construct($message, $code ?? 500);
+        $this->propertyPath = CastTo::getPropPath();
+        $this->methodName = $methodName;
+    }
 
     public static int $maxOperandTextLength = 100;
 
     public static function unresolved(string $methodOrClass): self
     {
-        $e = new self("Caster '{$methodOrClass}' could not be resolved.", 501);
-        $e->method = $methodOrClass;
+        $e = new self("Caster '{$methodOrClass}' could not be resolved.", code: 501);
+        $e->methodName = $methodOrClass;
 
         return $e;
     }
@@ -42,7 +49,7 @@ final class CastingException extends \RuntimeException
     {
         $type = match (true) {
             is_a($className, CasterInterface::class, true)                  => 'Caster',
-            is_a($className, CasterChainNodeProducerInterface::class, true) => 'Cast modifier',
+            is_a($className, CasterChainNodeProducerInterface::class, true) => 'Chain modifier',
             default                                                         => 'Class',
         };
 
@@ -91,12 +98,17 @@ final class CastingException extends \RuntimeException
             }
         }
 
-        $e = new self($message, 422); // 422 Unprocessable Entity
-
-        $e->className = $className;
-        $e->method = $methodName;
-        $e->args = $args;
-        $e->operand = $operand;
+        $e = new self(
+            message: $message,
+            className: $className,
+            operand: $operand,
+            methodName: $methodName,
+            args: $args,
+            code: 422 // Unprocessable Entity
+        );
+        if ($e->propertyPath ?? '') {
+            $e->message = "Prop `{$e->propertyPath}`: ".$e->message;
+        }
 
         return $e;
     }

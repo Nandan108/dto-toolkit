@@ -2,6 +2,7 @@
 
 namespace Nandan108\DtoToolkit\Attribute\ChainModifier;
 
+use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Exception\CastingException;
 use Nandan108\DtoToolkit\Internal\CasterChain;
@@ -47,7 +48,17 @@ class PerItem extends ChainModifierBase
                         throw CastingException::castingFailure(messageOverride: 'PerItem modifier expected an array value, received '.gettype($value), className: get_class($this), operand: $value, args: ['count' => $this->count]);
                     }
 
-                    return array_map($subchain, $value);
+                    $result = [];
+                    foreach ($value as $k => $v) {
+                        CastTo::pushPropPath($k);
+                        try {
+                            $result[$k] = $subchain($v);
+                        } finally {
+                            CastTo::popPropPath();
+                        }
+                    }
+
+                    return $result;
                 };
             }
         );
