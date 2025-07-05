@@ -3,6 +3,7 @@
 namespace Nandan108\DtoToolkit\Attribute\ChainModifier;
 
 use Nandan108\DtoToolkit\Contracts\CasterChainNodeInterface;
+use Nandan108\DtoToolkit\Contracts\CasterChainNodeProducerInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Exception\CastingException;
 use Nandan108\DtoToolkit\Internal\CasterChain;
@@ -23,8 +24,8 @@ class FirstSuccess extends ChainModifierBase
     }
 
     /**
-     * @param \ArrayIterator $queue The queue of attributes to be processed
-     * @param BaseDto        $dto   The DTO instance
+     * @param \ArrayIterator<int, CasterChainNodeProducerInterface> $queue The queue of attributes to be processed
+     * @param BaseDto                                               $dto   The DTO instance
      *
      * @return CasterChain A closure that applies the composed caster on each element of the passed array value
      */
@@ -37,9 +38,9 @@ class FirstSuccess extends ChainModifierBase
          *
          * @return \Closure A closure that applies the composed caster on each element of the passed array value
          */
-        $builder = function (array $chainElements, ?callable $upstreamChain): \Closure {
+        $builder = function (array $chainElements, ?\Closure $upstreamChain): \Closure {
             // get the closure for each node wrapped by Collect
-            $closures = array_map(fn (CasterChainNodeInterface $node): callable => // foo!
+            $closures = array_map(fn (CasterChainNodeInterface $node): \Closure => // foo!
                 $node->getBuiltClosure($upstreamChain), $chainElements);
 
             return function (mixed $value) use ($closures): mixed {

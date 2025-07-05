@@ -8,6 +8,7 @@ use Nandan108\DtoToolkit\Contracts\CasterResolverInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Core\CastBase;
 use Nandan108\DtoToolkit\Exception\CastingException;
+use Nandan108\DtoToolkit\Internal\CasterMeta;
 use PHPUnit\Framework\TestCase;
 
 final class CasterInterfaceTest extends TestCase
@@ -48,7 +49,7 @@ final class CasterInterfaceTest extends TestCase
             #[\Override]
             public function cast(mixed $value, array $args): mixed
             {
-                return $this->prefix.$value;
+                return "{$this->prefix}$value";
             }
         };
 
@@ -64,7 +65,7 @@ final class CasterInterfaceTest extends TestCase
             #[\Override]
             public function cast(mixed $value, array $args): mixed
             {
-                return strtoupper($value);
+                return strtoupper((string) $value);
             }
         };
 
@@ -84,7 +85,7 @@ final class CasterInterfaceTest extends TestCase
             #[\Override]
             public function cast(mixed $value, array $args): mixed
             {
-                return $this->prefix.':'.$value;
+                return "{$this->prefix}:$value";
             }
         };
 
@@ -219,17 +220,17 @@ final class CasterInterfaceTest extends TestCase
             }
         };
 
-        /** @psalm-suppress InvalidReturnType, InvalidNullableReturnType, InvalidReturnStatement, NullableReturnStatement */
-        /** @psalm-suppress InternalMethod */
-        $getMeta = fn (): \stdClass => CastTo::_getCasterMetadata();
+        $getMeta =
+        /** @return array<string, array{casters: array<string, CasterMeta>, instance?: CasterInterface}> */
+        fn (): array => CastTo::_getCasterMetadata();
 
         // whipe out memoized caster data
         // FakeClass:["bar"]
         /** @psalm-suppress PossiblyFalseOperand */
         $fakeClassCacheKey = $className.':'.json_encode($fakeClassCtorArgs);
-        $this->assertObjectHasProperty($fakeClassCacheKey, $getMeta());
+        $this->assertArrayHasKey($fakeClassCacheKey, $getMeta());
         $attr::_clearCasterMetadata();
-        $this->assertObjectNotHasProperty($className, $getMeta());
+        $this->assertArrayNotHasKey($className, $getMeta());
 
         $casterClosure = $attr->getCasterChainNode($dto);
         $this->assertSame(
@@ -237,20 +238,16 @@ final class CasterInterfaceTest extends TestCase
             $casterClosure('val'),
         );
 
-        /** @var array $casterMeta */
         $allCasters = $getMeta();
-        $casterMeta = $allCasters->$fakeClassCacheKey;
+        $casterMeta = $allCasters[$fakeClassCacheKey];
         $this->assertArrayHasKey('casters', $casterMeta);
         $attr::_clearCasterMetadata($className);
-        $this->assertObjectNotHasProperty($className, $getMeta());
+        $this->assertArrayNotHasKey($className, $getMeta());
 
         // get the caster again, which will re-fill the caster cache
         $attr->getCasterChainNode($dto);
-        // this time, we use getCasterMetadata() with an argument (different code path)
-        /** @var array $casterMeta */
-        /** @psalm-suppress InternalMethod */
-        $casterMeta = $attr::_getCasterMetadata($fakeClassCacheKey);
-        /** @psalm-suppress PossiblyInvalidArgument */
+
+        $casterMeta = $attr::_getCasterMetadata()[$fakeClassCacheKey];
         $this->assertArrayHasKey('casters', $casterMeta);
     }
 }

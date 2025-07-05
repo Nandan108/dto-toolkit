@@ -8,11 +8,21 @@ use Nandan108\DtoToolkit\Contracts\ValidatesInputInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Traits\CreatesFromArrayOrEntity;
 use Nandan108\DtoToolkit\Traits\NormalizesFromAttributes;
+use Nandan108\PropAccess\Exception\AccessorException;
+use Nandan108\PropAccess\PropAccess;
 use PHPUnit\Framework\TestCase;
 
 /** @psalm-suppress UnusedClass */
 final class CreatesFromArrayTest extends TestCase
 {
+    #[\Override]
+    public function setUp(): void
+    {
+        parent::setUp();
+        // Ensure that the test environment is clean
+        PropAccess::bootDefaultResolvers();
+    }
+
     public function testInstantiatesDtoFromArray(): void
     {
         /** @psalm-suppress NoValue, UnusedVariable, UndefinedMagicMethod */
@@ -192,9 +202,11 @@ final class CreatesFromArrayTest extends TestCase
             private string|int|null $name = 'sam';
         };
 
-        $this->expectException(\LogicException::class);
-        $this->expectExceptionMessage('No public getter or property found for \'itemId\' in '.get_class($entity));
+        $this->expectException(AccessorException::class);
+        $this->expectExceptionMessage('No public getter or property found for: itemId, name in '.get_class($entity));
 
+        // attempts to create a new FromArrayTestDto from data (itemId, name, email) taken from the entity
+        // but itemId and name do not exist on the entity, so it should throw an exception
         FromArrayTestDto::fromEntity($entity, false);
     }
 }

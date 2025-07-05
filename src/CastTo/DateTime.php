@@ -58,7 +58,7 @@ class DateTime extends CastBase implements CasterInterface, BootsOnDtoInterface
         /** @var string $format */
         [$format] = $args;
 
-        /** @var ?\DateTimeZone $timezone */
+        /** @var ?\DateTimeZone $tz */
         $tz = $this->resolveParam('timezone', $value);
 
         $dt = \DateTimeImmutable::createFromFormat($format, $value, $tz);

@@ -2,10 +2,16 @@
 
 namespace Nandan108\DtoToolkit\Attribute;
 
+use Nandan108\DtoToolkit\Contracts\HasContextInterface;
 use Nandan108\DtoToolkit\Contracts\PhaseAwareInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Enum\Phase;
+use Nandan108\DtoToolkit\Exception\ExtractionSyntaxError;
+use Nandan108\DtoToolkit\Exception\LoadingException;
 use Nandan108\DtoToolkit\Traits\HasPhase;
+use Nandan108\PropPath\Exception\SyntaxError;
+use Nandan108\PropPath\PropPath;
+use Nandan108\PropPath\Support\ExtractContext;
 
 /**
  * This attribute is used to specify the scoping groups for a property.
@@ -18,45 +24,41 @@ class MapFrom implements PhaseAwareInterface
 {
     use HasPhase;
 
-    // const TAKE_FROM_ORIGINAL = '^';
-    public const THROW_IF_MISSING = '!';
+    /** @var \Closure(array, ?\Closure(string, ExtractContext): never): mixed */
+    private \Closure $extractor;
 
-    public function __construct(public array|string $sources)
+    /** @var \Closure(string, ExtractContext):never */
+    private \Closure $evalErrorHandler;
+
+    public function __construct(string|array $paths)
     {
         $this->isIoBound = true;
+
+        try {
+            $this->extractor = PropPath::compile($paths);
+        } catch (SyntaxError $e) {
+            /** @var string $jsonPath */
+            $jsonPath = json_encode($paths, JSON_THROW_ON_ERROR);
+            throw new ExtractionSyntaxError(message: "MapFrom: Invalid path provided: $jsonPath.", previous: $e);
+        }
+
+        $this->evalErrorHandler = function (string $msg, ExtractContext $context): never {
+            throw new LoadingException($context->getEvalErrorMessage($msg));
+        };
     }
 
-    public function __invoke(array $origValues, BaseDto $dto, array|string|null $sources = null, string $path = ''): mixed
+    public function __invoke(array $input, BaseDto $dto): mixed
     {
-        $output = [];
-        $sources ??= $this->sources;
-
-        $singleField = false;
-        if (is_string($sources)) {
-            $sources = [$sources];
-            $singleField = true;
+        $roots = [
+            'input' => $input,
+            'dto'   => $dto,
+        ];
+        if ($dto instanceof HasContextInterface) {
+            /** @var array */
+            $roots['context'] = $dto->getContext();
         }
 
-        foreach ($sources as $key => $source) {
-            if (is_string($source)) {
-                [$flags, $source] = $this->splitFlagsFromSourceName($source);
-                if ($flags[self::THROW_IF_MISSING] && !array_key_exists($source, $origValues)) {
-                    throw new \InvalidArgumentException(sprintf('Key \'%s\' not found in input values', $source));
-                }
-                if ($flags[self::THROW_IF_MISSING] > 1 && !isset($origValues[$source])) {
-                    throw new \InvalidArgumentException(sprintf('Key \'%s\' should not be blank', $source));
-                }
-                $output[$key] = $origValues[$source] ?? null;
-            } elseif (is_array($source)) {
-                $output[$key] = $this($origValues, $dto, $source, $path.($path ? '.' : '').$key);
-            }
-        }
-
-        if ($singleField) {
-            $output = reset($output);
-        }
-
-        return $output;
+        return ($this->extractor)($roots, $this->evalErrorHandler);
     }
 
     #[\Override]
@@ -68,58 +70,18 @@ class MapFrom implements PhaseAwareInterface
     }
 
     /**
-     * Source names may start with one or more of the following flag characters:
-     *  - a caret (^) to indicate that the value should be taken from the original input values\
-     *  rather than the current value of the property (default).
-     *  - an excalamation mark (!) to indicate to throw an exception if the source is not\
-     *  found in the original values.
-     *
-     * @return array{0: array<string, int>, 1: string} an array with the flags and the source name
-     *                                                 Te flags are returned as an associative array with the flag characters as keys and\
-     *                                                 the number of occurrences as values
-     */
-    private function splitFlagsFromSourceName(string $source): array
-    {
-        $allowed_flags = [/* self::TAKE_FROM_ORIGINAL, */ self::THROW_IF_MISSING];
-        $flags = array_fill_keys($allowed_flags, 0);
-
-        // flag characters may come in any order, so loop on the string
-        // until we find a non-flag character
-        for ($i = 0; $i < strlen($source); ++$i) {
-            if (!in_array($source[$i], $allowed_flags)) {
-                break;
-            }
-            ++$flags[$source[$i]];
-        }
-
-        $source = substr($source, array_sum($flags));
-
-        return [$flags, $source];
-    }
-
-    /**
      * Get the mappers for a given DTO and phase.
      *
-     * @param $dto   the DTO instance
-     * @param $props the properties to return a mapper for
+     * @param BaseDto       $dto       the DTO instance
+     * @param array<string> $propNames the properties to return a mapper for
      *
-     * @return array<string, self> an array of MapFrom instances, indexed by property name
+     * @return array<MapFrom> an array of MapFrom instances, indexed by property name
      */
-    public static function getMappers(BaseDto $dto, ?array $props = null): array
+    public static function getMappers(BaseDto $dto, ?array $propNames = null): array
     {
-        /** @var array<string, self[]> $mappers */
-        $mappersByProp = ($dto::class)::loadPhaseAwarePropMeta(Phase::InboundLoad, 'attr', self::class);
+        /** @var array<string, self> $mappers */
+        $mappers = ($dto::class)::loadPhaseAwarePropMeta(Phase::InboundLoad, 'attr', self::class, true);
 
-        // if no properties are given, return all mappers
-        $props ??= array_keys($mappersByProp);
-
-        $mappersByProp = array_filter(
-            array: array_map(
-                callback: fn (array $arr): ?MapFrom => $arr[0] ?? null,
-                array: array_intersect_key($mappersByProp, array_flip($props)),
-            ),
-        );
-
-        return $mappersByProp;
+        return null !== $propNames ? array_intersect_key($mappers, array_flip($propNames)) : $mappers;
     }
 }

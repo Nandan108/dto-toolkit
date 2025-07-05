@@ -118,13 +118,13 @@ trait UsesParamResolver
                     throw new \RuntimeException("To use '<context' as a parameter value, the DTO must implement HasContextInterface.");
                 }
 
-                if (!$dto->hasContext($contextKey)) {
+                if (!$dto->contextHas($contextKey)) {
                     throw new \RuntimeException("Cannot resolve context key '$contextKey' (no context set) for caster ".static::class);
                 }
 
                 return $provider = function (mixed $value, ?string $prop, BaseDto&HasContextInterface $dto) use ($contextKey, $checkClosure, $paramName, $config): mixed {
                     // attempt to get the parameter value from the context
-                    $paramValue = $dto->getContext($contextKey);
+                    $paramValue = $dto->contextGet($contextKey);
 
                     if (null !== $paramValue && null !== $checkClosure) {
                         $paramValue = $checkClosure($paramValue);
@@ -167,9 +167,9 @@ trait UsesParamResolver
             // initializing $paramValue to keep psalm happy
             $paramValue = null;
 
-            if ($dto instanceof HasContextInterface && $dto->hasContext($paramName)) {
+            if ($dto instanceof HasContextInterface && $dto->contextHas($paramName)) {
                 // attempt to get the parameter value from the context
-                $paramValue = $dto->getContext($paramName);
+                $paramValue = $dto->contextGet($paramName);
                 $source = "\$dto->getContext('$paramName')";
             } elseif (method_exists($dto, $defaultParamGetter)) {
                 // attempt resolution via $dto->{"get$paramName"}()

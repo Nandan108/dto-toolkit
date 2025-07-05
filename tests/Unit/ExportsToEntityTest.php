@@ -2,21 +2,33 @@
 
 namespace Nandan108\DtoToolkit\Tests\Unit;
 
+use Nandan108\DtoToolkit\Attribute\MapTo;
 use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Contracts\NormalizesInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
+use Nandan108\DtoToolkit\Core\FullDto;
 use Nandan108\DtoToolkit\Traits\ExportsToEntity;
 use Nandan108\DtoToolkit\Traits\NormalizesFromAttributes;
+use Nandan108\PropAccess\Exception\AccessorException;
+use Nandan108\PropAccess\PropAccess;
 use PHPUnit\Framework\TestCase;
 
 /** @psalm-suppress UnusedClass */
 final class ExportsToEntityTest extends TestCase
 {
+    #[\Override]
+    public function setUp(): void
+    {
+        parent::setUp();
+        // Ensure that the test environment is clean
+        PropAccess::bootDefaultResolvers();
+    }
+
     public function testDtoInstanciatesNewEntityFromEntityClassProperty(): void
     {
         $dto = new class extends BaseDto {
             use ExportsToEntity;
-            public ?string $someProp = null;
+            public ?string $fooProp = null;
 
             public function __construct()
             {
@@ -24,11 +36,11 @@ final class ExportsToEntityTest extends TestCase
             }
         };
 
-        $entity1 = $dto->fill(['someProp' => 'someVal'])->toEntity();
+        $entity1 = $dto->fill(['fooProp' => 'someVal'])->toEntity();
         /** @psalm-suppress TypeDoesNotContainType */
         $this->assertInstanceOf(EntityClassToInstanciateFromName::class, $entity1);
 
-        $entity2 = $dto->fill(['someProp' => 'someOtherVal'])->toEntity();
+        $entity2 = $dto->fill(['fooProp' => 'someOtherVal'])->toEntity();
         /** @psalm-suppress TypeDoesNotContainType */
         $this->assertInstanceOf(EntityClassToInstanciateFromName::class, $entity2);
 
@@ -163,7 +175,7 @@ final class ExportsToEntityTest extends TestCase
         $dto = new class extends BaseDto {
             use ExportsToEntity;
             /** @psalm-suppress NonInvariantDocblockPropertyType */
-            public ?string $someProp = null;
+            public ?string $fooProp = null;
             public ?string $email = null;
 
             public function __construct()
@@ -172,18 +184,19 @@ final class ExportsToEntityTest extends TestCase
             }
         };
 
-        $this->expectException(\LogicException::class);
+        $this->expectException(AccessorException::class);
         $this->expectExceptionMessage('No public setter or property found');
 
         /** @psalm-suppress UnusedMethodCall */
-        $dto->fill(['someProp' => 'someVal', 'email' => 'foo@bar.baz'])->toEntity();
+        $dto->fill(['fooProp' => 'someVal', 'email' => 'foo@bar.baz']);
+        $dto->toEntity();
     }
 
     public function testToEntityAllowsOverridingNewEntityInstance(): void
     {
         $dto = new class extends BaseDto {
             use ExportsToEntity;
-            public ?string $someProp = null;
+            public ?string $fooProp = null;
 
             public function __construct()
             {
@@ -196,7 +209,7 @@ final class ExportsToEntityTest extends TestCase
                     throw new \LogicException('Entity class must not be null');
                 }
                 $entity = new static::$entityClass();
-                $entity->someProp = $inputData['someProp'] ?? null;
+                $entity->fooProp = $inputData['fooProp'] ?? null;
 
                 // entity properties already set!
                 return [
@@ -207,10 +220,45 @@ final class ExportsToEntityTest extends TestCase
         };
 
         /** @var object $entity */
-        $entity = $dto->fill(['someProp' => 'someVal'])->toEntity();
+        $entity = $dto->fill(['fooProp' => 'someVal'])->toEntity();
 
         $this->assertInstanceOf(EntityClassToInstanciateFromName::class, $entity);
-        $this->assertSame('someVal', $entity->someProp);
+        $this->assertSame('someVal', $entity->fooProp);
+    }
+
+    public function testToEntityUsesMapToAttributes(): void
+    {
+        $dto = new class extends FullDto {
+            /** @var ?class-string */
+            protected static ?string $entityClass = EntityClassToInstanciateFromName::class;
+
+            public ?string $doop = null;
+
+            #[MapTo('fooProp')]
+            public ?string $foo = null;
+
+            // Note: this will use the setter method `setBarProp()` (converts to uppercase)
+            #[MapTo('barProp')]
+            public ?string $bar = null;
+
+            // Note: this will use the setter method `assignBazProp()`
+            #[MapTo(null, 'assignBazProp')]
+            public ?string $baz = null;
+
+            public function __construct()
+            {
+            }
+        };
+
+        $dto->fill(['doop' => 'doop', 'foo' => 'someVal', 'bar' => 'anotherVal', 'baz' => 'someBaz']);
+        /** @psalm-suppress UnusedMethodCall */
+        $entity = $dto->toEntity();
+
+        $this->assertInstanceOf(EntityClassToInstanciateFromName::class, $entity);
+        $this->assertSame('someVal', $entity->fooProp);
+        $this->assertSame('ANOTHERVAL', $entity->barProp);
+        $this->assertSame('somebaz', $entity->bazProp);
+        $this->assertSame('doop', $entity->doop);
     }
 }
 
@@ -221,7 +269,23 @@ final class ExportsToEntityTest extends TestCase
  * */
 final class EntityClassToInstanciateFromName
 {
+    public ?string $doop = null;
+
     /** @psalm-suppress PossiblyUnusedProperty */
-    public ?string $someProp = null;
-    // no setter for email
+    public ?string $fooProp = null;
+    public ?string $barProp = null;
+
+    /** @psalm-suppress PossiblyUnusedMethod */
+    public function setBarProp(string $bar): void
+    {
+        $this->barProp = strtoupper($bar);
+    }
+
+    public ?string $bazProp = null;
+
+    /** @psalm-suppress PossiblyUnusedMethod */
+    public function assignBazProp(string $baz): void
+    {
+        $this->bazProp = strtolower($baz);
+    }
 }

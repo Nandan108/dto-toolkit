@@ -4,6 +4,33 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [0.7.0] - 2025-07-04
+
+### Added
+- Integrated [prop-path](https://packagist.org/packages/nandan108/prop-path) for structured extraction via `#[MapFrom]` and `#[CastTo\Extract]`
+- Integrated [prop-access](https://packagist.org/packages/nandan108/prop-access) to handle entity getter/setter access cleanly
+- New exception types:
+  - `ExtractionSyntaxError` for invalid prop-path strings
+  - `LoadingException` for inbound value extraction errors
+  - `DtoToolkitException` interface to unify all internal exceptions
+
+### Changed
+- `MapFrom` now uses prop-path internally and supports accessing input/context/dto roots
+- `Extract` caster rewritten to use compiled path logic from prop-path
+- `fromEntity()` and `toEntity()` now use `PropAccess::getValueMap()` and `PropAccess::getSetterMapOrThrow()`
+- Method renaming in `HasContextInterface`: `getContext()` → `contextGet()`, etc.
+- Unit tests improved for edge case coverage and context handling
+
+### Removed
+- `CaseConverter` and `EntityAccessorHelper` utility classes (replaced by `prop-access`)
+
+### BREAKING
+- Context method renaming will require refactoring if your code uses `HasContextInterface` directly
+- `MapFrom` path syntax now validated by prop-path; invalid strings will throw `ExtractionSyntaxError`
+
+
+---
+
 ## [v0.6.0]
 
 ### ✨ New Features

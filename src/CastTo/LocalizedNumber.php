@@ -56,10 +56,13 @@ final class LocalizedNumber extends CastBase implements CasterInterface, BootsOn
     #[\Override]
     public function cast(mixed $value, array $args): string
     {
+        /** @psalm-suppress UnnecessaryVarAnnotation */
+        /** @var array{0: int, 1: int} $args */
         [$style, $fractionDigits] = $args;
 
         $this->throwIfNotNumeric($value);
 
+        /** @var string $locale */
         $locale = $this->resolveParam('locale', $value);
 
         $formatter = new \NumberFormatter($locale, $style);

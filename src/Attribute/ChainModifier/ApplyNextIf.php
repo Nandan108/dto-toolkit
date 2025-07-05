@@ -2,6 +2,7 @@
 
 namespace Nandan108\DtoToolkit\Attribute\ChainModifier;
 
+use Nandan108\DtoToolkit\Contracts\CasterChainNodeInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Internal\CasterChain;
 use Nandan108\DtoToolkit\Traits\UsesParamResolver;
@@ -21,7 +22,7 @@ class ApplyNextIf extends ChainModifierBase
      * @throws \InvalidArgumentException
      */
     public function __construct(
-        public mixed $condition,
+        public string $condition,
         public int $count = 1,
         public bool $negate = false,
     ) {
@@ -41,6 +42,7 @@ class ApplyNextIf extends ChainModifierBase
             $dto,
             $this->count,
             className: 'ApplyNextIf',
+            /** @param array<array-key, CasterChainNodeInterface> $chainElements */
             buildCasterClosure: function (array $chainElements, ?callable $upstreamChain): \Closure {
                 $subchain = CasterChain::composeFromNodes($chainElements);
 
@@ -50,6 +52,7 @@ class ApplyNextIf extends ChainModifierBase
 
                     // get the value from upstream
                     if (null !== $upstreamChain) {
+                        /** @psalm-var mixed */
                         $value = $upstreamChain($value);
                     }
 

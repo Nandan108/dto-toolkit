@@ -94,7 +94,11 @@ Adapters will provide support for:
 ## 🧪 Testing & Quality
 
 - 100% test coverage using PHPUnit
-- Static analysis via Psalm (`--show-info=true` clean)
+- Psalm level 3
+- Code style enforced with [PHP-CS-Fixer](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer):
+  - Based on the `@Symfony` rule set
+  - Aligned `=>` for better readability
+  - Disallows implicit loose comparisons (`==`, `!=`)
 
 ---
 

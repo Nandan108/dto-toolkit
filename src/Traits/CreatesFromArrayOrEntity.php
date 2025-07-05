@@ -7,7 +7,7 @@ use Nandan108\DtoToolkit\Contracts\NormalizesInterface;
 use Nandan108\DtoToolkit\Contracts\ScopedPropertyAccessInterface;
 use Nandan108\DtoToolkit\Contracts\ValidatesInputInterface;
 use Nandan108\DtoToolkit\Enum\Phase;
-use Nandan108\DtoToolkit\Support\EntityAccessorHelper;
+use Nandan108\PropAccess\PropAccess;
 
 /**
  * @method static static fromArray(array $input, bool $ignoreUnknownProps = false)
@@ -56,10 +56,7 @@ trait CreatesFromArrayOrEntity
 
         // Get data from mappers. Only fill if we actually get a value.
         foreach ($mappers as $prop => $mapper) {
-            $value = $mapper($input, $this) ?? $inputToBeFilled[$prop] ?? null;
-            if (null !== $value) {
-                $inputToBeFilled[$prop] = $value;
-            }
+            $inputToBeFilled[$prop] = $mapper($input, $this);
         }
 
         // and fill the DTO
@@ -103,16 +100,12 @@ trait CreatesFromArrayOrEntity
      */
     public function _fromEntity(object $entity, bool $ignoreInaccessibleProps = true): static
     {
-        $inputData = [];
-
-        $getterMap = EntityAccessorHelper::getEntityGetterMap(
-            entity: $entity,
+        /** @var array */
+        $inputData = PropAccess::getValueMap(
+            valueSource: $entity,
             propNames: $this->getFillable(),
             ignoreInaccessibleProps: $ignoreInaccessibleProps
         );
-        foreach ($getterMap as $prop => $getFrom) {
-            $inputData[$prop] = $getFrom($entity);
-        }
 
         return $this->_fromArray($inputData, true);
     }

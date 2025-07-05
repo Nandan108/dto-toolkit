@@ -37,6 +37,7 @@ final class Integer extends CastBase
         }
 
         if (isset($floatVal)) {
+            /** @var float $floatVal */
             return match ($mode) {
                 IntCastMode::Trunc => (int) $floatVal,
                 IntCastMode::Floor => (int) floor($floatVal),

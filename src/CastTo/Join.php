@@ -17,7 +17,7 @@ final class Join extends CastBase
     public function cast(mixed $value, array $args): ?string
     {
         [$separator] = $args;
-
+        /** @var string $separator */
         if (!is_array($value)) {
             throw CastingException::castingFailure(className: self::class, operand: $value, messageOverride: 'Expected array, but got '.gettype($value));
         }

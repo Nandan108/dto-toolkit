@@ -5,8 +5,9 @@ namespace Nandan108\DtoToolkit\Exception;
 use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Contracts\CasterChainNodeProducerInterface;
 use Nandan108\DtoToolkit\Contracts\CasterInterface;
+use Nandan108\DtoToolkit\Contracts\DtoToolkitException;
 
-final class CastingException extends \RuntimeException
+final class CastingException extends \RuntimeException implements DtoToolkitException
 {
     public ?string $propertyPath;
 

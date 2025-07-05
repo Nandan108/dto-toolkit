@@ -55,14 +55,15 @@ final class DateTimeFromLocalized extends CastBase implements CasterInterface, B
     {
         $value = $this->throwIfNotStringable($value, 'non-empty date string', true);
 
-        $timezone = $this->resolveParam('timezone', $value);
-        $locale = $this->resolveParam('locale', $value);
         /** @var ?\DateTimeZone $timezone */
+        $timezone = $this->resolveParam('timezone', $value);
         /** @var string $locale */
+        $locale = $this->resolveParam('locale', $value);
+
+        /** @psalm-suppress UnnecessaryVarAnnotation */
+        /** @var array{0: int, 1: int, 2: ?string} $args */
         [$dateStyle, $timeStyle, $pattern] = $args;
-        /** @var ?int $dateStyle */
-        /** @var ?int $timeStyle */
-        /** @var ?string $pattern */
+
         $formatter = \IntlDateFormatter::create(
             locale: $locale,
             dateType: $dateStyle,

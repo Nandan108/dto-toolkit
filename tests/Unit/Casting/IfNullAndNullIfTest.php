@@ -6,11 +6,14 @@ use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Contracts\NormalizesInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Traits\NormalizesFromAttributes;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class IfNullAndNullIfTest extends TestCase
 {
-    public function testAppliesIfnullAndNullifCasters(): void
+    // use valueProvider()
+    #[DataProvider('valueProvider')]
+    public function testAppliesIfnullAndNullifCasters(string $prop, mixed $value, mixed $expected): void
     {
         /** @psalm-suppress ExtensionRequirementViolation */
         $dto = new class extends BaseDto implements NormalizesInterface {
@@ -30,34 +33,33 @@ final class IfNullAndNullIfTest extends TestCase
             public mixed $baz = null;
         };
 
-        $check = function (string $prop, mixed $value, mixed $expected) use ($dto): void {
-            $dto->unfill(['foo', 'bar', 'baz']);
-            /** @psalm-suppress UnusedMethodCall */
-            $dto->fill([$prop => $value])->normalizeInbound();
+        /** @psalm-suppress UnusedMethodCall */
+        $dto->fill([$prop => $value])->normalizeInbound();
 
-            $this->assertSame($expected, $dto->$prop);
-        };
+        $this->assertSame($expected, $dto->$prop);
+    }
 
-        // IfNull test
-        $check('foo', null, -1);
-        $check('foo', 4, 4);
-        // nullIf tests
-        $check('bar', -2, '-2');
-        $check('bar', -1, 'null');
-        $check('bar', 0, 'null');
-        $check('bar', 'null', 'null');
-        $check('bar', 'no', 'null');
-        $check('bar', '0', '"0"');
-        $check('bar', 'zero', '"zero"');
-        // replaceIf tests
-        $check('baz', 1, 'A'); // c
-        $check('baz', 2, 'A');
-        $check('baz', 3, 'c');
-        $check('baz', 4, 4);
-        $check('baz', 'a', 'c');
-        $check('baz', 'b', 'c');
-        $check('baz', 'd', 'd');
-        $check('baz', [1], [1]);
-        $check('baz', [1, 2], 'c');
+    public static function valueProvider(): array
+    {
+        return [
+            ['foo', null, null],
+            ['foo', 4, 4],
+            ['bar', -2, '-2'],
+            ['bar', -1, 'null'],
+            ['bar', 0, 'null'],
+            ['bar', 'null', 'null'],
+            ['bar', 'no', 'null'],
+            ['bar', '0', '"0"'],
+            ['bar', 'zero', '"zero"'],
+            ['baz', 1, 'A'], // c
+            ['baz', 2, 'A'],
+            ['baz', 3, 'c'],
+            ['baz', 4, 4],
+            ['baz', 'a', 'c'],
+            ['baz', 'b', 'c'],
+            ['baz', 'd', 'd'],
+            ['baz', [1], [1]],
+            ['baz', [1, 2], 'c'],
+        ];
     }
 }

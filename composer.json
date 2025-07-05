@@ -3,14 +3,16 @@
     "description": "A modern, framework-agnostic PHP 8.1+ DTO system with attribute-driven data normalization and mapping to entities or arrays.",
     "type": "library",
     "require": {
-        "php": ">=8.1 <8.5"
+        "php": ">=8.1 <8.5",
+        "nandan108/prop-path": "^0.3.0",
+        "nandan108/prop-access": "^0.5.0"
     },
     "require-dev": {
         "php": ">=8.1 <8.5",
         "phpunit/phpunit": "^10.0",
         "symfony/var-dumper": "^6.0 || ^7.0",
         "mockery/mockery": "^1.6",
-        "vimeo/psalm": "^6.10",
+        "vimeo/psalm": "^6.12",
         "nunomaduro/collision": "^6.4",
         "friendsofphp/php-cs-fixer": "^3.75"
     },

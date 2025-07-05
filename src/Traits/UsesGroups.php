@@ -66,13 +66,14 @@ trait UsesGroups // user must implement HasGroupsInterface, ScopedPropertyAccess
     }
 
     /**
-     * @return string[] list of groups in the scope of the given phase
-     *                  implements HasGroupsInterface
+     * @return array<string> list of groups in the scope of the given phase
+     *                       implements HasGroupsInterface
      **/
     #[\Override]
     public function getActiveGroups(Phase $phase): array
     {
-        return (array) $this->getContext('groups.'.$phase->value, []);
+        /** @var array<string> */
+        return (array) $this->contextGet('groups.'.$phase->value, []);
     }
 
     /**
@@ -96,7 +97,7 @@ trait UsesGroups // user must implement HasGroupsInterface, ScopedPropertyAccess
     public function getPropertiesInScope(Phase $phase): array
     {
         $propGroupsForPhase = $this->getPropGroups($phase);
-        $activeGroups = (array) $this->getContext('groups.'.$phase->value, []);
+        $activeGroups = (array) $this->contextGet('groups.'.$phase->value, []);
 
         /** @var string[] $inScope */
         $inScope = [];

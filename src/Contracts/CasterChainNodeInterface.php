@@ -7,15 +7,15 @@ interface CasterChainNodeInterface
     /**
      * Returns the closure (or callable) that performs the transformation.
      */
-    public function getClosure(): callable;
+    public function getClosure(): \Closure;
 
     /**
-     * Returns a callable that performs the transformation.
+     * Returns a Closure that performs the transformation.
      * If $upstream ( u($v) ) is provided, the returned callable (f($v)) will wrap it: f(u($v)).
      *
-     * @param ?callable $upstream the upstream closure to be used in the chain
+     * @param ?\Closure $upstream the upstream closure to be used in the chain
      */
-    public function getBuiltClosure(?callable $upstream): callable;
+    public function getBuiltClosure(?\Closure $upstream): \Closure;
 
     public function __invoke(mixed $value): mixed;
 }

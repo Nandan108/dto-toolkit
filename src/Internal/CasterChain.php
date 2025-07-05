@@ -18,18 +18,18 @@ final class CasterChain implements CasterChainNodeInterface
      *
      * Defaults to [$this, 'composeFromNodes'] unless overridden (e.g. by chain modifiers).
      *
-     * @var callable
+     * @var \Closure(CasterChainNodeInterface[], ?\Closure): \Closure
      */
     public $buildCasterClosure;
 
     /**
      * CasterChain constructor.
      *
-     * @param ?\ArrayIterator<int, CasterChainNodeProducerInterface> $queue
-     * @param int                                                    $count              The number of elements (sub-nodes) to include in this chain node
-     * @param string                                                 $className          Debugging info: name of the class that's creating this chain
-     * @param ?callable                                              $buildCasterClosure A callable that builds the final casting chain from consumed nodes.
-     *                                                                                   Defaults to [$this, 'composeFromNodes'] unless overridden (e.g. by chain modifiers).
+     * @param ?\ArrayIterator<int, CasterChainNodeProducerInterface>     $queue
+     * @param int                                                        $count              The number of elements (sub-nodes) to include in this chain node
+     * @param string                                                     $className          Debugging info: name of the class that's creating this chain
+     * @param ?\Closure(CasterChainNodeInterface[], ?\Closure): \Closure $buildCasterClosure A \Closure that builds the final casting chain from consumed nodes.
+     *                                                                                       Defaults to [$this, 'composeFromNodes'] unless overridden (e.g. by chain modifiers).
      *
      * @throws \LogicException
      */
@@ -38,8 +38,7 @@ final class CasterChain implements CasterChainNodeInterface
         BaseDto $dto,
         int $count = -1,
         public string $className = 'Caster',
-        /** @var ?callable $buildCasterClosure */
-        ?callable $buildCasterClosure = null,
+        ?\Closure $buildCasterClosure = null,
     ) {
         $queue ??= new \ArrayIterator();
         for ($i = $count; 0 !== $i && $queue->valid(); --$i) {
@@ -66,28 +65,39 @@ final class CasterChain implements CasterChainNodeInterface
             throw new \LogicException("#[$className] expected $count child nodes, but found $childNodesNames.");
         }
 
-        $this->buildCasterClosure = $buildCasterClosure ?? [$this, 'composeFromNodes'];
+        // if no builder was provided, use $this->composeFromNodes()
+        if (null === $buildCasterClosure) {
+            $buildCasterClosure =
+                /** @param CasterChainNodeInterface[] $chainElements */
+                fn (array $chainElements, ?\Closure $upstreamChain): \Closure => // Compose a chain from the child nodes
+                    $this->composeFromNodes($chainElements, $upstreamChain);
+        }
+
+        $this->buildCasterClosure = $buildCasterClosure;
     }
 
     #[\Override]
-    public function getClosure(): callable
+    public function getClosure(): \Closure
     {
         return $this->getBuiltClosure();
     }
 
     #[\Override]
-    public function getBuiltClosure(?callable $upstream = null): callable
+    public function getBuiltClosure(?\Closure $upstream = null): \Closure
     {
-        return $this->compiled ??= ($this->buildCasterClosure)($this->childNodes, $upstream);
+        if (null === $this->compiled) {
+            $this->compiled = ($this->buildCasterClosure)($this->childNodes, $upstream);
+        }
+
+        return $this->compiled;
     }
 
     /**
      * Compose a chain from an array of CasterChainNodeInterface.
      *
      * @param CasterChainNodeInterface[] $nodes
-     * @param ?\Closure                  $upstream
      */
-    public static function composeFromNodes(array $nodes, ?callable $upstream = null): callable
+    public static function composeFromNodes(array $nodes, ?\Closure $upstream = null): \Closure
     {
         $chain = $upstream;
 
@@ -108,7 +118,7 @@ final class CasterChain implements CasterChainNodeInterface
      * @param class-string<T>|null                    $typeFilter only elements matching this type will be passed to the callback
      * @param int                                     $maxDepth   maximum recursion depth (default -1 = unlimited)
      */
-    public function recursiveWalk(callable $callback, ?string $typeFilter = null, int $maxDepth = -1): void
+    public function recursiveWalk(\Closure $callback, ?string $typeFilter = null, int $maxDepth = -1): void
     {
         foreach ($this->childNodes as $element) {
             // If it matches the type filter, apply callback

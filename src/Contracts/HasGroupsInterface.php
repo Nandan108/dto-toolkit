@@ -19,5 +19,8 @@ interface HasGroupsInterface
     /** @psalm-suppress PossiblyUnusedMethod */
     public function groupsAreInScope(Phase $phase, array $groups): bool;
 
+    /**
+     * @return array<string> list of groups in the scope of the given phase
+     */
     public function getActiveGroups(Phase $phase): array;
 }

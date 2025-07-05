@@ -1,0 +1,16 @@
+#!/bin/sh
+
+FILES=$(git diff --cached --name-only --diff-filter=ACMR | grep --color=never -E '\.php$')
+
+if [ -z "$FILES" ]; then
+    exit 0
+fi
+
+vendor/bin/php-cs-fixer fix --dry-run --diff --allow-risky=yes --using-cache=no \
+    --path-mode=intersection --config=.php-cs-fixer.php $FILES
+
+if [ $? -ne 0 ]; then
+    echo "✘ PHP-CS-Fixer found issues in staged files. Please fix them before committing, or run:"
+    echo "composer cs-fix"
+    exit 1;
+fi

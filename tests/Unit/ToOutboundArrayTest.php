@@ -62,6 +62,7 @@ final class ToOutboundArrayTest extends TestCase
             public ?string $staysUnfilled = 'yes';
 
             #[\Override]
+            /** @param array{'num': int, 'setByHook': string} $outputData */
             public function preOutput(mixed &$outputData): void
             {
                 if (is_array($outputData)) {

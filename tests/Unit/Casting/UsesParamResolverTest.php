@@ -13,6 +13,7 @@ use Nandan108\DtoToolkit\Core\FullDto;
 use Nandan108\DtoToolkit\Exception\CastingException;
 use Nandan108\DtoToolkit\Traits\CreatesFromArrayOrEntity;
 use Nandan108\DtoToolkit\Traits\NormalizesFromAttributes;
+use Nandan108\PropAccess\PropAccess;
 use PHPUnit\Framework\TestCase;
 
 final class UsesParamResolverTest extends TestCase
@@ -20,6 +21,8 @@ final class UsesParamResolverTest extends TestCase
     #[\Override]
     public function setUp(): void
     {
+        PropAccess::bootDefaultResolvers();
+
         if (!extension_loaded('intl')) {
             $this->markTestSkipped('intl extension not available');
         }
@@ -34,9 +37,10 @@ final class UsesParamResolverTest extends TestCase
             'fr_FR' => '05/10/2025 12:34',
         ];
         foreach ($locales as $locale => $expected) {
+            $dto = UsesParamResolverDateTestDto::withContext(['locale' => $locale]);
             /** @psalm-suppress UndefinedMagicMethod */
-            $dto = UsesParamResolverDateTestDto::withContext(['locale' => $locale])
-                ->fromArrayLoose(['dateContextLocale' => $date]);
+            $dto->fromArrayLoose(['dateContextLocale' => $date]);
+
             $actual = $dto->dateContextLocale;
 
             $this->assertSame($expected, $actual);

@@ -17,7 +17,8 @@ final class Json extends CastBase
     #[\Override]
     public function cast(mixed $value, array $args): string
     {
-        /** @var int $flags */
+        /** @psalm-suppress UnnecessaryVarAnnotation */
+        /** @var array{0: int, 1: int<1, 2147483647>} $args */
         [$flags, $depth] = $args;
 
         try {

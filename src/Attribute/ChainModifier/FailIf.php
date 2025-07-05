@@ -22,7 +22,7 @@ class FailIf extends ChainModifierBase
      * @throws \InvalidArgumentException
      */
     public function __construct(
-        public readonly mixed $condition,
+        public readonly string $condition,
         public readonly bool $negate = false,
     ) {
     }

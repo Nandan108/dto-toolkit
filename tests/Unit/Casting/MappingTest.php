@@ -3,12 +3,14 @@
 namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
 use Nandan108\DtoToolkit\Attribute\MapFrom;
+use Nandan108\DtoToolkit\Attribute\MapTo;
 use Nandan108\DtoToolkit\Attribute\Outbound;
 use Nandan108\DtoToolkit\Core\FullDto;
+use Nandan108\DtoToolkit\Exception\LoadingException;
 use Nandan108\DtoToolkit\Tests\Traits\CanTestCasterClassesAndMethods;
 use PHPUnit\Framework\TestCase;
 
-final class MapFromTest extends TestCase
+final class MappingTest extends TestCase
 {
     use CanTestCasterClassesAndMethods;
 
@@ -20,15 +22,24 @@ final class MapFromTest extends TestCase
 
             #[MapFrom('bar')]
             public string|array|null $boo = null;
+
+            // no MapFrom attribute means it is copied as-is
+            public ?string $fiz = null;
         };
 
         $dto = $dtoClass::fromArrayLoose([
             'foo' => 'FOO-val',
             'bar' => 'BAR-val',
             'baz' => 'BAZ-val',
+            'fiz' => 'FIZ-val',
         ]);
-        $this->assertSame(['qux1' => 'FOO-val', 'qux2' => ['BAZ-val', 'BAR-val']], $dto->bar);
+        $this->assertSame([
+            'qux1' => 'FOO-val',
+            'qux2' => ['BAZ-val', 'BAR-val'],
+        ],
+            $dto->bar);
         $this->assertSame('BAR-val', $dto->boo);
+        $this->assertSame('FIZ-val', $dto->fiz);
 
         $dto = $dtoClass::fromArrayLoose([
             'foo' => 'FOO-val',
@@ -52,8 +63,8 @@ final class MapFromTest extends TestCase
         ]);
         $this->assertSame(['qux1' => 'FOO-val', 'qux2' => [null, 'BAR-val']], $dto->bar);
 
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Key \'baz\' not found in input values');
+        $this->expectException(LoadingException::class);
+        $this->expectExceptionMessage('Path segment $input.`baz` not found in array.');
         /** @psalm-suppress UnusedVariable */
         $dtoClass::fromArrayLoose([
             'foo' => 'FOO-val',
@@ -68,8 +79,8 @@ final class MapFromTest extends TestCase
             public string|array|null $bar = '';
         };
 
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Key \'baz\' should not be blank');
+        $this->expectException(LoadingException::class);
+        $this->expectExceptionMessage('Path segment $input.`baz` is null but required.');
         $dtoClass::fromArrayLoose([
             'foo' => 'FOO-val',
             'bar' => 'BAR-val',
@@ -90,5 +101,31 @@ final class MapFromTest extends TestCase
         $dtoClass::fromArrayLoose([
             'foo' => 'FOO-val',
         ]);
+    }
+
+    public function testMapTo(): void
+    {
+        $dtoClass = new class extends FullDto {
+            #[MapTo('foo')]
+            public string|array|null $bar = '';
+
+            #[MapTo(null)]
+            public ?string $notExported = null;
+        };
+        $dto = $dtoClass::fromArray(['bar' => 'BAR-val', 'notExported' => 'NOT-exported-val']);
+        $out = $dto->toOutboundArray();
+
+        $this->assertSame(['foo' => 'BAR-val'], $out);
+    }
+
+    public function testMapFromFailsWithInvalidPath(): void
+    {
+        // Extract with invalid path input
+        try {
+            new MapFrom('foo.-bar!');
+        } catch (\Exception $e) {
+            $this->assertInstanceOf(\InvalidArgumentException::class, $e);
+            $this->assertStringContainsString('Invalid path provided', $e->getMessage());
+        }
     }
 }

@@ -1,70 +1,77 @@
 # Mapping Attributes
 
-Mapping attributes define how DTO properties should be transformed during hydration (input) or normalization (output).
-
-> #### Note: this feature is NOT ready
-> When it is, add this line to [README](../README.md)/Documentation:
-> - [Mapping](docs/Mapping.md) – customize input and output field mappings using `MapFrom()` and `MapTo()`
+Mapping attributes define how DTO properties map to external data structures during hydration (input) or normalization (output).
 
 ---
 
-## 🔁 `#[MapFrom(...)]` (Inbound Mapping)
+## 🔁 `#[MapFrom($paths)]` (Inbound Mapping)
 
-Use `MapFrom` to specify one or more raw input fields that should map to a given property:
+Use `MapFrom` to extract one or more values from the input array or other roots (like the DTO or its context) using a [prop-path](https://github.com/nandan108/prop-path) expression.
+
+### 💡 Basic usage
 
 ```php
 #[MapFrom('postal_code')]
 public string $zip;
 
-#[MapFrom(['zip' => 'postal_code', 'city' => 'city'])]
+#[MapFrom(['zip' => 'address.zip', 'city' => 'address.city'])]
 #[CastTo\newInstance(Address::class)]
 public Address $address;
 ```
 
-This allows separation of *input field names* from *internal DTO structure* and decouples mapping from casting.
+This allows precise decoupling of DTO structure from raw input shape.
 
 ---
 
-## 🔄 `#[MapTo(...)]` (Outbound Mapping)
+### 🧠 Path syntax (powered by `prop-path`)
 
-Use `MapTo` to control how DTO properties are mapped to specific output properties.
+Paths are parsed and evaluated using `prop-path` ([syntax here](https://github.com/Nandan108/prop-path/blob/main/docs/Syntax.md)). It supports expressions such as::
 
-### 💡 Syntax
+* Access multiple **roots**:
+  * `$input`: the input array (default root)
+  * `$dto`: the DTO instance itself
+  * `$context`: the DTO’s context (see `HasContextInterface`)
+* Use fallback:
+  `'user.email ?? user.backup_email'`
+* Require keys:
+  `'!email'` (throws if key missing), `'!!email'` (throws if null)
+* Extract groups of values:
+  `'[foo, bar.baz, qux.0.name]'`
+* Access arrays by index or slices:
+  `'items[0:3].*.name'`
+
+### ❗ Error handling
+
+* Invalid syntax → `ExtractionSyntaxError`
+* Missing required fields → `LoadingException`
+* All paths are validated at DTO construction
+
+---
+
+## 🔄 `#[MapTo($outboundName, $setterName = null)]` (Outbound Mapping)
+
+Use `MapTo` to rename or discard properties during outbound transformation (DTO → array or entity):
 
 ```php
-class MapTo {
-    public function __construct(
-        ?string $target = null,
-        ?string $setter = null,
-        bool $silentFail = false
-    ) { ... }
-}
+#[MapTo('postalCode')]
+public string $zip;
 
-#[MapTo('targetField', setter: 'customSetter')]
-public string $sourceField;
+#[MapTo(null)]
+public mixed $internalDebugField; // ignored in output
+
+#[MapTo('address', setterName: 'assignAddress')]
+public Address $address;
+
 ```
-
-### 🧠 Resolution Order
-
-| Form                                      | Behavior                                                                 |
-|------------------------------------------|--------------------------------------------------------------------------|
-| `#[MapTo('field', setter: 'assignX')]`    | Try `$target->assignX($value)`, then `$target->field = $value`, then throw*.|
-| `#[MapTo(setter: 'assignX')]`             | Try `$target->assignX($value)` only — throw if not found*                 |
-| `#[MapTo('field')]`                       | Try `$target->setField($value)`, then `$target->field = $value`, then throw* |
-| `#[MapTo(null)]`                          | Discards the property entirely during outbound transformation            |
-
-*If `$silentFail` is true, it will not throw an error when unable to set.
-
-This offers granular control for both structured output and DTO → Entity hydration.
 
 ---
 
-## 🔒 Notes
+## 📝 Notes
 
-- Both `MapTo` and `MapFrom` can be used on the same property
-- `MapFrom` mapping logic is evaluated *before* any casting or normalization
-- `MapTo(null)` is equivalent to sending a value to `/dev/null`
-- If both setter and field assignment fail (public prop/setter unavailable), a `MappingException` will be thrown
+* `MapFrom` and `MapTo` may be used independently or together
+* `MapFrom` runs **before** any casting or normalization
+* `MapTo(null)` discards the property completely (e.g. internal use only)
+* The `setterName` parameter is only used when hydrating entities with `$dto->toEntity()`. In the rare cases where your property setter doesn't use the standard `"set".$propName` method name, you can specify the exact setter method name this way. It is ignored when exporting content with `$dto->toOutboundArray()`.
 
 ---
 
@@ -77,14 +84,16 @@ class AddressDto extends FullDto
     #[MapTo('postalCode')]
     public ?string $zip;
 
-    #[MapFrom(['address', 'zip', 'city'])]
+    #[MapFrom(['zip' => 'address.zip', 'city' => 'address.city'])]
     #[CastTo(AddressCast::class)]
-    #[MapTo(setter: 'assignAddress')]
+    #[MapTo('address', setter: 'assignAddress')]
     public null|array|Address $address;
 
+    #[MapFrom('$context.userId')]
     #[MapTo(null)]
-    public ?string $debugInfo = null;
+    public ?int $traceId;
 }
 ```
 
-This setup allows total control over input field mapping and output transformation while maintaining a clean, declarative style.
+This mapping system provides powerful, precise control over how data flows into and out of your DTOs — with clear, declarative syntax.
+

@@ -41,17 +41,17 @@ final class LocalizedDateTime extends CastBase implements CasterInterface, Boots
     #[\Override]
     public function cast(mixed $value, array $args): string
     {
+        /** @psalm-suppress UnnecessaryVarAnnotation */
+        /** @var array{0: int, 1: int, 2:?string} $args */
         [$dateStyle, $timeStyle, $pattern] = $args;
-        /** @var int $dateStyle */
-        /** @var int $timeStyle */
-        /** @var ?string $pattern */
+
         if (!$value instanceof \DateTimeInterface) {
             throw CastingException::castingFailure(static::class, $value, 'Value must be a DateTimeInterface');
         }
 
-        /** @var ?\DateTimeZone $timezone */
         /** @var string $locale */
         $locale = $this->resolveParam('locale', $value);
+        /** @var ?\DateTimeZone $timezone */
         $timezone = $this->resolveParam('timezone', $value);
 
         $formatter = \IntlDateFormatter::create(

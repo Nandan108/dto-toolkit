@@ -4,11 +4,21 @@ declare(strict_types=1);
 
 namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
+use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Exception\CastingException;
 use PHPUnit\Framework\TestCase;
 
 final class CastingExceptionTest extends TestCase
 {
+    #[\Override]
+    public function setup(): void
+    {
+        parent::setup();
+        // make sure CastTo::$currentPropPath is empty
+        while (null !== CastTo::popPropPath()) {
+        }
+    }
+
     public function testCastingFailureWithObjectOperand(): void
     {
         $exception = CastingException::castingFailure(
@@ -72,7 +82,8 @@ final class CastingExceptionTest extends TestCase
             messageOverride: 'Something went wrong',
         );
 
-        $this->assertStringStartsWith('Something went wrong:', $exception->getMessage());
+        $message = $exception->getMessage();
+        $this->assertStringStartsWith('Something went wrong:', $message);
     }
 
     public function testCastingFailureWithUnencodableArgs(): void

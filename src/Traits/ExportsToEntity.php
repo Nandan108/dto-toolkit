@@ -2,8 +2,8 @@
 
 namespace Nandan108\DtoToolkit\Traits;
 
+use Nandan108\DtoToolkit\Attribute\MapTo;
 use Nandan108\DtoToolkit\Core\BaseDto;
-use Nandan108\DtoToolkit\Support\EntityAccessorHelper;
 
 /**
  * @psalm-require-extends BaseDto
@@ -41,7 +41,7 @@ trait ExportsToEntity
 
         // Get properties already cast, ready to to be set on entity
         /** @psalm-suppress UndefinedMethod */
-        $normalizedProps = $this->toOutboundArray(runPreOutputHook: false);
+        $normalizedProps = $this->toOutboundArray(runPreOutputHook: false, applyOutboundMappings: false);
 
         /** @psalm-suppress InvalidOperand */
         $propsToSet = [...$normalizedProps, ...$context];
@@ -57,12 +57,10 @@ trait ExportsToEntity
             }
         }
 
-        /** @psalm-suppress UndefinedMagicMethod */
-        $setters = EntityAccessorHelper::getEntitySetterMap($entity, array_keys($propsToSet));
+        $setters = MapTo::getSetters($this, array_keys($propsToSet), $entity);
 
         foreach ($propsToSet as $prop => $value) {
-            /** @psalm-suppress InvalidFunctionCall */
-            $setters[$prop]($value);
+            $setters[$prop]($entity, $value);
         }
 
         // call pre-output hook

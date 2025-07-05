@@ -3,6 +3,7 @@
 namespace Nandan108\DtoToolkit\Core;
 
 use Nandan108\DtoToolkit\Attribute\Inject;
+use Nandan108\DtoToolkit\Attribute\MapTo;
 use Nandan108\DtoToolkit\Attribute\Outbound;
 use Nandan108\DtoToolkit\Attribute\WithDefaultGroups;
 use Nandan108\DtoToolkit\Contracts\Bootable;
@@ -31,15 +32,19 @@ abstract class BaseDto
     public array $_filled = [];
 
     // full metadata cache per class (static)
+    /** @var array<array<array-key, array<array-key, array{attr?: PhaseAwareInterface|list<PhaseAwareInterface>}>>> */
     private static array $_propertyMetadataCache = [];
 
     /**
      * Load the metadata for the given phase.
      *
-     * @param mixed                      $metaDataName
      * @param \Closure|class-string|null $filter
+     *
+     * @/return array<string, array<string, mixed>>|array<string, mixed>
+     *
+     * @return array<array-key, array<never, never>|mixed>
      */
-    public static function loadPhaseAwarePropMeta(Phase $phase, string $metaDataName, \Closure|string|null $filter): array
+    public static function loadPhaseAwarePropMeta(Phase $phase, string $metaDataName, \Closure|string|null $filter, bool $ignoreEmpty = false): array
     {
         if (!isset(self::$_propertyMetadataCache[static::class])) {
             $cache = [];
@@ -58,8 +63,13 @@ abstract class BaseDto
                     $cache[$phaseCase->value][$propName] = [];
                 }
 
-                foreach ($attributes as $attribute) {
-                    $attrInstance = $attribute->newInstance();
+                foreach ($attributes as $attributeRef) {
+                    $attrInstance = $attributeRef->newInstance();
+
+                    /** @psalm-suppress ArgumentTypeCoercion */
+                    /** @var int $flags */
+                    $flags = (new \ReflectionClass($attributeRef->getName()))->getAttributes()[0]->newInstance()->flags;
+                    $isRepeatable = ($flags & \Attribute::IS_REPEATABLE) === \Attribute::IS_REPEATABLE;
 
                     if ($attrInstance instanceof Outbound) {
                         $isOutbound = true;
@@ -68,8 +78,12 @@ abstract class BaseDto
 
                     if ($attrInstance instanceof PhaseAwareInterface) {
                         $attrInstance->setOutbound($isOutbound);
-
-                        $cache[$attrInstance->getPhase()->value][$propName]['attr'][] = $attrInstance;
+                        if ($isRepeatable) {
+                            /** @var array<array<array{attr?: list<PhaseAwareInterface>}>> $cache */
+                            $cache[$attrInstance->getPhase()->value][$propName]['attr'][] = $attrInstance;
+                        } else {
+                            $cache[$attrInstance->getPhase()->value][$propName]['attr'] = $attrInstance;
+                        }
                     }
                 }
             }
@@ -88,18 +102,27 @@ abstract class BaseDto
         );
 
         // if filter is null, we keep all attributes
-        $filter ??= static fn (): bool => true;
+        if (null !== $filter) {
+            /** @var callable(mixed): mixed */
+            $filterClosure = is_string($filter)
+                // if $filter is a string, it's an class name, and we keep only instances of that class
+                ? fn (object $attr): bool => $attr instanceof $filter
+                : $filter;
 
-        // if $filter is a string, it's an class name, and we keep only instances of that class
-        if (is_string($filter)) {
-            $filter = static function (object $attr) use ($filter): bool {
-                return $attr instanceof $filter;
-            };
+            /** @var mixed $meta */
+            foreach ($metaByName as &$meta) {
+                /** @psalm-suppress TooManyArguments */
+                if (is_array($meta)) {
+                    $meta = array_filter($meta, $filterClosure);
+                } elseif (!$filterClosure($meta)) {
+                    $meta = []; // if not an array, filter it and return null if empty
+                }
+            }
         }
 
-        foreach ($metaByName as &$meta) {
-            /** @psalm-suppress TooManyArguments */
-            $meta = array_filter($meta, $filter);
+        // if ignoreEmpty is false, return all attributes as-is
+        if ($ignoreEmpty) {
+            $metaByName = array_filter($metaByName, static fn (mixed $meta): bool => (bool) $meta);
         }
 
         return $metaByName;
@@ -131,15 +154,28 @@ abstract class BaseDto
      *
      * @psalm-suppress PossiblyUnusedMethod, UnusedParam, InvalidReturnType
      */
-    public function toOutboundArray(bool $runPreOutputHook = true): array
+    public function toOutboundArray(bool $runPreOutputHook = true, bool $applyOutboundMappings = true): array
     {
-        $propsInScope = $this instanceof ScopedPropertyAccessInterface
-            ? array_intersect($this->getPropertiesInScope(Phase::OutboundExport), array_keys($this->_filled))
-            : null; // all properties
+        if ($this instanceof ScopedPropertyAccessInterface) {
+            // If the DTO implements ScopedPropertyAccessInterface, we only export properties in scope.
+            // This is useful for DTOs that have different scopes for different phases.
+            /** @var string[] */
+            $propsInScope = $this->getPropertiesInScope(Phase::OutboundExport);
+            $propsInScope = array_intersect($propsInScope, array_keys($this->_filled));
+        } else {
+            // If the DTO does not implement ScopedPropertyAccessInterface, we export all filled properties.
+            $propsInScope = null; // all properties
+        }
 
         $data = $this->toArray($propsInScope);
 
+        // Apply any #[MapTo] attributes (map to outbound names)
+        if ($applyOutboundMappings) {
+            $data = MapTo::applyOutboundKeys($data, $this);
+        }
+
         if ($this instanceof NormalizesInterface) {
+            /** @var array<array-key, mixed> */
             $data = $this->normalizeOutbound($data);
         }
 
@@ -188,8 +224,10 @@ abstract class BaseDto
     public function fill(array $values): static
     {
         foreach ($values as $key => $value) {
-            $this->$key = $value;
-            $this->_filled[$key] = true;
+            if (null !== $value) {
+                $this->$key = $value;
+                $this->_filled[$key] = true;
+            }
         }
 
         return $this;

@@ -36,6 +36,7 @@ final class Floating extends CastBase
 
         $value = $this->throwIfNotStringable($value);
 
+        /** @var ?string $decimalPoint */
         [$decimalPoint] = $args;
 
         if (null !== $decimalPoint) {

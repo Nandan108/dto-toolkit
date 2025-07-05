@@ -16,7 +16,7 @@ class SkipNextIf extends ApplyNextIf
     use UsesParamResolver;
 
     public function __construct(
-        public mixed $condition,
+        public string $condition,
         public int $count = 1,
     ) {
         parent::__construct(

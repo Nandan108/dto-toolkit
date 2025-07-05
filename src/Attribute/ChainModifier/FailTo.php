@@ -51,6 +51,7 @@ class FailTo extends ChainModifierBase
 
     protected function resolveHandler(BaseDto $dto): callable
     {
+        /** @psalm-var mixed */
         $fallback = $this->fallback;
 
         if (null === $this->handler) {

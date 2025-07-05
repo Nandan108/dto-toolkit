@@ -213,14 +213,14 @@ final class LocaleAwareTest extends TestCase
 
         // remove locale from context and check if default locale is used
         /** @psalm-suppress UndefinedMagicMethod */
-        $dto->unfill()->unsetContext('locale')->fromArray(['amount' => 1234.56]);
+        $dto->unfill()->contextUnset('locale')->fromArray(['amount' => 1234.56]);
         /** @psalm-suppress DocblockTypeContradiction */
         $this->assertSame('1,234.56', $dto->amount);
 
         // Pass an invalid lcoale via context and check if exception is thrown
         try {
             /** @psalm-suppress UndefinedMagicMethod */
-            $dto->unfill()->setContext('locale', 'bad-locale')->fromArray(['amount' => 1234.56]);
+            $dto->unfill()->contextSet('locale', 'bad-locale')->fromArray(['amount' => 1234.56]);
             $this->fail('Expected CastingException');
         } catch (\RuntimeException $e) {
             $this->assertStringStartsWith('Prop `amount`: $dto->getContext(\'locale\') returned an invalid value "bad-locale"', $e->getMessage());

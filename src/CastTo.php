@@ -4,6 +4,7 @@ namespace Nandan108\DtoToolkit;
 
 use Nandan108\DtoToolkit\Contracts\Bootable;
 use Nandan108\DtoToolkit\Contracts\BootsOnDtoInterface;
+use Nandan108\DtoToolkit\Contracts\CasterChainNodeInterface;
 use Nandan108\DtoToolkit\Contracts\CasterChainNodeProducerInterface;
 use Nandan108\DtoToolkit\Contracts\CasterInterface;
 use Nandan108\DtoToolkit\Contracts\CasterResolverInterface;
@@ -28,7 +29,9 @@ class CastTo implements PhaseAwareInterface, CasterChainNodeProducerInterface
 
     protected static string $methodPrefix = 'castTo';
     public static ?CasterResolverInterface $customCasterResolver = null;
-    protected static ?\stdClass $globalMemoizedCasters = null;
+
+    /** @var array<string, array{casters: array<string, CasterMeta>, instance?: CasterInterface}> */
+    protected static array $globalMemoizedCasters = [];
     protected static array $injectables = [];
 
     protected static array $currentPropPath = [];
@@ -51,8 +54,6 @@ class CastTo implements PhaseAwareInterface, CasterChainNodeProducerInterface
             throw new \LogicException('No casting method name or class provided.');
         }
 
-        // Initialize the caster cache if it doesn't exist
-        self::$globalMemoizedCasters ??= new \stdClass();
         /** @psalm-suppress RedundantPropertyInitializationCheck */
         self::$onCastResolved ??= static function (): void {};
     }
@@ -60,7 +61,8 @@ class CastTo implements PhaseAwareInterface, CasterChainNodeProducerInterface
     #[\Override]
     public function getCasterChainNode(BaseDto $dto, ?\ArrayIterator $queue = null): CasterMeta
     {
-        $cache = static::$globalMemoizedCasters;
+        /** @psalm-suppress UnsupportedPropertyReferenceUsage */
+        $cache = &static::$globalMemoizedCasters;
         $args = $this->args;
         $this->methodOrClass ??= $this::class;
         /** @psalm-suppress RiskyTruthyFalsyComparison */
@@ -75,8 +77,7 @@ class CastTo implements PhaseAwareInterface, CasterChainNodeProducerInterface
         // Check if we have a memoized caster for the given method
         foreach (['class', 'dto-method'] as $keyType) {
             $memoKey = $getMemoizeKey($keyType, $dto);
-            /** @var ?CasterMeta $casterMeta */
-            $casterMeta = $cache->$memoKey['casters'][$serialize($args)] ?? null;
+            $casterMeta = $cache[$memoKey]['casters'][$serialize($args)] ?? null;
             if ($casterMeta) {
                 (static::$onCastResolved)($casterMeta, true);
 
@@ -85,7 +86,14 @@ class CastTo implements PhaseAwareInterface, CasterChainNodeProducerInterface
         }
 
         // Helper function to memoize the caster
-        $memoizeCaster = function (string $keyType, ?\Closure $caster = null, ?string $object = null, ?string $method = null, ?object $instance = null) use (&$cache, $serialize, $args, $dto, $getMemoizeKey): CasterMeta {
+        /**
+         * @param string               $keyType  The type of key to use for memoization
+         * @param \Closure|null        $caster   The caster closure to memoize
+         * @param string|null          $object   The object or class name for debugging
+         * @param string|null          $method   The method name for debugging
+         * @param CasterInterface|null $instance The instance of the caster (if any)
+         */
+        $memoizeCaster = function (string $keyType, ?\Closure $caster = null, ?string $object = null, ?string $method = null, ?CasterInterface $instance = null) use (&$cache, $serialize, $args, $dto, $getMemoizeKey): CasterMeta {
             $memoKey = $getMemoizeKey($keyType, $dto);
 
             // CastInterface instances are memoized by class name, so we only keep one instance of each
@@ -93,11 +101,11 @@ class CastTo implements PhaseAwareInterface, CasterChainNodeProducerInterface
             if ($instance) {
                 $this->methodOrClass ??= $instance::class;
                 // check if we've already got a memoized one, in which case use that one instead.
-                $cachedInstance = $cache->$memoKey['instance'] ?? null;
+                $cachedInstance = $cache[$memoKey]['instance'] ?? null;
                 // if this is a cache miss (we don't yet have an instance of that class)
                 if (null === $cachedInstance) {
                     // put the instance in the cache
-                    $cache->$memoKey['instance'] = $instance;
+                    $cache[$memoKey]['instance'] = $instance;
                     // Then prepare it by injecting and booting
                     if ($instance instanceof Injectable) {
                         $instance->inject();
@@ -117,7 +125,7 @@ class CastTo implements PhaseAwareInterface, CasterChainNodeProducerInterface
             $object ??= $this->methodOrClass;
 
             /** @psalm-suppress PossiblyNullArgument */
-            $cache->$memoKey['casters'][$serialize($args)] = $casterMeta = new CasterMeta(
+            $cache[$memoKey]['casters'][$serialize($args)] = $casterMeta = new CasterMeta(
                 caster: $caster, // The actual transformation closure or callable
                 instance: $instance, // The object behind the closure (if any)
                 sourceClass: $object, // For debugging: where the caster came from
@@ -185,21 +193,14 @@ class CastTo implements PhaseAwareInterface, CasterChainNodeProducerInterface
     /**
      * 🐞 Debugging utility: retrieve internal memoized caster data.
      *
-     * @param string|null $methodKey The method key to retrieve
-     *
-     * @return \stdClass|array The memoized casters or a specific caster
+     * @return array<string, array{casters: array<string, CasterMeta>, instance?: CasterInterface}> The memoized casters or a specific caster
      *
      * @internal for debugging and introspection purposes only
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
-    public static function _getCasterMetadata(?string $methodKey = null): \stdClass|array|null
+    public static function _getCasterMetadata(): array
     {
-        if (null !== $methodKey) {
-            /* @var array */
-            return self::$globalMemoizedCasters->$methodKey;
-        }
-
         return self::$globalMemoizedCasters;
     }
 
@@ -207,9 +208,9 @@ class CastTo implements PhaseAwareInterface, CasterChainNodeProducerInterface
     public static function _clearCasterMetadata(?string $methodKey = null): void
     {
         if (null !== $methodKey) {
-            unset(self::$globalMemoizedCasters->{$methodKey});
+            unset(self::$globalMemoizedCasters[$methodKey]);
         } else {
-            self::$globalMemoizedCasters = new \stdClass();
+            self::$globalMemoizedCasters = [];
         }
     }
 
@@ -259,6 +260,7 @@ class CastTo implements PhaseAwareInterface, CasterChainNodeProducerInterface
      */
     public static function getCastingClosureMap(BaseDto $dto, bool $outbound = false): array
     {
+        /** @var array<class-string, array<int, array<string, CasterChain>>|null> */
         static $cache = [];
         self::$currentDto = $dto;
         $reflection = new \ReflectionClass($dto);
@@ -267,11 +269,12 @@ class CastTo implements PhaseAwareInterface, CasterChainNodeProducerInterface
 
         // static cache to keep track of which DTOs have been booted
         static $dtoBootCache = new \WeakMap();
-
+        /** @var \WeakMap<BaseDto, true> $dtoBootCache */
         $phase = Phase::fromComponents($outbound, false);
 
         $phaseKey = (int) $outbound;
         if ($dto instanceof HasGroupsInterface) {
+            /** @var array<string> */
             $activeGroups = $dto->getActiveGroups($phase);
             sort($activeGroups);
             /** @psalm-suppress RiskyTruthyFalsyComparison */
@@ -285,8 +288,19 @@ class CastTo implements PhaseAwareInterface, CasterChainNodeProducerInterface
             $attrInstancesByProp = ($dto::class)::loadPhaseAwarePropMeta($phase, 'attr', CasterChainNodeProducerInterface::class);
 
             // build caster chains
+            /** @var CasterChainNodeProducerInterface[]|CasterChainNodeProducerInterface $attrInstances
+             * Note: All CasterChainNodeProducerInterface instances (Casters and chain modifiers)
+             * are expected to be repeatable attributes. If one is not repeatable, $attrInstances won't be an array
+             * and the instanciation of the CasterChain iterator will fail.
+             */
             foreach (array_filter($attrInstancesByProp) as $propName => $attrInstances) {
-                $chain = new CasterChain(new \ArrayIterator($attrInstances), $dto);
+                /** @psalm-suppress RedundantCondition */
+                is_array($attrInstances) or ($msg = 'Attribute class '.get_class($attrInstances).
+                    ' must be declared with #[Attribute(..., IS_REPEATABLE)].' and throw new \LogicException($msg));
+
+                /** @var array<int, CasterChainNodeProducerInterface> $attrInstances */
+                $iterator = new \ArrayIterator($attrInstances);
+                $chain = new CasterChain($iterator, $dto);
                 $casts[$phaseKey][$propName] = $chain;
             }
         }
@@ -296,15 +310,17 @@ class CastTo implements PhaseAwareInterface, CasterChainNodeProducerInterface
         // Boot chain elements on DTO (recursively), if needed
         if (!isset($dtoBootCache[$dto])) {
             // use a WeakMap for its object de-duplication properties
+            /** @var \WeakMap<BootsOnDtoInterface, BootsOnDtoInterface> */
             $instances = new \WeakMap();
             // gather all instances of BootsOnDtoInterface, from all chains (both phases)
             foreach ($casts as $map) {
                 foreach ($map as $chain) {
-                    /** @psalm-suppress ArgumentTypeCoercion, UnnecessaryVarAnnotation */
-                    /** @var CasterChain $chain */
-                    $chain->recursiveWalk(function (CasterMeta $meta) use ($instances) {
-                        if ($meta->instance instanceof BootsOnDtoInterface) {
-                            $instances[$meta->instance] ??= $meta->instance;
+                    // ** @var CasterChain $chain */
+                    $chain->recursiveWalk(function (CasterChainNodeInterface $meta) use ($instances): void {
+                        if ($meta instanceof CasterMeta && $meta->instance instanceof BootsOnDtoInterface) {
+                            if (!isset($instances[$meta->instance])) {
+                                $instances[$meta->instance] = $meta->instance;
+                            }
                         }
                     }, CasterMeta::class);
                 }
@@ -335,9 +351,9 @@ class CastTo implements PhaseAwareInterface, CasterChainNodeProducerInterface
         self::$currentPropPath[] = $segment;
     }
 
-    public static function popPropPath(): void
+    public static function popPropPath(): int|string|null
     {
-        array_pop(self::$currentPropPath);
+        return array_pop(self::$currentPropPath);
     }
 
     public static function getPropPath(): ?string

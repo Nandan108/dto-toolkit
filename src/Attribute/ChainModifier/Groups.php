@@ -2,6 +2,8 @@
 
 namespace Nandan108\DtoToolkit\Attribute\ChainModifier;
 
+use Nandan108\DtoToolkit\Contracts\CasterChainNodeInterface;
+use Nandan108\DtoToolkit\Contracts\CasterChainNodeProducerInterface;
 use Nandan108\DtoToolkit\Contracts\HasGroupsInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Internal\CasterChain;
@@ -17,15 +19,30 @@ final class Groups extends ChainModifierBase
     }
 
     #[\Override]
+    /**
+     * Summary of getCasterChainNode.
+     *
+     * @param ?\ArrayIterator<int, CasterChainNodeProducerInterface> $queue
+     *
+     * @throws \LogicException
+     */
     public function getCasterChainNode(BaseDto $dto, ?\ArrayIterator $queue): CasterChain
     {
         if (!$dto instanceof HasGroupsInterface) {
             throw new \LogicException('To use #[Groups], DTO must use UsesGroups trait or implement HasGroupsInterface');
         }
 
+        /*
+        xpects       callable(array<array-key, Nandan108\DtoToolkit\Contracts\CasterChainNodeInterface>, callable|null):Closure|null,
+        but    impure-Closure(array<array-key, Nandan108\DtoToolkit\Contracts\CasterChainNodeInterface>, callable|null):(callable|pure-Closure(mixed):mixed) provided
+        */
         // consume the subchain, whether it'll be applied or not, decide application at cast-time
         return new CasterChain($queue, $dto, $this->count, 'PerItem',
-            buildCasterClosure: function (array $chainElements, ?\Closure $upstreamChain) use ($dto): callable {
+            buildCasterClosure:
+            /**
+             * @param CasterChainNodeInterface[] $chainElements
+             */
+            function (array $chainElements, ?\Closure $upstreamChain) use ($dto): callable {
                 // apply the subchain only if the groups are in scope
                 if ($this->inPhase($dto)) {
                     return CasterChain::composeFromNodes($chainElements, $upstreamChain);

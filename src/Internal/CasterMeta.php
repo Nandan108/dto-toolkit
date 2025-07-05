@@ -20,13 +20,13 @@ final class CasterMeta implements CasterChainNodeInterface
     }
 
     #[\Override]
-    public function getClosure(): callable
+    public function getClosure(): \Closure
     {
         return $this->caster;
     }
 
     #[\Override]
-    public function getBuiltClosure(?callable $upstream): callable
+    public function getBuiltClosure(?\Closure $upstream): \Closure
     {
         /** @psalm-suppress RiskyTruthyFalsyComparison */
         $caster = $this->getClosure();

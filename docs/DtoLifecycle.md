@@ -22,7 +22,7 @@ Behind the scenes, static calls to these `from*` and `with*` calls are handled b
   ⚠️ DTO props are not initialized in the constructor, therefore each must have a default value (generally null).
 2. Public properties are populated with raw input values.
   ⚠️ This means that the types of public properties must allow raw input value types to be stored.
-3. Each property filled is recorded in `$this->_filled`.
+3. Each property filled by a non-null value is recorded in `$this->_filled`.
 4. Property values are cast/transformed as specified by `#[CastTo\...]` attributes (see section 3. on Normalization)
   ⚠️ This means that the types of public properties must also accomodate their post-cast type.
 

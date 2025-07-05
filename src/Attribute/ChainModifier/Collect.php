@@ -4,21 +4,25 @@ namespace Nandan108\DtoToolkit\Attribute\ChainModifier;
 
 use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Contracts\CasterChainNodeInterface;
+use Nandan108\DtoToolkit\Contracts\CasterChainNodeProducerInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Exception\CastingException;
 use Nandan108\DtoToolkit\Internal\CasterChain;
 
 /**
- * The PerItem attribute is used to apply the next $count CastTo attributes
- * on each element of the passed array value instead of the whole value.
+ * The Collect attribute is used to.
  *
  * @psalm-api
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 class Collect extends ChainModifierBase
 {
+    /** @var array<string> */
     private array $keys;
 
+    /**
+     * @param array<string>|int $countOrKeys
+     */
     public function __construct(
         public array|int $countOrKeys,
     ) {
@@ -28,18 +32,20 @@ class Collect extends ChainModifierBase
         if (is_array($countOrKeys)) {
             $keys = $this->keys = $countOrKeys;
             foreach ($keys as $key) {
+                /** @psalm-suppress DocblockTypeContradiction */
                 is_string($key) or $throw('The keys must be strings');
             }
             count($keys) === count(array_unique($keys)) or $throw('The keys must be unique');
         } else {
             $countOrKeys >= 1 or $throw('If a count is given, it must be greater than 0');
+            /** @psalm-suppress InvalidPropertyAssignmentValue */
             $this->keys = range(0, $countOrKeys - 1);
         }
     }
 
     /**
-     * @param \ArrayIterator $queue The queue of attributes to be processed
-     * @param BaseDto        $dto   The DTO instance
+     * @param \ArrayIterator<int, CasterChainNodeProducerInterface> $queue The queue of attributes to be processed
+     * @param BaseDto                                               $dto   The DTO instance
      *
      * @return CasterChain A closure that applies the composed caster on each element of the passed array value
      */
@@ -66,6 +72,7 @@ class Collect extends ChainModifierBase
                         CastTo::pushPropPath($this->keys[$i]);
 
                         try {
+                            /** @psalm-var mixed */
                             $result[$this->keys[$i]] = $closure($value);
                         } finally {
                             CastTo::popPropPath();

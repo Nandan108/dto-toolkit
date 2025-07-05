@@ -11,7 +11,7 @@ trait HasContext
 
     /** @psalm-suppress PossiblyUnusedReturnValue */
     #[\Override]
-    public function setContext(string $key, mixed $value): static
+    public function contextSet(string $key, mixed $value): static
     {
         $this->_context[$key] = $value;
 
@@ -20,7 +20,7 @@ trait HasContext
 
     /** @psalm-suppress PossiblyUnusedReturnValue */
     #[\Override]
-    public function unsetContext(string $key): static
+    public function contextUnset(string $key): static
     {
         unset($this->_context[$key]);
 
@@ -30,19 +30,20 @@ trait HasContext
     public function _withContext(array $values): static
     {
         foreach ($values as $key => $val) {
-            $this->setContext($key, $val);
+            $this->contextSet($key, $val);
         }
 
         return $this;
     }
 
     #[\Override]
-    public function getContext(string $key, mixed $default = null): mixed
+    public function contextGet(string $key, mixed $default = null): mixed
     {
         return $this->_context[$key] ?? $default;
     }
 
-    public function hasContext(string $key, bool $treatNullAsMissing = true): bool
+    #[\Override]
+    public function contextHas(string $key, bool $treatNullAsMissing = true): bool
     {
         if (!array_key_exists($key, $this->_context)) {
             return false;
@@ -55,7 +56,8 @@ trait HasContext
         return true;
     }
 
-    public function getContextMap(): array
+    #[\Override]
+    public function getContext(): array
     {
         return $this->_context;
     }

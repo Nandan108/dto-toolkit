@@ -21,7 +21,7 @@ final class DateTimeString extends DateTime
             throw CastingException::castingFailure(static::class, $value, messageOverride: 'Expected a DateTime or DateTimeImmutable instance');
         }
 
-        /** @var ?\DateTimeZone $timezone */
+        /** @var ?\DateTimeZone $tz */
         $tz = $this->resolveParam('timezone', $value);
 
         // if the timezone is the same, no need to create a new DateTime object

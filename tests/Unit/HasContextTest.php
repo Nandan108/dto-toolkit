@@ -8,16 +8,14 @@ use PHPUnit\Framework\TestCase;
 
 final class HasContextTest extends TestCase
 {
-    private ?object $object = null;
+    private ?HasContextTest_Fixture $object = null;
 
     #[\Override]
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->object = new class implements HasContextInterface {
-            use HasContext;
-        };
+        $this->object = new HasContextTest_Fixture();
     }
 
     public function testSetContextAndGetContext(): void
@@ -25,23 +23,23 @@ final class HasContextTest extends TestCase
         $this->object or throw new \Exception('Object not initialized');
 
         // set a value 'foo' => 'bar' in the context
-        $this->object->setContext('foo', 'bar');
+        $this->object->contextSet('foo', 'bar');
         // check if the value is set
-        $this->assertSame('bar', $this->object->getContext('foo'));
+        $this->assertSame('bar', $this->object->contextGet('foo'));
         // check if getting an unset value returns null
-        $this->assertNull($this->object->getContext('missing'));
+        $this->assertNull($this->object->contextGet('missing'));
         // check if getting an unset value with a default returns the default
-        $this->assertSame('default', $this->object->getContext('missing', 'default'));
+        $this->assertSame('default', $this->object->contextGet('missing', 'default'));
         // Set a null value
-        $this->object->setContext('foo', null);
-        // Check if hasContext returns false for null value
-        $this->assertFalse($this->object->hasContext('foo'));
-        // Check if hasContext returns true for null value with treatNullAsMissing = false
-        $this->assertTrue($this->object->hasContext('foo', false));
+        $this->object->contextSet('foo', null);
+        // Check if contextHas returns false for null value
+        $this->assertFalse($this->object->contextHas('foo'));
+        // Check if contextHas returns true for null value with treatNullAsMissing = false
+        $this->assertTrue($this->object->contextHas('foo', false));
         // Remove value from context
-        $this->object->unsetContext('foo');
-        // Check if the value is removed -- hasContext with treatNullAsMissing = false should return false
-        $this->assertFalse($this->object->hasContext('foo', false));
+        $this->object->contextUnset('foo');
+        // Check if the value is removed -- contextHas with treatNullAsMissing = false should return false
+        $this->assertFalse($this->object->contextHas('foo', false));
     }
 
     public function testWithContextAndGetContextMap(): void
@@ -56,10 +54,15 @@ final class HasContextTest extends TestCase
 
         $this->object->_withContext($data);
 
-        $this->assertSame(1, $this->object->getContext('a'));
-        $this->assertSame(2, $this->object->getContext('b'));
-        $this->assertSame(3, $this->object->getContext('c'));
+        $this->assertSame(1, $this->object->contextGet('a'));
+        $this->assertSame(2, $this->object->contextGet('b'));
+        $this->assertSame(3, $this->object->contextGet('c'));
 
-        $this->assertSame($data, $this->object->getContextMap());
+        $this->assertSame($data, $this->object->getContext());
     }
+}
+
+final class HasContextTest_Fixture implements HasContextInterface
+{
+    use HasContext;
 }

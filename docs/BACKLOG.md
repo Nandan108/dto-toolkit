@@ -2,13 +2,12 @@
 
 ## Product Backlog Items
 
-- **[071]** Add `#[CastTo\Coalesce(array $ignore = [null])]` - takes an array and return first element not in $ignore list.
-- **[046]** Add modifier `#[SkipIfMatch(mixed $values, $return=null)]`, allows short-circuitting following caster(s) by returning \$return if input === \$values or input in $values.
+- **[071]** Add `#[CastTo\Coalesce(array, $ignore = [null])]` - takes an array and return first element not in $ignore list.
+- **[046]** Add modifier `#[SkipIfMatch(array $values, $return=null)]`, allows short-circuitting following caster(s) by returning \$return if input is found in \$values or input in $values.
 - **[056]** Support multi-step casting by making withGroups(inboundCast: ...) take a sequence of group(s)
   Then apply each step in sequence. Same with outboundCast.
-- **[020]** Add `#[MapTo(...)]` Attribute [See details](Mapping.md)
-- **[055]** Add `#[MapFromInternal(string|array $fields)]` to allow mapping from one or more internal properties or values already cast in a previous step, rather than external input.
 - **[044]** Add support for DTO transforms (`\$dto->toDto($otherDtoClass)`) [See details](#PBI-044)
+- **[028]** Add nested DTO support with `CastTo\Dto(class, groups: 'api')` (from array or object), recursive normalization and validation
 - **[034]** Add support for logging failed casts in FailTo/FailNextTo. `CastTo::$castSoftFailureLogger = function (CastingException $e, $returnedVal)`
 - **[062]** Add support for getCaster() debug mode
   - When enabled, caster closures push/pop debug context during execution
@@ -16,22 +15,21 @@
   - Example message: "PropName: Caster1->Caster2->FailNextTo(PerItem(Caster3 -> Caster4))"
 - **[048]** Add debug mode setting. When enabled, add casting stack tracking (push/pop) to enable logging full context when failing within a chain.
 - **[050]** Add `#[LogCast($debugOnly = true)]` to also allow logging non-failing chains.
-- **[036]** Add support for `#[AlwaysCast(fromVal:..., groups:...)]`. Forces casting unfilled props by providing a default value to cast when unfilled.
-- **[028]** Add nested DTO support with `CastTo\Dto(class, groups: 'api')` (from array or object), recursive normalization and validation
+- **[036]** Add support for `#[AlwaysCast(fromVal:...)]`. Forces casting unfilled props by auto-filling with a default value.
 - **[045]** Add support for validation [See details](#PBI-045)
   The mapping source will be different for inbound and outbound casting, this needs reflexion.
   **[058]** Add a doc about FullDto and making one's own slimmed-down version if not all features are needed
-- **[063]** Add validation attributes as part of caster chains
+- **[072]** Add support for continued processing after failure, throwing the full list of errors at the end, with pluggable error processing.
+- **[063]** Rename Caster Chains to Processing Chains and add Validation attributes as part of chains
   - E.g., #[Valid\Range(min, max)], #[Valid\StrLength()]
   - Non-mutating steps: must have validate($value): void, can throw ValidationException
   - Must be phase-aware like other processing chain elements
-  - Consider renaming "casting chains" to "processing chains" where applicable
 - **[064]** Add framework-specific ValidationException mappers in adapters
+  - Add a "ProcessingErrorMapperInterface" for adapter overrides
   - Core DTOT will throw a generic ValidationException on validation failure
   - Allow adapters (e.g., dtot-adapter-laravel, dtot-adapter-symfony) to map or wrap ValidationExceptions into framework-native exceptions
   - This enables seamless integration with Laravel and Symfony's validation error handling mechanisms
   - Keep validation logic and error reporting fully pluggable and framework-agnostic
-  - Consider a "ValidationErrorMapperInterface" for adapter overrides (optional future enhancement)
 - **[070]** Create new exception (CastingSetupException ?)
   - To be thrown when encountering errors during chain building/boot/instanciation, etc...
   - These exceptions won't have translations, while cast-time exceptions (CastingExceptions) will allow message l10n in the future
@@ -88,6 +86,8 @@
 - [065] Add FirstSuccess chain modifier: #[FirstSuccess($count)]
 - [040] Add `#[MapFrom(string|array $fields)]`
 - [069] Add  #[WithDefaultGroups(...)] class attribute, takes same params as UsesGroups::_withGroups() and auto-applies them after instanciation
+- [020] Add `#[MapTo(...)]` Attribute [See details](Mapping.md)
+- [055] Add `#[Extract(string|array $roots)]` to allow mapping from one or more internal properties or values already cast in a previous step, rather than external input.
 
 
 ---

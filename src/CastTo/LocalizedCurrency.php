@@ -53,12 +53,14 @@ final class LocalizedCurrency extends CastBase implements CasterInterface, Boots
     #[\Override]
     public function cast(mixed $value, array $args): string
     {
+        /** @var string $currency */
         [$currency] = $args;
 
         if (!is_numeric($value)) {
             throw CastingException::castingFailure(static::class, $value, 'Value is not numeric.');
         }
 
+        /** @var string $locale */
         $locale = $this->resolveParam('locale', $value);
 
         $formatter = new \NumberFormatter($locale, \NumberFormatter::CURRENCY);
