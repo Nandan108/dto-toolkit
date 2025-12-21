@@ -1,12 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\Tests\Traits;
 
 use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Contracts\BootsOnDtoInterface;
-use Nandan108\DtoToolkit\Contracts\NormalizesInterface;
+use Nandan108\DtoToolkit\Contracts\ProcessesInterface;
+use Nandan108\DtoToolkit\Contracts\ProcessingExceptionInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
-use Nandan108\DtoToolkit\Traits\NormalizesFromAttributes;
+use Nandan108\DtoToolkit\Internal\ProcessingNodeBase;
+use Nandan108\DtoToolkit\Traits\ProcessesFromAttributes;
 
 trait CanTestCasterClassesAndMethods
 {
@@ -20,22 +24,22 @@ trait CanTestCasterClassesAndMethods
     public function casterTest(mixed $method, mixed $input, mixed $expected, array $args = [], ?string $exceptionMessage = null): void
     {
         // /** @psalm-suppress ExtensionRequirementViolation */
-        $dto = new class extends BaseDto implements NormalizesInterface {
-            use NormalizesFromAttributes;
+        $dto = new class extends BaseDto implements ProcessesInterface {
+            use ProcessesFromAttributes;
         };
 
         // create caster Attribute using static helper method, and from it get the caster Closure
         if (is_string($method)) {
             $casterAttribute = new CastTo($method, args: $args);
-            $caster = $casterAttribute->getCasterChainNode($dto);
+            $caster = $casterAttribute->getProcessingNode($dto);
         } elseif ($method instanceof CastTo) {
-            $caster = $method->getCasterChainNode($dto);
+            $caster = $method->getProcessingNode($dto);
         } else {
             $this->fail('Invalid method type: '.gettype($method));
         }
 
-        CastTo::setCurrentPropName('test');
-        CastTo::setCurrentDto($dto);
+        ProcessingNodeBase::setCurrentPropName('test');
+        ProcessingNodeBase::setCurrentDto($dto);
 
         if ($caster->instance instanceof BootsOnDtoInterface) {
             $caster->instance->bootOnDto();
@@ -55,7 +59,16 @@ trait CanTestCasterClassesAndMethods
             if (is_string($expected) && class_exists($expected) && is_a($e, $expected)) {
                 $this->assertInstanceOf($expected, $e);
                 if (null !== $exceptionMessage && $exceptionMessage > '') {
-                    $this->assertStringContainsString($exceptionMessage, $e->getMessage());
+                    if ($e instanceof ProcessingExceptionInterface) {
+                        $template = $e->getMessageTemplate();
+                        $params = $e->getMessageParameters();
+                        $this->assertTrue(
+                            $template === $exceptionMessage || (($params['reason'] ?? null) === $exceptionMessage),
+                            "Expected template or reason '{$exceptionMessage}', got template '{$template}'",
+                        );
+                    } else {
+                        $this->assertStringContainsString($exceptionMessage, $e->getMessage());
+                    }
                 }
             } else {
                 throw $e;

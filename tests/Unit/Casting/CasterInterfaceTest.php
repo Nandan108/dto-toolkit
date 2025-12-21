@@ -1,14 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
 use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Contracts\CasterInterface;
-use Nandan108\DtoToolkit\Contracts\CasterResolverInterface;
+use Nandan108\DtoToolkit\Contracts\NodeResolverInterface;
+use Nandan108\DtoToolkit\Contracts\ProcessingNodeInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Core\CastBase;
-use Nandan108\DtoToolkit\Exception\CastingException;
-use Nandan108\DtoToolkit\Internal\CasterMeta;
+use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
+use Nandan108\DtoToolkit\Exception\Config\NodeProducerResolutionException;
+use Nandan108\DtoToolkit\Exception\Process\TransformException;
+use Nandan108\DtoToolkit\Internal\ProcessingNodeBase;
+use Nandan108\DtoToolkit\Internal\ProcessingNodeMeta;
 use PHPUnit\Framework\TestCase;
 
 final class CasterInterfaceTest extends TestCase
@@ -17,16 +23,15 @@ final class CasterInterfaceTest extends TestCase
     #[\Override]
     public function tearDown(): void
     {
-        CastTo::$customCasterResolver = null;
+        ProcessingNodeBase::$customNodeResolver = null;
     }
 
     public function testThrowsIfClassDoesNotExist(): void
     {
-        $this->expectException($className = CastingException::class);
-        $this->expectExceptionMessage("Caster 'FakeClass' could not be resolved");
+        $this->expectException(NodeProducerResolutionException::class);
         $dto = new class extends BaseDto {};
         $attr = new CastTo('FakeClass');
-        $attr->getCasterChainNode($dto);
+        $attr->getProcessingNode($dto);
     }
 
     public function testThrowsIfClassDoesNotImplementInterface(): void
@@ -34,9 +39,13 @@ final class CasterInterfaceTest extends TestCase
         $classNotImplementingCasterInterface = new class {};
         $dto = new class extends BaseDto {};
         $attr = new CastTo($className = get_class($classNotImplementingCasterInterface));
-        $this->expectException(CastingException::class);
-        $this->expectExceptionMessage("Class '{$className}' does not implement the CasterInterface.");
-        $attr->getCasterChainNode($dto);
+        try {
+            $attr->getProcessingNode($dto);
+            $this->fail('Expected exception not thrown');
+        } catch (TransformException $e) {
+            $this->assertSame('processing.transform.invalid_interface', $e->getMessageTemplate());
+            $this->assertSame($className, $e->getMessageParameters()['className'] ?? null);
+        }
     }
 
     public function testInstantiatesWithConstructorArgs(): void
@@ -55,7 +64,7 @@ final class CasterInterfaceTest extends TestCase
 
         $attr = new CastTo(get_class($casterClass), args: [], constructorArgs: ['X']);
         $dto = new class extends BaseDto {};
-        $caster = $attr->getCasterChainNode($dto);
+        $caster = $attr->getProcessingNode($dto);
         $this->assertSame('Xfoo', $caster('foo'));
     }
 
@@ -71,7 +80,7 @@ final class CasterInterfaceTest extends TestCase
 
         $attr = new CastTo(get_class($casterClass));
         $dto = new class extends BaseDto {};
-        $caster = $attr->getCasterChainNode($dto);
+        $caster = $attr->getProcessingNode($dto);
         $this->assertSame('FOO', $caster('foo'));
     }
 
@@ -104,7 +113,7 @@ final class CasterInterfaceTest extends TestCase
 
         $attr = new $castToSublass($casterClass);
         $dto = new class extends BaseDto {};
-        $caster = $attr->getCasterChainNode($dto);
+        $caster = $attr->getProcessingNode($dto);
         $this->assertSame('\SomeNameSpace\MyClass:42', $caster('42'));
     }
 
@@ -126,9 +135,9 @@ final class CasterInterfaceTest extends TestCase
         $attr = new CastTo($casterClass);
         $dto = new class extends BaseDto {};
 
-        $this->expectException(\LogicException::class);
+        $this->expectException(InvalidConfigException::class);
         $this->expectExceptionMessage('requires constructor args');
-        $attr->getCasterChainNode($dto);
+        $attr->getProcessingNode($dto);
     }
 
     public function testReusesCachedInstanceAndClosure(): void
@@ -150,9 +159,9 @@ final class CasterInterfaceTest extends TestCase
         $attr2 = new CastTo($casterClass, args: ['a']);
         $attr3 = new CastTo($casterClass, args: ['b']);
 
-        $caster1 = $attr1->getCasterChainNode($dto);
-        $caster2 = $attr2->getCasterChainNode($dto);
-        $caster3 = $attr3->getCasterChainNode($dto);
+        $caster1 = $attr1->getProcessingNode($dto);
+        $caster2 = $attr2->getProcessingNode($dto);
+        $caster3 = $attr3->getProcessingNode($dto);
 
         $this->assertSame('1:foo', $caster1('foo'));
         $this->assertSame('2:bar', $caster2('bar')); // reuses closure
@@ -166,44 +175,44 @@ final class CasterInterfaceTest extends TestCase
         $attr = new CastTo(
             $className = 'FakeClass',
             args: $args = ['foo', 'baz'],
-            constructorArgs: $fakeClassCtorArgs
+            constructorArgs: $fakeClassCtorArgs,
         );
 
         // Test a custom CasterResolver returning a Closure
-        CastTo::$customCasterResolver = new class implements CasterResolverInterface {
+        ProcessingNodeBase::$customNodeResolver = new class implements NodeResolverInterface {
             #[\Override]
-            public function resolve(string $className, array $args = [], array $constructorArgs = []): CasterInterface|\Closure
+            public function resolve(string $methodOrClass, array $args = [], array $constructorArgs = []): \Closure
             {
                 /** @psalm-suppress MissingClosureParamType */
-                return function (mixed $value) use ($className, $args, $constructorArgs) {
+                return function (mixed $value) use ($methodOrClass, $args, $constructorArgs) {
                     $ctorArgs = json_encode($constructorArgs);
                     $castParams = json_encode([$value, $args]);
-                    $returnVal = "executing {$className}(...$ctorArgs)->cast(...$castParams)";
+                    $returnVal = "executing {$methodOrClass}(...$ctorArgs)->cast(...$castParams)";
 
                     return $returnVal;
                 };
             }
         };
 
-        $casterClosure = $attr->getCasterChainNode($dto);
+        $casterClosure = $attr->getProcessingNode($dto);
         $castResult = $casterClosure('val');
         $this->assertSame(
             "executing $className(...[\"bar\"])->cast(...[\"val\",[\"foo\",\"baz\"]])",
-            $castResult
+            $castResult,
         );
 
         // Test a custom CasterResolver returning a CasterInterface
-        CastTo::$customCasterResolver = new class implements CasterResolverInterface {
+        ProcessingNodeBase::$customNodeResolver = new class implements NodeResolverInterface {
             public function __construct()
             {
             }
 
             #[\Override]
-            public function resolve(string $className, array $args = [], array $constructorArgs = []): CasterInterface|\Closure
+            public function resolve(string $methodOrClass, array $args = [], array $constructorArgs = []): CasterInterface | \Closure
             {
-                return new class($className, $constructorArgs) extends CastBase {
+                return new class($methodOrClass, $constructorArgs) extends CastBase {
                     public function __construct(
-                        public string $className,
+                        public ?string $methodOrClass,
                         public ?array $constructorArgs = null,
                     ) {
                     }
@@ -214,25 +223,25 @@ final class CasterInterfaceTest extends TestCase
                         $ctorArgs = json_encode($this->constructorArgs);
                         $castParams = json_encode([$value, $args]);
 
-                        return "->cast() executing {$this->className}(...$ctorArgs)->cast(...$castParams)";
+                        return "->cast() executing {$this->methodOrClass}(...$ctorArgs)->cast(...$castParams)";
                     }
                 };
             }
         };
 
         $getMeta =
-        /** @return array<string, array{casters: array<string, CasterMeta>, instance?: CasterInterface}> */
-        fn (): array => CastTo::_getCasterMetadata();
+        /** @return array<string, array{nodes: array<string, ProcessingNodeMeta>, instance?: ProcessingNodeInterface}> */
+        fn (): array => CastTo::_getNodeMetadata();
 
         // whipe out memoized caster data
         // FakeClass:["bar"]
         /** @psalm-suppress PossiblyFalseOperand */
         $fakeClassCacheKey = $className.':'.json_encode($fakeClassCtorArgs);
         $this->assertArrayHasKey($fakeClassCacheKey, $getMeta());
-        $attr::_clearCasterMetadata();
+        $attr::_clearNodeMetadata();
         $this->assertArrayNotHasKey($className, $getMeta());
 
-        $casterClosure = $attr->getCasterChainNode($dto);
+        $casterClosure = $attr->getProcessingNode($dto);
         $this->assertSame(
             "->cast() executing $className(...[\"bar\"])->cast(...[\"val\",[\"foo\",\"baz\"]])",
             $casterClosure('val'),
@@ -240,14 +249,14 @@ final class CasterInterfaceTest extends TestCase
 
         $allCasters = $getMeta();
         $casterMeta = $allCasters[$fakeClassCacheKey];
-        $this->assertArrayHasKey('casters', $casterMeta);
-        $attr::_clearCasterMetadata($className);
+        $this->assertArrayHasKey('nodes', $casterMeta);
+        $attr::_clearNodeMetadata($className);
         $this->assertArrayNotHasKey($className, $getMeta());
 
         // get the caster again, which will re-fill the caster cache
-        $attr->getCasterChainNode($dto);
+        $attr->getProcessingNode($dto);
 
-        $casterMeta = $attr::_getCasterMetadata()[$fakeClassCacheKey];
-        $this->assertArrayHasKey('casters', $casterMeta);
+        $casterMeta = $attr::_getNodeMetadata()[$fakeClassCacheKey];
+        $this->assertArrayHasKey('nodes', $casterMeta);
     }
 }

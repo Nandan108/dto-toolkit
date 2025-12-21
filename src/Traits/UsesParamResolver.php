@@ -1,11 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\Traits;
 
 use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Contracts\HasContextInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
-use Nandan108\DtoToolkit\Exception\CastingException;
+use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
+use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
+use Nandan108\DtoToolkit\Internal\ProcessingNodeBase;
 
 /**
  * This trait provides a way to resolve caster parameters for DTOs.
@@ -22,11 +26,11 @@ trait UsesParamResolver
     protected function getParamResolverConfig(string $paramName): ParamResolverConfig
     {
         // Can't use this trait without being a CastTo
-        // $this instanceof CastTo or throw new \RuntimeException('Caster must implement CastTo to use UsesLocaleResolver');
-        $dto = CastTo::getCurrentDto();
+        // $this instanceof CastTo or throw new InvalidConfigException('Caster must implement CastTo to use UsesLocaleResolver');
+        $dto = ProcessingNodeBase::getCurrentDto();
 
         if (!isset(static::$paramProvidersMap) || !isset(static::$paramProvidersMap[$dto])) {
-            throw new \RuntimeException('Please call configureParamResolver() before resolveParamProvider()');
+            throw new InvalidConfigException('configureParamResolver() must be called before resolveParamProvider()');
         }
         /** @var array<string, ParamResolverConfig> $resolverConfigs */
         $resolverConfigs = static::$paramProvidersMap[$dto];
@@ -34,7 +38,7 @@ trait UsesParamResolver
         $config = $resolverConfigs[$paramName] ?? null;
 
         // Config should be set up in the bootOnDto() method. If it's not, something went wrong - throw an exception.
-        $config or throw new \RuntimeException("Parameter '$paramName' has not been configured by configureParamResolver().");
+        $config or throw new InvalidConfigException("Parameter '$paramName' has not been configured by configureParamResolver().");
 
         return $config;
     }
@@ -43,7 +47,7 @@ trait UsesParamResolver
      * This resolves the required provider. It should be called in the constructor.
      *
      * @throws \InvalidArgumentException
-     * @throws \RuntimeException
+     * @throws InvalidConfigException
      *
      * @psalm-suppress UndefinedDocblockClass
      */
@@ -81,7 +85,10 @@ trait UsesParamResolver
                 $extraParam = $attemptJsonDecode($matches[3] ?? null);
 
                 if (!method_exists($dto, $paramGetter)) {
-                    throw new \BadMethodCallException("DTO does not have a $paramGetter() method.");
+                    throw new InvalidConfigException(
+                        "DTO does not have a $paramGetter() method.",
+                        ['dtoClass' => get_class($dto), 'paramGetter' => $paramGetter],
+                    );
                 }
 
                 return $provider = function (mixed $value, ?string $prop, BaseDto $dto) use ($paramGetter, $extraParam): mixed {
@@ -115,14 +122,14 @@ trait UsesParamResolver
 
                 // if the value is '<context', return a provider that gets the value from the context
                 if (!$dto instanceof HasContextInterface) {
-                    throw new \RuntimeException("To use '<context' as a parameter value, the DTO must implement HasContextInterface.");
+                    throw new InvalidConfigException("To use '<context' as a parameter value, the DTO must implement HasContextInterface.");
                 }
 
                 if (!$dto->contextHas($contextKey)) {
-                    throw new \RuntimeException("Cannot resolve context key '$contextKey' (no context set) for caster ".static::class);
+                    throw new InvalidConfigException("Cannot resolve context key '$contextKey' (no context set) for caster ".static::class);
                 }
 
-                return $provider = function (mixed $value, ?string $prop, BaseDto&HasContextInterface $dto) use ($contextKey, $checkClosure, $paramName, $config): mixed {
+                return $provider = function (mixed $value, ?string $prop, BaseDto & HasContextInterface $dto) use ($contextKey, $checkClosure, $paramName, $config): mixed {
                     // attempt to get the parameter value from the context
                     $paramValue = $dto->contextGet($contextKey);
 
@@ -134,7 +141,7 @@ trait UsesParamResolver
                         // if the value is not valid, throw an exception
                         /** @psalm-suppress RiskyTruthyFalsyComparison */
                         $paramValue = json_encode($paramValue) ?: '(type: '.get_debug_type($paramValue).')';
-                        throw new \RuntimeException("Prop $prop: Invalid $paramName $paramValue in context key '$contextKey' for ".static::class);
+                        throw new InvalidConfigException("Prop $prop: Invalid $paramName $paramValue in context key '$contextKey' for ".static::class);
                     }
 
                     return $paramValue;
@@ -148,7 +155,7 @@ trait UsesParamResolver
                     // if the class has a method that matches the getter, use it
                     return $provider = fn (mixed $value, ?string $prop): mixed => [$classProvider, $paramGetter]($value, $prop, $dto);
                 }
-                throw new \InvalidArgumentException("Class $classProvider does not have a $paramGetter() method.");
+                throw new InvalidArgumentException("Class $classProvider does not have a $paramGetter() method.");
             }
 
             // 4. If we have a validity checker and the value passes
@@ -157,7 +164,7 @@ trait UsesParamResolver
                 return $provider = fn () => $paramValueOrProviderClass;
             }
 
-            throw new \RuntimeException("Cannot resolve $paramName from \"$paramValueOrProviderClass\" for ".static::class);
+            throw new InvalidConfigException("Cannot resolve $paramName from \"$paramValueOrProviderClass\" for ".static::class);
         }
 
         // Null value provided or non-null but not early-resolvable?
@@ -181,13 +188,16 @@ trait UsesParamResolver
             }
 
             // this syntax is used to allow full coverage without the incovenience of having to test the sad path separately
-            isset($source) or throw new \RuntimeException("No value or provider given, unable to resolve $paramName for ".static::class);
+            isset($source) or throw new InvalidConfigException("No value or provider given, unable to resolve $paramName for ".static::class);
 
             // if checkValid is set, check the value and throw if invalid
             if ($config->checkValid && !($config->checkValid)($paramValue, $paramName)) {
                 /** @psalm-suppress RiskyTruthyFalsyComparison */
-                $paramValue = json_encode($paramValue) ?: '';
-                throw CastingException::castingFailure(static::class, $paramValue, messageOverride: "$source returned an invalid value $paramValue for ".static::class);
+                $jsonVal = json_encode($paramValue) ?: '(type: '.get_debug_type($paramValue).')';
+                throw new InvalidConfigException(
+                    __METHOD__.": $source returned an invalid value $jsonVal",
+                    ['params' => $paramName, 'paramValue' => $paramValue, 'source' => $source],
+                );
             }
 
             return $paramValue;
@@ -196,7 +206,7 @@ trait UsesParamResolver
 
     protected function configureParamResolver(string $paramName, mixed $valueOrProvider, ?\Closure $checkValid = null, ?\Closure $hydrate = null, ?\Closure $fallback = null): void
     {
-        $dto = CastTo::getCurrentDto();
+        $dto = ProcessingNodeBase::getCurrentDto();
 
         // Can't use ??= here, because psalm complains about type coersion
         if (null === static::$paramProvidersMap) {
@@ -219,7 +229,7 @@ trait UsesParamResolver
     /**
      * returns the locale for the given value, locale provider, and context (propName, dto).
      *
-     * @throws \RuntimeException
+     * @throws InvalidConfigException
      *
      * @psalm-suppress UndefinedDocblockClass
      */
@@ -230,12 +240,12 @@ trait UsesParamResolver
         // if no $paramValueOrProviderClass is passed, check for a constructorArg with the same name as the parameter to resolve
         $paramValueOrProviderClass ??= $this->constructorArgs[$paramName] ?? null;
 
-        $dto = CastTo::getCurrentDto();
+        $dto = ProcessingNodeBase::getCurrentDto();
 
         /** @var CastTo|UsesParamResolver $this */
         $provider = $this->resolveParamProvider($config, $paramValueOrProviderClass, $dto);
 
-        $paramValue = $provider($value, CastTo::getCurrentPropName(), $dto);
+        $paramValue = $provider($value, ProcessingNodeBase::getCurrentPropName(), $dto);
 
         $hydrate = $config->hydrate;
 

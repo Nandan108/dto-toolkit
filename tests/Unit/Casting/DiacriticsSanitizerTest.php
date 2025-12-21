@@ -1,11 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
 // use Nandan108\DtoToolkit\Core\CastTo;
 // use Nandan108\DtoToolkit\Traits\CanCastBasicValues;
 
 use Nandan108\DtoToolkit\CastTo;
+use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException as ConfigInvalidArgumentException;
 use Nandan108\DtoToolkit\Tests\Traits\CanTestCasterClassesAndMethods;
 use Nandan108\DtoToolkit\Traits\UsesDiacriticSanitizer;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -24,7 +27,7 @@ final class DiacriticsSanitizerTest extends TestCase
 
     public function testDiacriticsSanitizerThrowsOnInvalidTransliterationParams(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(ConfigInvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid transliteration parameters');
 
         $testClass = new class {

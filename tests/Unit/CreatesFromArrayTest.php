@@ -1,13 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\Tests\Unit;
 
 use Nandan108\DtoToolkit\CastTo;
-use Nandan108\DtoToolkit\Contracts\NormalizesInterface;
-use Nandan108\DtoToolkit\Contracts\ValidatesInputInterface;
+use Nandan108\DtoToolkit\Contracts\ProcessesInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
+use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
 use Nandan108\DtoToolkit\Traits\CreatesFromArrayOrEntity;
-use Nandan108\DtoToolkit\Traits\NormalizesFromAttributes;
+use Nandan108\DtoToolkit\Traits\ProcessesFromAttributes;
 use Nandan108\PropAccess\Exception\AccessorException;
 use Nandan108\PropAccess\PropAccess;
 use PHPUnit\Framework\TestCase;
@@ -47,42 +49,6 @@ final class CreatesFromArrayTest extends TestCase
         $this->assertArrayHasKey('itemId', $dto->_filled);
     }
 
-    // Test the the DTO is validateda after being filled if it implements ValidatesInputInterface
-    public function testDtoIsValidatedInFromArrayIfItImplementsValidatesInputInterface(): void
-    {
-        $dtoClass = new class extends BaseDto implements ValidatesInputInterface {
-            use CreatesFromArrayOrEntity;
-
-            #[\Override]
-            public function validate(array $args = []): static
-            {
-                // Simulate validation logic
-                if ('invalid-email' === $this->email) {
-                    throw new \Exception('Validation failed');
-                }
-
-                return $this;
-            }
-
-            public string|int|null $item_id = null;
-            public ?string $email = null;
-            public string|int|null $age = null;
-        };
-
-        try {
-            /** @psalm-suppress UndefinedMagicMethod */
-            (new $dtoClass())->fromArray([
-                'item_id' => '5',
-                'age'     => '30',
-                'email'   => 'invalid-email',
-            ]);
-            $this->fail('Expected exception not thrown');
-        } catch (\Exception $e) {
-            // Assert that the exception message is as expected
-            $this->assertSame('Validation failed', $e->getMessage());
-        }
-    }
-
     // Test that the fromArray method throws an exception if unknown properties are passed
     // and ignoreUnknownProperties is false
     public function testThrowExceptionForUnknownPropertiesWhenIgnoreUnknownPropertiesIsFalse(): void
@@ -103,7 +69,7 @@ final class CreatesFromArrayTest extends TestCase
         /** @psalm-suppress UndefinedPropertyFetch */
         $this->assertSame($rawEmail, $dto->email);
 
-        $this->expectException(\LogicException::class);
+        $this->expectException(InvalidConfigException::class);
         $this->expectExceptionMessage('Unknown properties: anUnknownProp, andAnother');
 
         /** @psalm-suppress NoValue, UnusedVariable */
@@ -121,13 +87,13 @@ final class CreatesFromArrayTest extends TestCase
     public function testFromArrayCallsNormalizeInboundOnDtosImplementingNormalizesInboundInterface(): void
     {
         /** @psalm-suppress ExtensionRequirementViolation */
-        $dtoClass = new class extends BaseDto implements NormalizesInterface {
+        $dtoClass = new class extends BaseDto implements ProcessesInterface {
             // implements NormalizesInbound
             use CreatesFromArrayOrEntity;
-            use NormalizesFromAttributes;
+            use ProcessesFromAttributes;
 
             #[CastTo\Integer]
-            public string|int|null $age = null;
+            public string | int | null $age = null;
 
             #[CastTo\Trimmed]
             public ?string $name = null;
@@ -147,27 +113,27 @@ final class CreatesFromArrayTest extends TestCase
         $this->assertSame('sam', $dto->name);
     }
 
-    public function testNormalizesFromEntity(): void
+    public function testProcessesFromEntity(): void
     {
-        $dtoClass = new class extends BaseDto implements NormalizesInterface {
+        $dtoClass = new class extends BaseDto implements ProcessesInterface {
             use CreatesFromArrayOrEntity;
-            use NormalizesFromAttributes;
+            use ProcessesFromAttributes;
 
             #[CastTo\Integer]
-            public string|int|null $itemId = null;
+            public string | int | null $itemId = null;
             public ?string $email = null;
             #[CastTo\Uppercase]
-            public string|int|null $name = null;
+            public string | int | null $name = null;
         };
 
         $entity = new class {
-            public string|int|null $itemId = '5';
+            public string | int | null $itemId = '5';
 
             public ?string $email = 'name@domain.test';
 
-            private string|int|null $name = 'sam';
+            private string | int | null $name = 'sam';
 
-            public function getName(): string|int|null
+            public function getName(): string | int | null
             {
                 return $this->name;
             }
@@ -177,7 +143,7 @@ final class CreatesFromArrayTest extends TestCase
                 $this->name = $name;
             }
 
-            public string|int|null $ignoredPropNotOnDTO = 'value';
+            public string | int | null $ignoredPropNotOnDTO = 'value';
         };
 
         /** @psalm-suppress UndefinedMagicMethod */
@@ -196,10 +162,10 @@ final class CreatesFromArrayTest extends TestCase
     public function testFailsIfPropertyDoesntExistOnEntity(): void
     {
         $entity = new class {
-            public string|int|null $itemNumber = '5';
+            public string | int | null $itemNumber = '5';
             public ?string $email = 'name@domain.test';
             // name is private, not accessible
-            private string|int|null $name = 'sam';
+            private string | int | null $name = 'sam';
         };
 
         $this->expectException(AccessorException::class);
@@ -211,14 +177,14 @@ final class CreatesFromArrayTest extends TestCase
     }
 }
 
-final class FromArrayTestDto extends BaseDto implements NormalizesInterface
+final class FromArrayTestDto extends BaseDto implements ProcessesInterface
 {
     use CreatesFromArrayOrEntity;
-    use NormalizesFromAttributes;
+    use ProcessesFromAttributes;
 
     #[CastTo\Integer]
-    public string|int|null $itemId = null;
+    public string | int | null $itemId = null;
     public ?string $email = null;
     #[CastTo\Uppercase]
-    public string|int|null $name = null;
+    public string | int | null $name = null;
 }

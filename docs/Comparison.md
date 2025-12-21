@@ -6,19 +6,20 @@ There are several libraries in the PHP ecosystem that offer data handling, mappi
 
 ## 🔍 Feature Comparison
 
-| Feature                           | DTO Toolkit       | Spatie DTO | Symfony Tools      | Valinor     | Laravel         |
-|-----------------------------------|--------------------|------------|---------------------|-------------|------------------|
-| Framework-agnostic                | ✅                 | ✅         | ❌ (Symfony-bound)  | ✅          | ❌ (Laravel-bound) |
-| Attribute-driven casting          | ✅                 | ❌         | ⚠️ (yaml/xml/attr)  | ✅          | ⚠️ (manual logic) |
-| Declarative syntax                | ✅                 | ⚠️         | ❌                  | ⚠️          | ⚠️               |
-| Pluggable adapters                | ✅                 | ❌         | ❌                  | ❌          | ❌               |
-| Input/output transformation       | ✅                 | ❌         | ⚠️                  | ✅          | ⚠️               |
-| Validation system separation      | ✅                 | ❌         | ❌                  | ✅          | ❌               |
-| Pre/post lifecycle hooks          | ✅                 | ❌         | ❌                  | ❌          | ⚠️               |
-| “Zero magic” design               | ✅                 | ✅         | ❌                  | ❌          | ❌               |
-| Testing and DX focus              | ✅                 | ✅         | ⚠️                  | ⚠️          | ⚠️               |
+| Feature                      | DTO Toolkit | Spatie DTO | Symfony Tools      | Valinor | Laravel            |
+| ---------------------------- | ----------- | ---------- | ------------------ | ------- | ------------------ |
+| Framework-agnostic           | ✅          | ✅         | ❌ (Symfony-bound) | ✅      | ❌ (Laravel-bound) |
+| Attribute-driven casting     | ✅          | ❌         | ⚠️ (yaml/xml/attr) | ✅      | ⚠️ (manual logic)  |
+| Declarative syntax           | ✅          | ⚠️         | ❌                 | ⚠️      | ⚠️                 |
+| Pluggable adapters           | ✅          | ❌         | ❌                 | ❌      | ❌                 |
+| Input/output transformation  | ✅          | ❌         | ⚠️                 | ✅      | ⚠️                 |
+| Validation system separation | ✅          | ❌         | ❌                 | ✅      | ❌                 |
+| Pre/post lifecycle hooks     | ✅          | ❌         | ❌                 | ❌      | ⚠️                 |
+| “Zero magic” design          | ✅          | ✅         | ❌                 | ❌      | ❌                 |
+| Testing and DX focus         | ✅          | ✅         | ⚠️                 | ⚠️      | ⚠️                 |
 
 Legend:
+
 - ✅ Native or first-class support
 - ⚠️ Partial or possible with effort
 - ❌ Not supported or not idiomatic
@@ -27,13 +28,13 @@ Legend:
 
 ## 🧠 Philosophy Alignment
 
-| Principle                     | DTO Toolkit       |
-|------------------------------|--------------------|
-| Separation of concerns       | ✅ Clean trait-based layering |
-| Composability                | ✅ Core traits and hooks |
-| Minimalism                   | ✅ Core stays lean |
-| Expressiveness               | ✅ Attributes and static helpers |
-| Adaptability                 | ✅ Adapter system, opt-in behaviors |
+| Principle              | DTO Toolkit                         |
+| ---------------------- | ----------------------------------- |
+| Separation of concerns | ✅ Clean trait-based layering       |
+| Composability          | ✅ Core traits and hooks            |
+| Minimalism             | ✅ Core stays lean                  |
+| Expressiveness         | ✅ Attributes and static helpers    |
+| Adaptability           | ✅ Adapter system, opt-in behaviors |
 
 ---
 

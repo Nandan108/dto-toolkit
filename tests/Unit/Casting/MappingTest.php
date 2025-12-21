@@ -1,12 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
 use Nandan108\DtoToolkit\Attribute\MapFrom;
 use Nandan108\DtoToolkit\Attribute\MapTo;
 use Nandan108\DtoToolkit\Attribute\Outbound;
 use Nandan108\DtoToolkit\Core\FullDto;
-use Nandan108\DtoToolkit\Exception\LoadingException;
+use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
+use Nandan108\DtoToolkit\Exception\Process\ExtractionException;
 use Nandan108\DtoToolkit\Tests\Traits\CanTestCasterClassesAndMethods;
 use PHPUnit\Framework\TestCase;
 
@@ -18,10 +21,10 @@ final class MappingTest extends TestCase
     {
         $dtoClass = new class extends FullDto {
             #[MapFrom(['qux1' => 'foo', 'qux2' => ['baz', 'bar']])]
-            public string|array|null $bar = '';
+            public string | array | null $bar = '';
 
             #[MapFrom('bar')]
-            public string|array|null $boo = null;
+            public string | array | null $boo = null;
 
             // no MapFrom attribute means it is copied as-is
             public ?string $fiz = null;
@@ -33,11 +36,13 @@ final class MappingTest extends TestCase
             'baz' => 'BAZ-val',
             'fiz' => 'FIZ-val',
         ]);
-        $this->assertSame([
-            'qux1' => 'FOO-val',
-            'qux2' => ['BAZ-val', 'BAR-val'],
-        ],
-            $dto->bar);
+        $this->assertSame(
+            [
+                'qux1' => 'FOO-val',
+                'qux2' => ['BAZ-val', 'BAR-val'],
+            ],
+            $dto->bar,
+        );
         $this->assertSame('BAR-val', $dto->boo);
         $this->assertSame('FIZ-val', $dto->fiz);
 
@@ -52,7 +57,7 @@ final class MappingTest extends TestCase
     {
         $dtoClass = new class extends FullDto {
             #[MapFrom(['qux1' => 'foo', 'qux2' => ['!baz', 'bar']])]
-            public string|array|null $bar = '';
+            public string | array | null $bar = '';
         };
 
         $dto = $dtoClass::fromArrayLoose([
@@ -63,8 +68,7 @@ final class MappingTest extends TestCase
         ]);
         $this->assertSame(['qux1' => 'FOO-val', 'qux2' => [null, 'BAR-val']], $dto->bar);
 
-        $this->expectException(LoadingException::class);
-        $this->expectExceptionMessage('Path segment $input.`baz` not found in array.');
+        $this->expectException(ExtractionException::class);
         /** @psalm-suppress UnusedVariable */
         $dtoClass::fromArrayLoose([
             'foo' => 'FOO-val',
@@ -76,11 +80,10 @@ final class MappingTest extends TestCase
     {
         $dtoClass = new class extends FullDto {
             #[MapFrom(['qux1' => 'foo', 'qux2' => ['!!baz', 'bar']])]
-            public string|array|null $bar = '';
+            public string | array | null $bar = '';
         };
 
-        $this->expectException(LoadingException::class);
-        $this->expectExceptionMessage('Path segment $input.`baz` is null but required.');
+        $this->expectException(ExtractionException::class);
         $dtoClass::fromArrayLoose([
             'foo' => 'FOO-val',
             'bar' => 'BAR-val',
@@ -90,13 +93,13 @@ final class MappingTest extends TestCase
 
     public function testMapFromThrowsIfUsedInOutboundPhase(): void
     {
-        $this->expectException(\LogicException::class);
+        $this->expectException(InvalidConfigException::class);
         $this->expectExceptionMessage('The MapFrom attribute cannot be used in the outbound phase.');
 
         $dtoClass = new class extends FullDto {
             #[Outbound]
             #[MapFrom('foo')]
-            public string|array|null $bar = '';
+            public string | array | null $bar = '';
         };
         $dtoClass::fromArrayLoose([
             'foo' => 'FOO-val',
@@ -107,7 +110,7 @@ final class MappingTest extends TestCase
     {
         $dtoClass = new class extends FullDto {
             #[MapTo('foo')]
-            public string|array|null $bar = '';
+            public string | array | null $bar = '';
 
             #[MapTo(null)]
             public ?string $notExported = null;
@@ -124,7 +127,7 @@ final class MappingTest extends TestCase
         try {
             new MapFrom('foo.-bar!');
         } catch (\Exception $e) {
-            $this->assertInstanceOf(\InvalidArgumentException::class, $e);
+            $this->assertInstanceOf(\Nandan108\DtoToolkit\Exception\Config\ExtractionSyntaxError::class, $e);
             $this->assertStringContainsString('Invalid path provided', $e->getMessage());
         }
     }

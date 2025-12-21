@@ -12,10 +12,10 @@ To examine the contents:
 
 ```php
 // Get all memoized casters
-CastTo::getCasterMetadata();
+CastTo::_getNodeMetadata();
 
 // Inspect a specific resolution path
-CastTo::getCasterMetadata('carbon');
+CastTo::_getNodeMetadata('carbon');
 ```
 
 Returns an object like:
@@ -35,7 +35,7 @@ Returns an object like:
 You can manually hook in logs or dump calls for development:
 
 ```php
-$caster = CastTo::getCasterMetadata('model');
+$caster = CastTo::_getNodeMetadata('model');
 dump("Model caster resolved from: {$caster->object}::{$caster->method}");
 ```
 
@@ -77,6 +77,6 @@ This usually means:
 
 ## 🧼 Summary
 
-- Use `getCasterMetadata()` to inspect or test resolution
+- Use `_getNodeMetadata()` to inspect or test resolution
 - Use `CastingException` for resolution failure handling
 - Collision works out of the box for better exception handling in CLI or test runs

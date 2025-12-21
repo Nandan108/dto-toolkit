@@ -1,10 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\Attribute\ChainModifier;
 
 use Nandan108\DtoToolkit\Core\BaseDto;
-use Nandan108\DtoToolkit\Exception\CastingException;
-use Nandan108\DtoToolkit\Internal\CasterChain;
+use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
+use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
+use Nandan108\DtoToolkit\Exception\Process\ProcessingException;
+use Nandan108\DtoToolkit\Internal\ProcessingChain;
 
 /**
  * The FailTo attribute is used to catch and handle exceptions
@@ -15,24 +19,28 @@ use Nandan108\DtoToolkit\Internal\CasterChain;
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 class FailTo extends ChainModifierBase
 {
-    protected \Closure|array|null $_handler = null;
+    protected \Closure | array | null $_handler = null;
 
     public function __construct(
         public readonly mixed $fallback = null,
-        public readonly string|array|null $handler = null,
+        public readonly string | array | null $handler = null,
     ) {
     }
 
     #[\Override]
-    public function getCasterChainNode(BaseDto $dto, ?\ArrayIterator $queue): CasterChain
+    public function getProcessingNode(BaseDto $dto, ?\ArrayIterator $queue): ProcessingChain
     {
         $handler = $this->resolveHandler($dto);
 
-        return new CasterChain(queue: $queue, dto: $dto, count: 0, className: 'FailTo',
+        return new ProcessingChain(
+            queue: $queue,
+            dto: $dto,
+            count: 0,
+            className: 'FailTo',
             buildCasterClosure: function (array $chainElements, ?callable $upstreamChain) use ($handler, $dto): \Closure {
                 if (null === $upstreamChain) {
                     // If there is no upstream chain, we can't catch exceptions
-                    throw new \LogicException('FailTo modifier catches failures that may be thrown by previous Casters, therefore it should not be used as the first element of a chain. Use FailNextTo instead.');
+                    throw new InvalidConfigException('FailTo modifier catches failures that may be thrown by previous Casters, therefore it should not be used as the first element of a chain. Use FailNextTo instead.');
                 }
 
                 // Wrap upstream chain execution in a try-catch block
@@ -41,11 +49,11 @@ class FailTo extends ChainModifierBase
                     try {
                         // execute upstream chain and return value
                         return $upstreamChain($value);
-                    } catch (CastingException $e) {
+                    } catch (ProcessingException $e) {
                         return $handler($value, $this->fallback, $e, $dto);
                     }
                 };
-            }
+            },
         );
     }
 
@@ -64,7 +72,7 @@ class FailTo extends ChainModifierBase
             $shortName = (new \ReflectionClass($this))->getShortName();
             /** @psalm-suppress RiskyTruthyFalsyComparison */
             $jsonSerializedHandler = json_encode($this->handler) ?: '???';
-            throw new \InvalidArgumentException("Invalid $shortName handler: $jsonSerializedHandler, ".'expected DTO method name or valid [class, staticMethod] callable.');
+            throw new InvalidArgumentException("Invalid $shortName handler: $jsonSerializedHandler, expected DTO method name or valid [class, staticMethod] callable.");
         }
 
         return $handler;

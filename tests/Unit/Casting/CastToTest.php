@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
 use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Core\FullDto;
-use Nandan108\DtoToolkit\Exception\CastingException;
+use Nandan108\DtoToolkit\Exception\Process\TransformException;
 use PHPUnit\Framework\TestCase;
 
 final class CastToTest extends TestCase
@@ -12,19 +14,19 @@ final class CastToTest extends TestCase
     public function testCastToMethodName(): void
     {
         $dto = new class extends FullDto {
-            #[CastTo('localType', [3])]
+            #[CastTo('localType', args: [3])]
             public mixed $value = null;
 
             /** @psalm-suppress MissingParamType */
-            public function castToLocalType($value, ...$args): string
+            public function castToLocalType($value, $firstArg): string
             {
                 /** @psalm-suppress PossiblyFalseOperand */
-                return "$value => localType:".json_encode($args);
+                return "$value => localType:".json_encode([$firstArg]);
             }
         };
 
         $dto->fill(['value' => 'input']);
-        $dto->normalizeInbound();
+        $dto->processInbound();
         $this->assertSame('input => localType:[3]', $dto->value);
     }
 
@@ -41,15 +43,19 @@ final class CastToTest extends TestCase
             /** @psalm-suppress MissingParamType */
             public function castToLocalType($value, ...$args): string
             {
-                throw CastingException::castingFailure($this::class, $value, __FUNCTION__, $args, 'Unexpected input');
+                throw TransformException::expected(
+                    methodOrClass: __METHOD__,
+                    operand: $value,
+                    expected: 'Something different',
+                );
             }
         };
 
         $dto->fill(['value1' => 'input1', 'value2' => 'input2']);
 
-        $this->expectException(CastingException::class);
-        $this->expectExceptionMessage('Unexpected input');
+        $this->expectException(TransformException::class);
+        $this->expectExceptionMessage('processing.transform.expected');
 
-        $dto->normalizeInbound();
+        $dto->processInbound();
     }
 }

@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\CastTo;
 
 use Nandan108\DtoToolkit\Core\CastBase;
-use Nandan108\DtoToolkit\Exception\CastingException;
+use Nandan108\DtoToolkit\Exception\Process\TransformException;
 
 /** @psalm-api */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
@@ -21,11 +23,18 @@ final class Json extends CastBase
         /** @var array{0: int, 1: int<1, 2147483647>} $args */
         [$flags, $depth] = $args;
 
-        try {
-            /** @var string */
-            return json_encode($value, $flags | JSON_THROW_ON_ERROR, $depth);
-        } catch (\JsonException $e) {
-            throw CastingException::castingFailure(className: static::class, operand: $value, messageOverride: 'Failed to cast value to JSON: '.$e->getMessage());
+        $encoded = json_encode($value, $flags & ~JSON_THROW_ON_ERROR, $depth);
+
+        if (false !== $encoded) {
+            return $encoded;
         }
+
+        throw TransformException::reason(
+            methodOrClass: self::class,
+            value: $value,
+            template_suffix: 'json.encoding_failed',
+            errorCode: 'json.encoding_failed',
+            debugExtras: ['message' => json_last_error_msg()],
+        );
     }
 }

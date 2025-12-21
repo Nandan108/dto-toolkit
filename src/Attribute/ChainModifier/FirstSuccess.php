@@ -1,16 +1,29 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\Attribute\ChainModifier;
 
-use Nandan108\DtoToolkit\Contracts\CasterChainNodeInterface;
-use Nandan108\DtoToolkit\Contracts\CasterChainNodeProducerInterface;
+use Nandan108\DtoToolkit\Contracts\ProcessingNodeInterface;
+use Nandan108\DtoToolkit\Contracts\ProcessingNodeProducerInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
-use Nandan108\DtoToolkit\Exception\CastingException;
-use Nandan108\DtoToolkit\Internal\CasterChain;
+use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
+use Nandan108\DtoToolkit\Exception\Process\ProcessingException;
+use Nandan108\DtoToolkit\Internal\ProcessingChain;
 
 /**
- * The FirstSuccess attribute is used to apply the next $count CastTo attributes
- * on each element of the passed array value instead of the whole value.
+ * FirstSuccess is conceptually a “multi-strategy evaluation” modifier.
+ * It attempts to apply multiple strategies (casters or validators)
+ * in sequence until one of them succeeds.
+ *
+ * It will return the result of the first successful strategy, which means
+ * the unchanged value if the strategy is a validator, or the transformed value
+ * if the strategy is a caster.
+ *
+ * Internally, FirstSuccess will attempt each strategy in order, catching
+ * any ProcessingException thrown by individual strategies. If all strategies
+ * fail, the modifier throws a single ProcessingException describing the
+ * aggregated failure.
  *
  * @psalm-api
  */
@@ -20,45 +33,64 @@ class FirstSuccess extends ChainModifierBase
     public function __construct(
         public readonly int $count = 1,
     ) {
-        $this->count > 1 or throw new \InvalidArgumentException('FirstSuccess: $count must be greater than or equal to 1.');
+        $this->count > 1 or throw new InvalidArgumentException('FirstSuccess: $count must be greater than or equal to 1.');
     }
 
     /**
-     * @param \ArrayIterator<int, CasterChainNodeProducerInterface> $queue The queue of attributes to be processed
-     * @param BaseDto                                               $dto   The DTO instance
+     * @param \ArrayIterator<int, ProcessingNodeProducerInterface> $queue The queue of attributes to be processed
+     * @param BaseDto                                              $dto   The DTO instance
      *
-     * @return CasterChain A closure that applies the composed caster on each element of the passed array value
+     * @return ProcessingChain A closure that applies the composed caster on each element of the passed array value
      */
     #[\Override]
-    public function getCasterChainNode(BaseDto $dto, ?\ArrayIterator $queue): CasterChain
+    public function getProcessingNode(BaseDto $dto, ?\ArrayIterator $queue): ProcessingChain
     {
         /**
-         * @param CasterChainNodeInterface[] $chainElements The elements of the chain
-         * @param \Closure|null              $upstreamChain The upstream chain closure
+         * @param ProcessingNodeInterface[] $chainElements The elements of the chain
+         * @param \Closure|null             $upstreamChain The upstream chain closure
          *
          * @return \Closure A closure that applies the composed caster on each element of the passed array value
          */
         $builder = function (array $chainElements, ?\Closure $upstreamChain): \Closure {
             // get the closure for each node wrapped by Collect
-            $closures = array_map(fn (CasterChainNodeInterface $node): \Closure => // foo!
+            $closures = array_map(fn (ProcessingNodeInterface $node): \Closure => // foo!
                 $node->getBuiltClosure($upstreamChain), $chainElements);
 
             return function (mixed $value) use ($closures): mixed {
+                $failures = [];
                 foreach ($closures as $closure) {
                     try {
                         // Try to apply the closure to the value
                         return $closure($value);
-                    } catch (CastingException) {
+                    } catch (ProcessingException $e) {
                         // If it fails, continue to the next closure
+                        $failures[] = $e;
                     }
                 }
 
                 // If all closures fail, throw!
-                throw CastingException::castingFailure(className: self::class, operand: $value, messageOverride: "All $this->count nodes wrapped by FirstSuccess have failed.");
+                throw ProcessingException::reason(
+                    methodOrClass: self::class,
+                    value: $value,
+                    template_suffix: 'modifier.first_success.all_failed',
+                    parameters: [
+                        'strategy_count' => count($closures),
+                    ],
+                    errorCode: 'modifier.first_success.all_failed',
+                    // messageOverride: "All  nodes wrapped by FirstSuccess have failed.",
+                    debugExtras: ['failures' => $failures],
+                );
+                // $this->count
             };
         };
 
         // Grab a subchain made of the next $this->count CastTo attributes from the queue
-        return new CasterChain($queue, $dto, $this->count, "FirstSuccess(count:$this->count)", buildCasterClosure: $builder);
+        return new ProcessingChain(
+            queue: $queue,
+            dto: $dto,
+            count: $this->count,
+            className: "FirstSuccess(count:$this->count)",
+            buildCasterClosure: $builder,
+        );
     }
 }

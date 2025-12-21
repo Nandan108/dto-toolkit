@@ -1,14 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\Internal;
 
-use Nandan108\DtoToolkit\Contracts\CasterChainNodeInterface;
-use Nandan108\DtoToolkit\Contracts\CasterChainNodeProducerInterface;
+use Nandan108\DtoToolkit\Contracts\ProcessingNodeInterface;
+use Nandan108\DtoToolkit\Contracts\ProcessingNodeProducerInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
+use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
 
-final class CasterChain implements CasterChainNodeInterface
+final class ProcessingChain implements ProcessingNodeInterface
 {
-    /** @var CasterChainNodeInterface[] */
+    /** @var ProcessingNodeInterface[] */
     private array $childNodes = [];
 
     private ?\Closure $compiled = null;
@@ -18,42 +21,42 @@ final class CasterChain implements CasterChainNodeInterface
      *
      * Defaults to [$this, 'composeFromNodes'] unless overridden (e.g. by chain modifiers).
      *
-     * @var \Closure(CasterChainNodeInterface[], ?\Closure): \Closure
+     * @var \Closure(ProcessingNodeInterface[], ?\Closure): \Closure
      */
     public $buildCasterClosure;
 
     /**
-     * CasterChain constructor.
+     * ProcessingChain constructor.
      *
-     * @param ?\ArrayIterator<int, CasterChainNodeProducerInterface>     $queue
-     * @param int                                                        $count              The number of elements (sub-nodes) to include in this chain node
-     * @param string                                                     $className          Debugging info: name of the class that's creating this chain
-     * @param ?\Closure(CasterChainNodeInterface[], ?\Closure): \Closure $buildCasterClosure A \Closure that builds the final casting chain from consumed nodes.
-     *                                                                                       Defaults to [$this, 'composeFromNodes'] unless overridden (e.g. by chain modifiers).
+     * @param ?\ArrayIterator<int, ProcessingNodeProducerInterface>     $queue
+     * @param int                                                       $count              The number of elements (sub-nodes) to include in this chain node
+     * @param string                                                    $className          Debugging info: name of the class that's creating this chain
+     * @param ?\Closure(ProcessingNodeInterface[], ?\Closure): \Closure $buildCasterClosure A \Closure that builds the final casting chain from consumed nodes.
+     *                                                                                      Defaults to [$this, 'composeFromNodes'] unless overridden (e.g. by chain modifiers).
      *
-     * @throws \LogicException
+     * @throws InvalidConfigException
      */
     public function __construct(
         ?\ArrayIterator $queue,
         BaseDto $dto,
         int $count = -1,
-        public string $className = 'Caster',
+        public string $className = 'Processing',
         ?\Closure $buildCasterClosure = null,
     ) {
         $queue ??= new \ArrayIterator();
         for ($i = $count; 0 !== $i && $queue->valid(); --$i) {
             // Recursively consume the next logical chain
-            /** @var CasterChainNodeProducerInterface */
+            /** @var ProcessingNodeProducerInterface */
             $current = $queue->current();
             $queue->next();
-            $this->childNodes[] = $current->getCasterChainNode($dto, $queue);
+            $this->childNodes[] = $current->getProcessingNode($dto, $queue);
         }
         if ($i > 0) {
-            $getClassName = function (CasterChainNodeInterface $node): string {
-                if ($node instanceof CasterChain) {
+            $getClassName = function (ProcessingNodeInterface $node): string {
+                if ($node instanceof ProcessingChain) {
                     return $node->className;
                 }
-                $class = $node instanceof CasterMeta ? $node->instance::class : $node::class;
+                $class = $node instanceof ProcessingNodeMeta ? $node->instance::class : $node::class;
                 $i = strrpos($class, '\\');
 
                 return false === $i ? $class : substr($class, $i + 1);
@@ -62,13 +65,13 @@ final class CasterChain implements CasterChainNodeInterface
             $childNodesNames = $this->childNodes
                 ? 'only '.count($this->childNodes).': ['.implode(', ', array_map($getClassName, $this->childNodes)).']'
                 : 'none';
-            throw new \LogicException("#[$className] expected $count child nodes, but found $childNodesNames.");
+            throw new InvalidConfigException("#[$className] expected $count child nodes, but found $childNodesNames.");
         }
 
         // if no builder was provided, use $this->composeFromNodes()
         if (null === $buildCasterClosure) {
             $buildCasterClosure =
-                /** @param CasterChainNodeInterface[] $chainElements */
+                /** @param ProcessingNodeInterface[] $chainElements */
                 fn (array $chainElements, ?\Closure $upstreamChain): \Closure => // Compose a chain from the child nodes
                     $this->composeFromNodes($chainElements, $upstreamChain);
         }
@@ -93,9 +96,9 @@ final class CasterChain implements CasterChainNodeInterface
     }
 
     /**
-     * Compose a chain from an array of CasterChainNodeInterface.
+     * Compose a chain from an array of ProcessingNodeInterface.
      *
-     * @param CasterChainNodeInterface[] $nodes
+     * @param ProcessingNodeInterface[] $nodes
      */
     public static function composeFromNodes(array $nodes, ?\Closure $upstream = null): \Closure
     {
@@ -114,9 +117,9 @@ final class CasterChain implements CasterChainNodeInterface
      *
      * @template T of object
      *
-     * @param \Closure(CasterChainNodeInterface):void $callback   a function that receives each matching element
-     * @param class-string<T>|null                    $typeFilter only elements matching this type will be passed to the callback
-     * @param int                                     $maxDepth   maximum recursion depth (default -1 = unlimited)
+     * @param \Closure(ProcessingNodeInterface):void $callback   a function that receives each matching element
+     * @param class-string<T>|null                   $typeFilter only elements matching this type will be passed to the callback
+     * @param int                                    $maxDepth   maximum recursion depth (default -1 = unlimited)
      */
     public function recursiveWalk(\Closure $callback, ?string $typeFilter = null, int $maxDepth = -1): void
     {

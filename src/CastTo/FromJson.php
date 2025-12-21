@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\CastTo;
 
 use Nandan108\DtoToolkit\Core\CastBase;
-use Nandan108\DtoToolkit\Exception\CastingException;
+use Nandan108\DtoToolkit\Exception\Process\TransformException;
 
 /** @psalm-api */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
@@ -15,16 +17,21 @@ final class FromJson extends CastBase
     }
 
     #[\Override]
-    public function cast(mixed $value, array $args): array|object
+    public function cast(mixed $value, array $args): array | object
     {
-        $value = $this->throwIfNotStringable($value);
+        $value = $this->ensureStringable($value);
 
         try {
             $asAssocFlag = $args[0] ? JSON_OBJECT_AS_ARRAY : 0;
 
             return json_decode($value, true, 512, JSON_THROW_ON_ERROR | $asAssocFlag);
         } catch (\JsonException $e) {
-            throw CastingException::castingFailure(className: static::class, operand: $value, messageOverride: 'JSON decode error: '.$e->getMessage());
+            throw TransformException::reason(
+                methodOrClass: static::class,
+                value: $value,
+                template_suffix: 'json.parsing_failed',
+                parameters: ['message' => $e->getMessage()],
+            );
         }
     }
 }

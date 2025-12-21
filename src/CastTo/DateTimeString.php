@@ -1,8 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\CastTo;
 
-use Nandan108\DtoToolkit\Exception\CastingException;
+use Nandan108\DtoToolkit\Exception\Process\TransformException;
 
 /**
  * Casts a DateTimeInterface object into a formatted string.
@@ -14,11 +16,12 @@ use Nandan108\DtoToolkit\Exception\CastingException;
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class DateTimeString extends DateTime
 {
+    /** @psalm-suppress PossiblyUnusedReturnValue */
     #[\Override]
     public function cast(mixed $value, array $args): string
     {
         if (!($value instanceof \DateTimeImmutable || $value instanceof \DateTime)) {
-            throw CastingException::castingFailure(static::class, $value, messageOverride: 'Expected a DateTime or DateTimeImmutable instance');
+            throw TransformException::expected(static::class, $value, 'DateTime or DateTimeImmutable instance');
         }
 
         /** @var ?\DateTimeZone $tz */

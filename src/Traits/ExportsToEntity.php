@@ -1,9 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\Traits;
 
 use Nandan108\DtoToolkit\Attribute\MapTo;
 use Nandan108\DtoToolkit\Core\BaseDto;
+use Nandan108\DtoToolkit\Core\ProcessingErrorList;
+use Nandan108\DtoToolkit\Enum\ErrorMode;
+use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
 
 /**
  * @psalm-require-extends BaseDto
@@ -30,18 +35,22 @@ trait ExportsToEntity
      * @param array       $context Additional data to set on the entity. This can be used to set
      *                             relations or other properties that are not part of the DTO.
      *
-     * @throws \LogicException
+     * @throws InvalidConfigException
      */
-    public function toEntity(?object $entity = null, array $context = []): object
-    {
+    public function toEntity(
+        ?object $entity = null,
+        array $context = [],
+        ?ProcessingErrorList $errorList = null,
+        ?ErrorMode $errorMode = null,
+    ): object {
         /** @psalm-suppress RedundantCondition */
         if (!$this instanceof BaseDto) {
-            throw new \LogicException('DTO must extend BaseDto to use ExportsToEntity trait.');
+            throw new InvalidConfigException('DTO must extend BaseDto to use ExportsToEntity trait.');
         }
 
-        // Get properties already cast, ready to to be set on entity
+        // Get properties already cast, ready to be set on entity
         /** @psalm-suppress UndefinedMethod */
-        $normalizedProps = $this->toOutboundArray(runPreOutputHook: false, applyOutboundMappings: false);
+        $normalizedProps = $this->toOutboundArray($errorList, $errorMode, runPreOutputHook: false, applyOutboundMappings: false);
 
         /** @psalm-suppress InvalidOperand */
         $propsToSet = [...$normalizedProps, ...$context];
@@ -75,7 +84,7 @@ trait ExportsToEntity
      * Create a new instance of the entity class.
      * Can be subclassed.
      *
-     * @throws \LogicException
+     * @throws InvalidConfigException
      *
      * @psalm-suppress PossiblyUnusedParam
      */
@@ -85,11 +94,11 @@ trait ExportsToEntity
 
         /** @psalm-suppress RiskyTruthyFalsyComparison */
         if (empty(static::$entityClass)) {
-            throw new \LogicException('No entity class specified on DTO '.$this::class.' for auto-instanciation.');
+            throw new InvalidConfigException('No entity class specified on DTO '.$this::class.' for auto-instanciation.');
         }
 
         if (!class_exists(static::$entityClass)) {
-            throw new \LogicException('Entity class '.static::$entityClass.' does not exist');
+            throw new InvalidConfigException('Entity class '.static::$entityClass.' does not exist');
         }
 
         $entity = new static::$entityClass();

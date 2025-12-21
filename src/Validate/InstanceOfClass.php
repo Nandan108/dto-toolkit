@@ -1,0 +1,43 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Nandan108\DtoToolkit\Validate;
+
+use Nandan108\DtoToolkit\Core\ValidateBase;
+use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
+use Nandan108\DtoToolkit\Exception\Process\GuardException;
+
+#[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
+final class InstanceOfClass extends ValidateBase
+{
+    /**
+     * @psalm-suppress PossiblyUnusedMethod
+     *
+     * @param class-string $className
+     **/
+    public function __construct(string $className)
+    {
+        /** @psalm-suppress DocblockTypeContradiction */
+        if ('' === $className) {
+            throw new InvalidConfigException('InstanceOfClass validator requires a class name.');
+        }
+        parent::__construct([$className]);
+    }
+
+    #[\Override]
+    public function validate(mixed $value, array $args = []): void
+    {
+        $className = $args[0];
+
+        if (!is_object($value) || !$value instanceof $className) {
+            throw GuardException::expected(
+                methodOrClass: static::class,
+                operand: $value,
+                expected: 'instance_of_class',
+                templateSuffix: 'not_instance_of',
+                parameters: ['class' => $className],
+            );
+        }
+    }
+}

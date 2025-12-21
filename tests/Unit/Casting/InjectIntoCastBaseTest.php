@@ -8,12 +8,13 @@ use Nandan108\DtoToolkit\Attribute\Inject;
 use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Contracts\Bootable;
 use Nandan108\DtoToolkit\Contracts\Injectable;
-use Nandan108\DtoToolkit\Contracts\NormalizesInterface;
+use Nandan108\DtoToolkit\Contracts\ProcessesInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Core\CastBase;
 use Nandan108\DtoToolkit\Core\FullDto;
+use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
 use Nandan108\DtoToolkit\Support\ContainerBridge;
-use Nandan108\DtoToolkit\Traits\NormalizesFromAttributes;
+use Nandan108\DtoToolkit\Traits\ProcessesFromAttributes;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -63,6 +64,7 @@ final class BridgeBasedSlugifyCaster extends CastBase
 {
     /** @psalm-suppress PropertyNotSetInConstructor */
     #[Inject] private DummySlugger $slugger;
+
     #[\Override]
     public function cast(mixed $value, array $args): string
     {
@@ -123,6 +125,7 @@ final class InjectIntoCastBaseTest extends TestCase
         $caster = new class extends CastBase {
             /** @psalm-suppress MissingPropertyType */
             #[Inject] private $prop;
+
             #[\Override]
             public function cast(mixed $value, array $args): mixed
             {
@@ -130,7 +133,7 @@ final class InjectIntoCastBaseTest extends TestCase
             }
         };
 
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(InvalidConfigException::class);
         $this->expectExceptionMessage('Cannot inject untyped property prop');
 
         $caster->inject();
@@ -138,17 +141,17 @@ final class InjectIntoCastBaseTest extends TestCase
 
     public function testThrowsOnMethodCastingWithEmptyMethodName(): void
     {
-        $this->expectException(\LogicException::class);
-        $this->expectExceptionMessage('No casting method name or class provided');
+        $this->expectException(InvalidConfigException::class);
+        $this->expectExceptionMessage('No method name or class provided');
 
-        $dto = new class extends BaseDto implements NormalizesInterface {
-            use NormalizesFromAttributes;
+        $dto = new class extends BaseDto implements ProcessesInterface {
+            use ProcessesFromAttributes;
             #[CastTo('')]
             public mixed $value = null;
         };
 
         $dto->fill(['value' => 'foo']);
-        $dto->normalizeInbound();
+        $dto->processInbound();
     }
 
     public function testInstantiatesWithConstructorArgs(): void
@@ -167,7 +170,7 @@ final class InjectIntoCastBaseTest extends TestCase
 
         $attr = new CastTo(get_class($casterClass), args: [], constructorArgs: ['X']);
         $dto = new class extends BaseDto {};
-        $caster = $attr->getCasterChainNode($dto);
+        $caster = $attr->getProcessingNode($dto);
         $this->assertSame('Xfoo', $caster('foo'));
     }
 }

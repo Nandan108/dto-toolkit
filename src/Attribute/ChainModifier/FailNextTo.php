@@ -1,10 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\Attribute\ChainModifier;
 
 use Nandan108\DtoToolkit\Core\BaseDto;
-use Nandan108\DtoToolkit\Exception\CastingException;
-use Nandan108\DtoToolkit\Internal\CasterChain;
+use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
+use Nandan108\DtoToolkit\Exception\Process\ProcessingException;
+use Nandan108\DtoToolkit\Internal\ProcessingChain;
 
 /**
  * The FailNextTo attribute is used to catch and handle exceptions potentially
@@ -17,22 +20,26 @@ class FailNextTo extends FailTo
 {
     public function __construct(
         public readonly mixed $fallback = null,
-        public readonly string|array|null $handler = null,
+        public readonly string | array | null $handler = null,
         public readonly int $count = -1,
     ) {
         if (!$this->count) {
-            throw new \InvalidArgumentException('FailNextTo: $count cannot be zero.');
+            throw new InvalidArgumentException('FailNextTo: $count cannot be zero.');
         }
     }
 
     #[\Override]
-    public function getCasterChainNode(BaseDto $dto, ?\ArrayIterator $queue): CasterChain
+    public function getProcessingNode(BaseDto $dto, ?\ArrayIterator $queue): ProcessingChain
     {
         $handler = $this->resolveHandler($dto);
 
-        return new CasterChain($queue, $dto, $this->count, className: 'FailNextTo',
+        return new ProcessingChain(
+            $queue,
+            $dto,
+            $this->count,
+            className: 'FailNextTo',
             buildCasterClosure: function (array $chainElements, ?callable $upstreamChain) use ($handler, $dto): \Closure {
-                $subchain = CasterChain::composeFromNodes($chainElements);
+                $subchain = ProcessingChain::composeFromNodes($chainElements);
 
                 return function (mixed $value) use ($upstreamChain, $subchain, $handler, $dto): mixed {
                     // get the value from upstream (exceptions thrown there are not the concern of this modifier)
@@ -45,11 +52,11 @@ class FailNextTo extends FailTo
                     try {
                         // catch-and-handle exceptions from the next caster
                         return $subchain($value);
-                    } catch (CastingException $e) {
+                    } catch (ProcessingException $e) {
                         return $handler($value, $this->fallback, $e, $dto);
                     }
                 };
-            }
+            },
         );
     }
 }

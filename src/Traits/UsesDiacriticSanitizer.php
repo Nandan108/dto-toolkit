@@ -1,8 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\Traits;
 
-use Nandan108\DtoToolkit\Exception\CastingException;
+use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
+use Nandan108\DtoToolkit\Exception\Process\TransformException;
 
 /**
  * To be used by casters that need to remove diacritics (i.e. accents and other marks) from a string's characters.
@@ -33,7 +36,13 @@ trait UsesDiacriticSanitizer
         $result = $transliterator->transliterate($value);
 
         // Transliteration failure is very unlikely to happen, but if it does, we throw an exception
-        false !== $result or throw CastingException::castingFailure(static::class, $value, 'Failed to transliterate string with Intl extension');
+        false !== $result or throw TransformException::reason(
+            methodOrClass: static::class,
+            value: $value,
+            // Failed to transliterate string with Intl extension
+            template_suffix: 'intl.transliterate_failed',
+            parameters: ['transliterateParams' => static::$transliterateParams],
+        );
 
         return $result;
     }
@@ -50,7 +59,7 @@ trait UsesDiacriticSanitizer
         if (null === $transliterator) {
             /** @var string $params */
             $params = json_encode($params);
-            throw new \InvalidArgumentException("Invalid transliteration parameters: $params");
+            throw new InvalidArgumentException("Invalid transliteration parameters: $params");
         }
 
         return static::$_transliterators[$params] = $transliterator;

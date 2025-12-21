@@ -1,12 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\Tests\Unit;
 
 use Nandan108\DtoToolkit\Attribute\Outbound;
 use Nandan108\DtoToolkit\CastTo;
-use Nandan108\DtoToolkit\Contracts\NormalizesInterface;
+use Nandan108\DtoToolkit\Contracts\ProcessesInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
-use Nandan108\DtoToolkit\Traits\NormalizesFromAttributes;
+use Nandan108\DtoToolkit\Traits\ProcessesFromAttributes;
 use PHPUnit\Framework\TestCase;
 
 /** @psalm-suppress UnusedClass */
@@ -16,8 +18,8 @@ final class ToOutboundArrayTest extends TestCase
     {
         /** @psalm-suppress ExtensionRequirementViolation */
         $dto = new class extends BaseDto {
-            public string|int|null $item_id = null;
-            public string|int|null $staysUnfilled = 'yes';
+            public string | int | null $item_id = null;
+            public string | int | null $staysUnfilled = 'yes';
         };
 
         /** @psalm-suppress NoValue, UnusedVariable */
@@ -48,8 +50,8 @@ final class ToOutboundArrayTest extends TestCase
     public function testBaseDtoToExportsToOutboundArrayAfterNormalizing(): void
     {
         /** @psalm-suppress ExtensionRequirementViolation */
-        $dto = new class extends BaseDto implements NormalizesInterface {
-            use NormalizesFromAttributes;
+        $dto = new class extends BaseDto implements ProcessesInterface {
+            use ProcessesFromAttributes;
 
             #[CastTo\Trimmed('-')] // inbound: trim dashes
             #[Outbound]
@@ -75,7 +77,7 @@ final class ToOutboundArrayTest extends TestCase
 
         /** @psalm-suppress NoValue, UnusedVariable */
         $dto->fill([ // GET
-            'multiplier' => $multiplier = '2', // will be auto-cast to int due to target prop type
+            'multiplier' => $multiplier = 2,
             'num'        => $rawItemId = '-5.7-',
         ]);
 
@@ -88,7 +90,7 @@ final class ToOutboundArrayTest extends TestCase
         // not filled
         $this->assertArrayNotHasKey('staysUnfilled', $dto->_filled);
 
-        $dto->normalizeInbound(); // runs normalization
+        $dto->processInbound(); // runs normalization
 
         // now check $num value after inbound normalization
         $this->assertSame(trim($rawItemId, '-'), $dto->num);

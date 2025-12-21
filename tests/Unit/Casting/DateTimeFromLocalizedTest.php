@@ -1,10 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
 use Nandan108\DtoToolkit\CastTo\DateTimeFromLocalized;
 use Nandan108\DtoToolkit\Core\FullDto;
-use Nandan108\DtoToolkit\Exception\CastingException;
+use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
+use Nandan108\DtoToolkit\Exception\Process\TransformException;
 use PHPUnit\Framework\TestCase;
 
 final class DateTimeFromLocalizedTest extends TestCase
@@ -21,7 +24,7 @@ final class DateTimeFromLocalizedTest extends TestCase
     {
         $dtoClass = new class extends FullDto {
             #[DateTimeFromLocalized(locale: 'fr_CH')]
-            public \DateTimeInterface|string|null $dt = null;
+            public \DateTimeInterface | string | null $dt = null;
         };
 
         foreach (['04.05.2025', '04.05.25'] as $date) {
@@ -37,7 +40,7 @@ final class DateTimeFromLocalizedTest extends TestCase
     {
         $dtoClass = new class extends FullDto {
             #[DateTimeFromLocalized(locale: 'fr_CH', pattern: 'dd.MM.yyyy HH:mm')]
-            public \DateTimeInterface|string|null $dt = null;
+            public \DateTimeInterface | string | null $dt = null;
         };
 
         $dt = $dtoClass::fromArray(['dt' => '04.05.2025 14:30'])->dt;
@@ -51,7 +54,7 @@ final class DateTimeFromLocalizedTest extends TestCase
     {
         $dtoClass = new class extends FullDto {
             #[DateTimeFromLocalized(locale: 'fr_CH', timezone: 'Europe/Paris')]
-            public \DateTimeInterface|string|null $dt = null;
+            public \DateTimeInterface | string | null $dt = null;
         };
 
         $dt = $dtoClass::fromArray(['dt' => '04.05.25 14:30'])->dt;
@@ -66,10 +69,10 @@ final class DateTimeFromLocalizedTest extends TestCase
     {
         $dtoClass = new class extends FullDto {
             #[DateTimeFromLocalized(locale: 'fr_CH')]
-            public \DateTimeInterface|string|null $dt = null;
+            public \DateTimeInterface | string | null $dt = null;
         };
 
-        $this->expectException(CastingException::class);
+        $this->expectException(TransformException::class);
         $dtoClass::fromArray(['dt' => '']);
     }
 
@@ -77,11 +80,10 @@ final class DateTimeFromLocalizedTest extends TestCase
     {
         $dtoClass = new class extends FullDto {
             #[DateTimeFromLocalized(locale: 'fr_CH', dateStyle: 99999)]
-            public \DateTimeInterface|string|null $dt = null;
+            public \DateTimeInterface | string | null $dt = null;
         };
 
-        $this->expectException(CastingException::class);
-        $this->expectExceptionMessageMatches('/Invalid date formater arguments/');
+        $this->expectException(InvalidConfigException::class);
         $dtoClass::fromArray(['dt' => '2023-10-05 14:30']);
     }
 
@@ -89,10 +91,10 @@ final class DateTimeFromLocalizedTest extends TestCase
     {
         $dtoClass = new class extends FullDto {
             #[DateTimeFromLocalized(locale: 'fr_CH')]
-            public \DateTimeInterface|string|null $dt = null;
+            public \DateTimeInterface | string | null $dt = null;
         };
 
-        $this->expectException(CastingException::class);
+        $this->expectException(TransformException::class);
         $dtoClass::fromArray(['dt' => 'Not a date']);
     }
 }

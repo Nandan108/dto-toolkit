@@ -262,7 +262,7 @@ These paths are opt-in and fully compatible with the core memoization logic.
 
 ### 🧰 Tools for Debugging
 
-- Use `CastTo::getCasterMetadata()` to inspect resolved and cached caster instances
-- Use `CastTo::clearCasterMetadata()` to reset all cached instances
+- Use `CastTo::_getCasterMetadata()` to inspect resolved and cached caster instances
+- Use `CastTo::_clearCasterMetadata()` to reset all cached instances
 
 *A debug mode is planned, where CastingExceptions will provide full chain context information to the catcher when thrown from within a chain.*

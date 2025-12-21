@@ -1,14 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\Attribute\ChainModifier;
 
 use Nandan108\DtoToolkit\Core\BaseDto;
-use Nandan108\DtoToolkit\Exception\CastingException;
-use Nandan108\DtoToolkit\Internal\CasterChain;
+use Nandan108\DtoToolkit\Exception\Process\ProcessingException;
+use Nandan108\DtoToolkit\Internal\ProcessingChain;
 use Nandan108\DtoToolkit\Traits\UsesParamResolver;
 
 /**
- * The ApplyNextIf chain modifier is used to skip the next $count chain elements.
+ * The FailIf chain modifier is used to fail immediately if $condition is met.
  * By default, $count is -1, which means it will wrap as many chain elements as possible.
  *
  * @psalm-api
@@ -18,9 +20,6 @@ class FailIf extends ChainModifierBase
 {
     use UsesParamResolver;
 
-    /**
-     * @throws \InvalidArgumentException
-     */
     public function __construct(
         public readonly string $condition,
         public readonly bool $negate = false,
@@ -28,7 +27,7 @@ class FailIf extends ChainModifierBase
     }
 
     #[\Override]
-    public function getCasterChainNode(BaseDto $dto, ?\ArrayIterator $queue): CasterChain
+    public function getProcessingNode(BaseDto $dto, ?\ArrayIterator $queue): ProcessingChain
     {
         $this->configureParamResolver(
             paramName: 'condition',
@@ -36,20 +35,32 @@ class FailIf extends ChainModifierBase
             hydrate: fn (mixed $value): bool => (bool) $value,
         );
 
-        return new CasterChain(queue: $queue, dto: $dto, count: 0, className: 'FailIf',
+        return new ProcessingChain(
+            queue: $queue,
+            dto: $dto,
+            count: 0,
+            className: 'FailIf',
             buildCasterClosure: function (array $chainElements, ?callable $upstreamChain): \Closure {
                 return function (mixed $value) use ($upstreamChain): mixed {
                     /** @var bool */
                     $condition = $this->resolveParam('condition', $value, $this->condition);
 
                     if ($condition xor $this->negate) {
-                        throw CastingException::castingFailure(static::class, $value, messageOverride: 'Condition failed');
+                        throw ProcessingException::reason(
+                            methodOrClass: static::class,
+                            value: $value,
+                            template_suffix: 'modifier.fail_if.condition_failed',
+                            parameters: [
+                                'condition' => json_encode($this->condition),
+                                'negated'   => $this->negate,
+                            ],
+                        );
                     }
 
                     // apply casting
                     return null === $upstreamChain ? $value : $upstreamChain($value);
                 };
-            }
+            },
         );
     }
 }

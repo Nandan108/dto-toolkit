@@ -1,18 +1,22 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\Traits;
 
 use Nandan108\DtoToolkit\Attribute\MapFrom;
-use Nandan108\DtoToolkit\Contracts\NormalizesInterface;
+use Nandan108\DtoToolkit\Contracts\ProcessesInterface;
 use Nandan108\DtoToolkit\Contracts\ScopedPropertyAccessInterface;
-use Nandan108\DtoToolkit\Contracts\ValidatesInputInterface;
+use Nandan108\DtoToolkit\Core\ProcessingErrorList;
+use Nandan108\DtoToolkit\Enum\ErrorMode;
 use Nandan108\DtoToolkit\Enum\Phase;
+use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
 use Nandan108\PropAccess\PropAccess;
 
 /**
- * @method static static fromArray(array $input, bool $ignoreUnknownProps = false)
- * @method static static fromArrayLoose(array $input, bool $ignoreUnknownProps = false)
- * @method static static fromEntity(object $entity, bool $ignoreInaccessibleProps = true)
+ * @method static static fromArray(array $input, bool $ignoreUnknownProps = false, ?ProcessingErrorList $errorList = null, ?ErrorMode $errorMode = null)
+ * @method static static fromArrayLoose(array $input, bool $ignoreUnknownProps = false, ?ProcessingErrorList $errorList = null, ?ErrorMode $errorMode = null)
+ * @method static static fromEntity(object $entity, bool $ignoreInaccessibleProps = true, ?ProcessingErrorList $errorList = null, ?ErrorMode $errorMode = null)
  *
  * These methods are dynamically routed via __call() and __callStatic() to their corresponding instance methods.
  * Static analyzers require the above annotations to avoid false positives.
@@ -24,13 +28,15 @@ trait CreatesFromArrayOrEntity
      *
      * @param bool $ignoreUnknownProps If true, unknown properties will be ignored
      *
-     * @throws \LogicException
+     * @throws InvalidConfigException
      *
      * @psalm-suppress MethodSignatureMismatch, MoreSpecificReturnType
      */
     public function _fromArray(
         array $input,
         bool $ignoreUnknownProps = false,
+        ?ProcessingErrorList $errorList = null,
+        ?ErrorMode $errorMode = null,   // <── yes
     ): static {
         // fill the DTO with the input values
         /** @psalm-suppress InaccessibleMethod */
@@ -39,7 +45,7 @@ trait CreatesFromArrayOrEntity
         if (!$ignoreUnknownProps) {
             $unknownProperties = array_diff(array_keys($input), $fillables);
             if ($unknownProperties) {
-                throw new \LogicException('Unknown properties: '.implode(', ', $unknownProperties));
+                throw new InvalidConfigException('Unknown properties: '.implode(', ', $unknownProperties));
             }
         }
 
@@ -62,17 +68,10 @@ trait CreatesFromArrayOrEntity
         // and fill the DTO
         $this->fill($inputToBeFilled);
 
-        // validate raw input values
-        if ($this instanceof ValidatesInputInterface) {
-            // args not passed directly, let validator pull from groups or context
-            /** @psalm-suppress UnusedMethodCall */
-            $this->validate();
-        }
-
         // cast the values to their respective types and return the DTO
-        if ($this instanceof NormalizesInterface) {
+        if ($this instanceof ProcessesInterface) {
             /** @psalm-suppress UnusedMethodCall */
-            $this->normalizeInbound();
+            $this->processInbound($errorList, $errorMode);
         }
 
         // call post-load hook
@@ -85,28 +84,35 @@ trait CreatesFromArrayOrEntity
     /**
      * Create a new instance of the DTO from a request, ignoring unknown properties.
      *
-     * @throws \LogicException
+     * @throws InvalidConfigException
      *
      * @psalm-suppress PossiblyUnusedMethod, MethodSignatureMismatch
      */
-    public function _fromArrayLoose(array $input): static
-    {
+    public function _fromArrayLoose(
+        array $input,
+        ?ProcessingErrorList $errorList = null,
+        ?ErrorMode $errorMode = null,   // <── yes
+    ): static {
         /** @psalm-suppress NoValue */
-        return $this->_fromArray($input, ignoreUnknownProps: true);
+        return $this->_fromArray($input, ignoreUnknownProps: true, errorList: $errorList, errorMode: $errorMode);
     }
 
     /**
      * @psalm-suppress PossiblyUnusedMethod, MethodSignatureMismatch
      */
-    public function _fromEntity(object $entity, bool $ignoreInaccessibleProps = true): static
-    {
+    public function _fromEntity(
+        object $entity,
+        bool $ignoreInaccessibleProps = true,
+        ?ProcessingErrorList $errorList = null,
+        ?ErrorMode $errorMode = null,   // <── yes
+    ): static {
         /** @var array */
         $inputData = PropAccess::getValueMap(
             valueSource: $entity,
             propNames: $this->getFillable(),
-            ignoreInaccessibleProps: $ignoreInaccessibleProps
+            ignoreInaccessibleProps: $ignoreInaccessibleProps,
         );
 
-        return $this->_fromArray($inputData, true);
+        return $this->_fromArray($inputData, true, $errorList, $errorMode);
     }
 }

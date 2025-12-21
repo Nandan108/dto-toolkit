@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
 use Nandan108\DtoToolkit\CastTo;
-use Nandan108\DtoToolkit\Exception\CastingException;
+use Nandan108\DtoToolkit\Exception\Process\TransformException;
 use Nandan108\DtoToolkit\Tests\Traits\CanTestCasterClassesAndMethods;
 use PHPUnit\Framework\TestCase;
 
@@ -22,15 +24,15 @@ final class RegexCastTest extends TestCase
             new CastTo\RegexReplace($goodRegex, $replaceStr),
             $orgStr,
             'hello world',
-            [$goodRegex, $replaceStr]
+            [$goodRegex, $replaceStr],
         );
 
         $this->casterTest(
             new CastTo\RegexReplace($badRegex, $replaceStr),
             $orgStr,
-            CastingException::class,
+            TransformException::class,
             [$badRegex, $replaceStr],
-            'Compilation failed'
+            'processing.transform.regex.replace_failed',
         );
     }
 
@@ -44,15 +46,15 @@ final class RegexCastTest extends TestCase
             new CastTo\RegexSplit($goodRegex),
             $input,
             ['', 'hello', '.', 'world', ''],
-            [$goodRegex]
+            [$goodRegex],
         );
 
         $this->casterTest(
             new CastTo\RegexSplit($badRegex),
             $input,
-            CastingException::class,
+            TransformException::class,
             [$badRegex],
-            'Compilation failed'
+            'processing.transform.regex.split_failed',
         );
     }
 }

@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\CastTo;
 
 use Nandan108\DtoToolkit\Contracts\CasterInterface;
 use Nandan108\DtoToolkit\Core\CastBase;
-use Nandan108\DtoToolkit\Exception\CastingException;
+use Nandan108\DtoToolkit\Exception\Process\TransformException;
 
 /** @psalm-api */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
@@ -24,9 +26,13 @@ final class NumericString extends CastBase implements CasterInterface
         [$decimals, $decimalPoint, $thousandsSeparator] = $args;
 
         if (!is_numeric($value)) {
-            throw CastingException::castingFailure(className: static::class, operand: $value, messageOverride: 'Value is not numeric.');
+            throw TransformException::expected(
+                methodOrClass: static::class,
+                operand: $value,
+                expected: 'numeric string',
+            );
         }
 
-        return number_format((float) $value, $decimals, $decimalPoint, $thousandsSeparator);
+        return number_format((float) $value, (int) $decimals, $decimalPoint, $thousandsSeparator);
     }
 }

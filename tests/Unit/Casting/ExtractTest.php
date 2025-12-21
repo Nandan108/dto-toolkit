@@ -1,10 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
 use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Core\FullDto;
-use Nandan108\DtoToolkit\Exception\CastingException;
 use Nandan108\DtoToolkit\Tests\Traits\CanTestCasterClassesAndMethods;
 use Nandan108\PropAccess\PropAccess;
 use PHPUnit\Framework\TestCase;
@@ -41,10 +42,10 @@ final class ExtractTest extends TestCase
         $this->casterTest(new CastTo\Extract('propVal.2.2'), $dto, 'C');
 
         // Extract from ArrayAccess with invalid path
-        $this->casterTest(new CastTo\Extract('propVal.2.!3'), $dto, CastingException::class);
+        $this->casterTest(new CastTo\Extract('propVal.2.!3'), $dto, \Nandan108\DtoToolkit\Exception\Process\ExtractionException::class);
 
         // Extract with invalid path input
-        $this->casterTest(new CastTo\Extract('foo.bar.!3'), ['foo' => ['bar' => ['a', 'b', 'c']]], CastingException::class);
+        $this->casterTest(new CastTo\Extract('foo.bar.!3'), ['foo' => ['bar' => ['a', 'b', 'c']]], \Nandan108\DtoToolkit\Exception\Process\ExtractionException::class);
     }
 
     public function testExtractFailsWithInvalidPath(): void
@@ -53,7 +54,7 @@ final class ExtractTest extends TestCase
         try {
             new CastTo\Extract('foo.-bar!');
         } catch (\Exception $e) {
-            $this->assertInstanceOf(\InvalidArgumentException::class, $e);
+            $this->assertInstanceOf(\Nandan108\DtoToolkit\Exception\Config\ExtractionSyntaxError::class, $e);
             $this->assertStringContainsString('Invalid path provided', $e->getMessage());
         }
     }

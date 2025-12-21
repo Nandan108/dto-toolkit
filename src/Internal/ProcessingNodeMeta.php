@@ -1,39 +1,41 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\Internal;
 
-use Nandan108\DtoToolkit\Contracts\CasterChainNodeInterface;
+use Nandan108\DtoToolkit\Contracts\ProcessingNodeInterface;
 
 /**
- * Represents metadata for a single CastTo instance used in a caster chain.
+ * Represents metadata for a single processing node (cast/validate/etc.) used in a chain.
  */
-final class CasterMeta implements CasterChainNodeInterface
+final class ProcessingNodeMeta implements ProcessingNodeInterface
 {
     public function __construct(
-        public readonly \Closure $caster, // The actual transformation closure or callable
+        public readonly \Closure $callable, // The transformation/validation closure
         public readonly ?object $instance, // The object behind the closure (if any)
-        public readonly string $sourceClass, // For debugging: where the caster came from
+        public readonly string $sourceClass, // For debugging: where the node came from
         public readonly ?string $sourceMethod = null, // Optional: method or other debug info
     ) {
         // no-op to keep psalm happy
-        [$this->caster, $this->instance, $this->sourceClass, $this->sourceMethod];
+        [$this->callable, $this->instance, $this->sourceClass, $this->sourceMethod];
     }
 
     #[\Override]
     public function getClosure(): \Closure
     {
-        return $this->caster;
+        return $this->callable;
     }
 
     #[\Override]
     public function getBuiltClosure(?\Closure $upstream): \Closure
     {
         /** @psalm-suppress RiskyTruthyFalsyComparison */
-        $caster = $this->getClosure();
+        $callable = $this->getClosure();
 
         return (null !== $upstream)
-            ? fn (mixed $value): mixed => $caster($upstream($value))
-            : $caster;
+            ? fn (mixed $value): mixed => $callable($upstream($value))
+            : $callable;
     }
 
     #[\Override]

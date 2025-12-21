@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\CastTo;
 
 use Nandan108\DtoToolkit\Core\CastBaseNoArgs;
@@ -8,9 +10,9 @@ use Nandan108\DtoToolkit\Core\CastBaseNoArgs;
 final class Capitalized extends CastBaseNoArgs
 {
     #[\Override]
-    public function cast(mixed $value, array $args): ?string
+    public function cast(mixed $value, array $args): string
     {
-        $value = $this->throwIfNotStringable($value);
+        $value = $this->ensureStringable($value);
 
         return ucfirst(strtolower($value));
     }

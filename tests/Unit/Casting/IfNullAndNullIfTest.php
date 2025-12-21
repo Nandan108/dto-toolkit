@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
 use Nandan108\DtoToolkit\CastTo;
-use Nandan108\DtoToolkit\Contracts\NormalizesInterface;
+use Nandan108\DtoToolkit\Contracts\ProcessesInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
-use Nandan108\DtoToolkit\Traits\NormalizesFromAttributes;
+use Nandan108\DtoToolkit\Traits\ProcessesFromAttributes;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -16,16 +18,16 @@ final class IfNullAndNullIfTest extends TestCase
     public function testAppliesIfnullAndNullifCasters(string $prop, mixed $value, mixed $expected): void
     {
         /** @psalm-suppress ExtensionRequirementViolation */
-        $dto = new class extends BaseDto implements NormalizesInterface {
-            use NormalizesFromAttributes;
+        $dto = new class extends BaseDto implements ProcessesInterface {
+            use ProcessesFromAttributes;
 
             #[CastTo\IfNull(-1)]
             #[CastTo\Integer]
-            public string|int|null $foo = null;
+            public string | int | null $foo = null;
 
             #[CastTo\NullIf([-1, '', 'null', 'no', 0])]
             #[CastTo\Json]
-            public string|int|null $bar = null;
+            public string | int | null $bar = null;
 
             #[CastTo\ReplaceWhen([1, 2], 'A')]
             #[CastTo\ReplaceWhen(3, 'a')]
@@ -34,7 +36,7 @@ final class IfNullAndNullIfTest extends TestCase
         };
 
         /** @psalm-suppress UnusedMethodCall */
-        $dto->fill([$prop => $value])->normalizeInbound();
+        $dto->fill([$prop => $value])->processInbound();
 
         $this->assertSame($expected, $dto->$prop);
     }

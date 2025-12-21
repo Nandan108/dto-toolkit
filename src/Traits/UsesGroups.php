@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\Traits;
 
 use Nandan108\DtoToolkit\Attribute\PropGroups;
@@ -8,7 +10,7 @@ use Nandan108\DtoToolkit\Enum\Phase;
 /**
  * @method static static withGroups(array|string $all = [], array|string $inbound = [], array|string $inboundCast = [], array|string $outbound = [], array|string $outboundCast = [], array|string $validation = [])
  *
- * $this trait implements the HasGroupsInterface and ScopedPropertyAccessInterface
+ * This trait implements the HasGroupsInterface and ScopedPropertyAccessInterface
  */
 trait UsesGroups // user must implement HasGroupsInterface, ScopedPropertyAccessInterface
 {
@@ -24,7 +26,7 @@ trait UsesGroups // user must implement HasGroupsInterface, ScopedPropertyAccess
      * @param array|string $outbound     group names to filter properties for loading data (outbound.io phase)
      */
     #[\Override]
-    public function _withGroups(array|string $all = [], array|string $inbound = [], array|string $inboundCast = [], array|string $outbound = [], array|string $outboundCast = [], array|string $validation = []): static
+    public function _withGroups(array | string $all = [], array | string $inbound = [], array | string $inboundCast = [], array | string $outbound = [], array | string $outboundCast = [], array | string $validation = []): static
     {
         foreach ([&$all, &$inbound, &$inboundCast, &$outbound, &$outboundCast, &$validation] as &$groups) {
             if (is_string($groups)) {

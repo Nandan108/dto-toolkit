@@ -17,10 +17,11 @@ Casters, modifiers, and validators are composed into a fully declarative transfo
 ## ✨ Features
 
 - 🧱 Minimal and framework-agnostic
-- 🏷️ Attribute-based casting system with flexible resolution
+- 🏷️ Attribute-based processing system with flexible resolution
 - 🎯 Optional validation and normalization layers
 - 🔄 Easily transform between DTOs and entities/models
-- 🧩 Designed to work with pluggable framework adapters (Laravel, Symfony, etc.)
+- 🧩 Designed to work with pluggable [framework adapters](#adapter-packages) (Laravel, Symfony, etc.)
+
 
 ## 📦 Installation
 
@@ -68,22 +69,23 @@ These provide a convenient, framework-free entry point with all standard functio
 - [Lifecycle](docs/DtoLifecycle.md) – Understanding the lifecycle of a DTO
 - [Lifecycle Hooks](docs/Hooks.md) – customize behavior with `postLoad()` and `preOutput()`
 - [Toolkit Comparison](docs/Comparison.md) – see how this toolkit compares to other PHP DTO/mapping libraries
-- [Built-In Casters](docs/BuiltInCasters.md) — Full list of available `CastTo\*` casters
-- [Built-In Modifiers](docs/BuiltInModifiers.md) — Full list of available `Mod\*` chain modifiers
+- [Processing in detail](docs/Processing.md) — Validating and Transforming Data Through Nodes
+- [Built-In Core Casters](docs/BuiltInCasters.md) — Full list of available `CastTo\*` casters
+- [Built-In Core Validators](docs/BuiltInValidators.md) — list of available `Validate\*` validators *(more are planned)*
+- [Built-In Core Modifiers](docs/BuiltInModifiers.md) — Full list of available `Mod\*` chain modifiers
 - [Dependency Injection](docs/DI.md)
-- Validation *(planned)*
 - Writing Adapters *(planned)*
 
 ---
 
-## 🧩 Adapter Packages
+## 🧩 Adapter Packages<a id="adapter-packages"></a>
 
 - Laravel Adapter: [`nandan108/dto-toolkit-laravel`](https://github.com/nandan108/dto-toolkit-laravel) *(planned)*
 - Symfony Adapter: [`nandan108/dto-toolkit-symfony`](https://github.com/nandan108/dto-toolkit-symfony) *(planned)*
 
 Adapters will provide support for:
-- Validation using framework services
-- `fromRequest()` DTO hydration
+- Framework-compatible error handling and translations, for both validators and casters
+- `fromRequest()` for DTO hydration from HTTP requests
 - `toEntity()` or `toModel()` adapter-specific hydration
 - `toResponse()` generation
 - DI for class-based casters resolution
@@ -99,6 +101,7 @@ Adapters will provide support for:
   - Based on the `@Symfony` rule set
   - Aligned `=>` for better readability
   - Disallows implicit loose comparisons (`==`, `!=`)
+- Commit message style: conventional, with details if any
 
 ---
 

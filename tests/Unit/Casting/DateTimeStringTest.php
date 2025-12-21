@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
 use Nandan108\DtoToolkit\CastTo\DateTimeString;
@@ -13,7 +15,7 @@ final class DateTimeStringTest extends TestCase
     {
         $dtoClass = new class extends FullDto {
             #[DateTimeString]
-            public \DateTimeInterface|string|null $dt = null;
+            public \DateTimeInterface | string | null $dt = null;
         };
 
         $dto = $dtoClass::fromArray(['dt' => new \DateTimeImmutable('2025-05-04T12:34:56+02:00')]);
@@ -25,7 +27,7 @@ final class DateTimeStringTest extends TestCase
     {
         $dtoClass = new class extends FullDto {
             #[DateTimeString(format: DateTimeFormat::SQL)]
-            public \DateTimeInterface|string|null $dt = null;
+            public \DateTimeInterface | string | null $dt = null;
         };
 
         $dto = $dtoClass::fromArray(['dt' => new \DateTimeImmutable('2025-05-04T12:34:56+02:00')]);
@@ -37,7 +39,7 @@ final class DateTimeStringTest extends TestCase
     {
         $dtoClass = new class extends FullDto {
             #[DateTimeString(format: 'd.m.Y H:i')]
-            public \DateTimeInterface|string|null $dt = null;
+            public \DateTimeInterface | string | null $dt = null;
         };
 
         $dto = $dtoClass::fromArray(['dt' => new \DateTimeImmutable('2025-05-04 14:30')]);
@@ -49,7 +51,7 @@ final class DateTimeStringTest extends TestCase
     {
         $dtoClass = new class extends FullDto {
             #[DateTimeString(format: DateTimeFormat::SQL, timezone: 'UTC')]
-            public \DateTimeInterface|string|null $dt = null;
+            public \DateTimeInterface | string | null $dt = null;
         };
 
         $dto = $dtoClass::fromArray(['dt' => new \DateTimeImmutable('2025-05-04 14:30', new \DateTimeZone('Europe/Paris'))]);
@@ -61,10 +63,18 @@ final class DateTimeStringTest extends TestCase
     {
         $dtoClass = new class extends FullDto {
             #[DateTimeString]
-            public \DateTimeInterface|string|null $dt = null;
+            public \DateTimeInterface | string | null $dt = null;
         };
 
-        $this->expectException(\Nandan108\DtoToolkit\Exception\CastingException::class);
+        $this->expectException(\TypeError::class);
         $dtoClass::fromArray(['dt' => 12345]);
+    }
+
+    public function testThrowsTransformExceptionForNonDateTime(): void
+    {
+        $caster = new DateTimeString(format: 'c');
+
+        $this->expectException(\Nandan108\DtoToolkit\Exception\Process\TransformException::class);
+        $caster->cast('not-a-datetime', ['c']);
     }
 }

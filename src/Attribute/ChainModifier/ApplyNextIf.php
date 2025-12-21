@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\Attribute\ChainModifier;
 
-use Nandan108\DtoToolkit\Contracts\CasterChainNodeInterface;
+use Nandan108\DtoToolkit\Contracts\ProcessingNodeInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
-use Nandan108\DtoToolkit\Internal\CasterChain;
+use Nandan108\DtoToolkit\Internal\ProcessingChain;
 use Nandan108\DtoToolkit\Traits\UsesParamResolver;
 
 /**
@@ -18,9 +20,6 @@ class ApplyNextIf extends ChainModifierBase
 {
     use UsesParamResolver;
 
-    /**
-     * @throws \InvalidArgumentException
-     */
     public function __construct(
         public string $condition,
         public int $count = 1,
@@ -29,7 +28,7 @@ class ApplyNextIf extends ChainModifierBase
     }
 
     #[\Override]
-    public function getCasterChainNode(BaseDto $dto, ?\ArrayIterator $queue): CasterChain
+    public function getProcessingNode(BaseDto $dto, ?\ArrayIterator $queue): ProcessingChain
     {
         $this->configureParamResolver(
             paramName: 'condition',
@@ -37,14 +36,14 @@ class ApplyNextIf extends ChainModifierBase
             hydrate: fn (mixed $value): bool => (bool) $value,
         );
 
-        return new CasterChain(
+        return new ProcessingChain(
             $queue,
             $dto,
             $this->count,
             className: 'ApplyNextIf',
-            /** @param array<array-key, CasterChainNodeInterface> $chainElements */
+            /** @param array<array-key, ProcessingNodeInterface> $chainElements */
             buildCasterClosure: function (array $chainElements, ?callable $upstreamChain): \Closure {
-                $subchain = CasterChain::composeFromNodes($chainElements);
+                $subchain = ProcessingChain::composeFromNodes($chainElements);
 
                 return function (mixed $value) use ($upstreamChain, $subchain): mixed {
                     /** @var bool */
@@ -61,7 +60,7 @@ class ApplyNextIf extends ChainModifierBase
                         ? $subchain($value)
                         : $value;
                 };
-            }
+            },
         );
     }
 }

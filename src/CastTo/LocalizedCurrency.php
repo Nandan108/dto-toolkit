@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\CastTo;
 
 use Nandan108\DtoToolkit\Contracts\BootsOnDtoInterface;
 use Nandan108\DtoToolkit\Contracts\CasterInterface;
 use Nandan108\DtoToolkit\Core\CastBase;
-use Nandan108\DtoToolkit\Exception\CastingException;
+use Nandan108\DtoToolkit\Exception\Process\TransformException;
 use Nandan108\DtoToolkit\Traits\UsesLocaleResolver;
 
 /**
@@ -36,7 +38,7 @@ final class LocalizedCurrency extends CastBase implements CasterInterface, Boots
         string $currency,
         ?string $locale = null,
     ) {
-        $this->throwIfExtensionNotLoaded('intl');
+        $this->ensureExtensionLoaded('intl');
 
         parent::__construct(args: [$currency], constructorArgs: ['locale' => $locale]);
     }
@@ -57,7 +59,11 @@ final class LocalizedCurrency extends CastBase implements CasterInterface, Boots
         [$currency] = $args;
 
         if (!is_numeric($value)) {
-            throw CastingException::castingFailure(static::class, $value, 'Value is not numeric.');
+            throw TransformException::expected(
+                methodOrClass: static::class,
+                operand: $value,
+                expected: 'numeric',
+            );
         }
 
         /** @var string $locale */

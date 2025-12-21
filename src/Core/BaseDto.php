@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\Core;
 
 use Nandan108\DtoToolkit\Attribute\Inject;
@@ -8,14 +10,23 @@ use Nandan108\DtoToolkit\Attribute\Outbound;
 use Nandan108\DtoToolkit\Attribute\WithDefaultGroups;
 use Nandan108\DtoToolkit\Contracts\Bootable;
 use Nandan108\DtoToolkit\Contracts\Injectable;
-use Nandan108\DtoToolkit\Contracts\NormalizesInterface;
 use Nandan108\DtoToolkit\Contracts\PhaseAwareInterface;
+use Nandan108\DtoToolkit\Contracts\ProcessesInterface;
 use Nandan108\DtoToolkit\Contracts\ScopedPropertyAccessInterface;
+use Nandan108\DtoToolkit\Enum\ErrorMode;
 use Nandan108\DtoToolkit\Enum\Phase;
+use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
 use Nandan108\DtoToolkit\Support\ContainerBridge;
 
+/**
+ * @method static static withErrorMode(ErrorMode $mode)
+ * @method        $this  withErrorMode(ErrorMode $mode)
+ */
 abstract class BaseDto
 {
+    protected static ErrorMode $defaultErrorMode = ErrorMode::FailFast;
+    protected ?ErrorMode $errorMode = null;
+
     /**
      * List of properties that can be filled.
      *
@@ -25,15 +36,37 @@ abstract class BaseDto
 
     /**
      * List of properties that have been filled.
-     * The key is the property name, and the value is always true.
+     * The key is the property name, and the value is ALWAYS true.
+     * An unfilled property is simply not present in this array.
      *
-     * @var true[]
-     * */
+     * @var array<string, true>
+     **/
     public array $_filled = [];
 
     // full metadata cache per class (static)
     /** @var array<array<array-key, array<array-key, array{attr?: PhaseAwareInterface|list<PhaseAwareInterface>}>>> */
     private static array $_propertyMetadataCache = [];
+
+    /** @var array<class-string, array{defaults: array<string, mixed>, withoutDefault: list<string>}> */
+    private static array $_defaultsMap = [];
+
+    public static function setDefaultErrorMode(ErrorMode $mode): void
+    {
+        static::$defaultErrorMode = $mode;
+    }
+
+    public function getErrorMode(): ErrorMode
+    {
+        return $this->errorMode ?? static::$defaultErrorMode;
+    }
+
+    /** @psalm-suppress PossiblyUnusedMethod */
+    public function _withErrorMode(ErrorMode $mode): static
+    {
+        $this->errorMode = $mode;
+
+        return $this;
+    }
 
     /**
      * Load the metadata for the given phase.
@@ -44,7 +77,7 @@ abstract class BaseDto
      *
      * @return array<array-key, array<never, never>|mixed>
      */
-    public static function loadPhaseAwarePropMeta(Phase $phase, string $metaDataName, \Closure|string|null $filter, bool $ignoreEmpty = false): array
+    public static function loadPhaseAwarePropMeta(Phase $phase, string $metaDataName, \Closure | string | null $filter, bool $ignoreEmpty = false): array
     {
         if (!isset(self::$_propertyMetadataCache[static::class])) {
             $cache = [];
@@ -133,7 +166,7 @@ abstract class BaseDto
      *
      * @param object|class-string|null $objectOrClass defaults to the current instance
      */
-    protected function getPublicPropNames(object|string|null $objectOrClass = null, ?\ReflectionClass $reflectionClass = null): array
+    protected function getPublicPropNames(object | string | null $objectOrClass = null, ?\ReflectionClass $reflectionClass = null): array
     {
         $reflectionClass ??= new \ReflectionClass($objectOrClass ?? $this);
 
@@ -154,8 +187,12 @@ abstract class BaseDto
      *
      * @psalm-suppress PossiblyUnusedMethod, UnusedParam, InvalidReturnType
      */
-    public function toOutboundArray(bool $runPreOutputHook = true, bool $applyOutboundMappings = true): array
-    {
+    public function toOutboundArray(
+        ?ProcessingErrorList $errorList = null,
+        ?ErrorMode $errorMode = null,
+        bool $runPreOutputHook = true,
+        bool $applyOutboundMappings = true,
+    ): array {
         if ($this instanceof ScopedPropertyAccessInterface) {
             // If the DTO implements ScopedPropertyAccessInterface, we only export properties in scope.
             // This is useful for DTOs that have different scopes for different phases.
@@ -174,9 +211,9 @@ abstract class BaseDto
             $data = MapTo::applyOutboundKeys($data, $this);
         }
 
-        if ($this instanceof NormalizesInterface) {
+        if ($this instanceof ProcessesInterface) {
             /** @var array<array-key, mixed> */
-            $data = $this->normalizeOutbound($data);
+            $data = $this->processOutbound($data, $errorList, $errorMode);
         }
 
         if ($runPreOutputHook) {
@@ -210,6 +247,28 @@ abstract class BaseDto
         $keys = $propNames ?? array_keys($this->_filled);
 
         return array_intersect_key($vars, array_flip($keys));
+    }
+
+    /**
+     * Reset all public properties to their default values.
+     *
+     * @psalm-suppress PossiblyUnusedMethod
+     */
+    public function clear(): static
+    {
+        $defaults = static::getDefaultValues();
+
+        foreach ($defaults['defaults'] as $propName => $value) {
+            $this->$propName = $value;
+        }
+
+        foreach ($defaults['withoutDefault'] as $propName) {
+            unset($this->$propName);
+        }
+
+        $this->_filled = [];
+
+        return $this;
     }
 
     /**
@@ -281,7 +340,7 @@ abstract class BaseDto
      * @psalm-suppress PossiblyUnusedMethod
      * @psalm-suppress PossiblyUnusedParam
      */
-    public function preOutput(array|object &$outputData)
+    public function preOutput(array | object &$outputData)
     {
         // no-op - to be implemented in subclasses
     }
@@ -342,11 +401,9 @@ abstract class BaseDto
 
         // prepare the instance for use
         if ($instance instanceof Injectable) {
-            /** @psalm-suppress UnusedMethodCall */
             $instance->inject();
         }
         if ($instance instanceof Bootable) {
-            /** @psalm-suppress UnusedMethodCall */
             $instance->boot();
         }
 
@@ -388,14 +445,48 @@ abstract class BaseDto
     {
         $className = $classRef->getName();
         if (!$classRef->hasMethod($method)) {
-            throw new \BadMethodCallException("Method $className::{$method}() does not exist.");
+            throw new InvalidConfigException("Method $className::{$method}() does not exist.");
         }
         $methodRef = $classRef->getMethod($method);
         $visibility = $methodRef->isPublic() ? 'public' : ($methodRef->isProtected() ? 'protected' : 'private');
         if (!$visible || $methodRef->isPrivate()) {
-            throw new \BadMethodCallException(ucfirst($visibility)." method $className::{$method}() is not reachable from calling context.");
+            throw new InvalidConfigException(ucfirst($visibility)." method $className::{$method}() is not reachable from calling context.");
         }
 
         return $methodRef;
+    }
+
+    /**
+     * @return array{defaults: array<string, mixed>, withoutDefault: list<string>}
+     */
+    public static function getDefaultValues(): array
+    {
+        $className = static::class;
+        if (isset(self::$_defaultsMap[$className])) {
+            return self::$_defaultsMap[$className];
+        }
+
+        $classRef = static::getClassRef();
+        $defaultValues = $classRef->getDefaultProperties();
+        $withDefaults = [];
+        $withoutDefaults = [];
+
+        foreach ($classRef->getProperties(\ReflectionProperty::IS_PUBLIC) as $propRef) {
+            if ('_filled' === $propRef->getName() || $propRef->isStatic()) {
+                continue;
+            }
+
+            $propName = $propRef->getName();
+            if ($propRef->hasDefaultValue()) {
+                $withDefaults[$propName] = $defaultValues[$propName] ?? null;
+            } else {
+                $withoutDefaults[] = $propName;
+            }
+        }
+
+        return self::$_defaultsMap[$className] = [
+            'defaults'       => $withDefaults,
+            'withoutDefault' => $withoutDefaults,
+        ];
     }
 }

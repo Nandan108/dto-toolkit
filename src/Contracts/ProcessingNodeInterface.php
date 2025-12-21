@@ -1,8 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\Contracts;
 
-interface CasterChainNodeInterface
+interface ProcessingNodeInterface
 {
     /**
      * Returns the closure (or callable) that performs the transformation.

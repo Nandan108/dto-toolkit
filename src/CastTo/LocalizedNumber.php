@@ -1,10 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\CastTo;
 
 use Nandan108\DtoToolkit\Contracts\BootsOnDtoInterface;
 use Nandan108\DtoToolkit\Contracts\CasterInterface;
 use Nandan108\DtoToolkit\Core\CastBase;
+use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
+use Nandan108\DtoToolkit\Exception\Process\TransformException;
 use Nandan108\DtoToolkit\Traits\UsesLocaleResolver;
 
 /**
@@ -35,9 +39,9 @@ final class LocalizedNumber extends CastBase implements CasterInterface, BootsOn
         int $precision = 2,
         ?string $locale = null,
     ) {
-        $this->throwIfExtensionNotLoaded('intl');
+        $this->ensureExtensionLoaded('intl');
         if ($precision < 0) {
-            throw new \InvalidArgumentException('Precision must be a non-negative integer.');
+            throw new InvalidArgumentException('Precision must be a non-negative integer.');
         }
 
         // locale goes to constructorArgs because it needs to be part of the caster's instance cache key
@@ -60,7 +64,13 @@ final class LocalizedNumber extends CastBase implements CasterInterface, BootsOn
         /** @var array{0: int, 1: int} $args */
         [$style, $fractionDigits] = $args;
 
-        $this->throwIfNotNumeric($value);
+        if (!is_numeric($value)) {
+            throw TransformException::expected(
+                methodOrClass: static::class,
+                operand: $value,
+                expected: 'numeric',
+            );
+        }
 
         /** @var string $locale */
         $locale = $this->resolveParam('locale', $value);

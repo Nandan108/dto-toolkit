@@ -1,9 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\CastTo;
 
 use Nandan108\DtoToolkit\Core\CastBase;
-use Nandan108\DtoToolkit\Exception\CastingException;
+use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
+use Nandan108\DtoToolkit\Exception\Process\TransformException;
 
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class Floating extends CastBase
@@ -27,6 +30,7 @@ final class Floating extends CastBase
         [$this->decimalPoint];
     }
 
+    /** @psalm-suppress PossiblyUnusedReturnValue */
     #[\Override]
     public function cast(mixed $value, array $args): ?float
     {
@@ -34,12 +38,16 @@ final class Floating extends CastBase
             return (float) $value;
         }
 
-        $value = $this->throwIfNotStringable($value);
+        $value = $this->ensureStringable($value);
 
         /** @var ?string $decimalPoint */
         [$decimalPoint] = $args;
 
         if (null !== $decimalPoint) {
+            if ('' === $decimalPoint) {
+                throw new InvalidArgumentException('CastTo\Floating: Decimal point cannot be empty.');
+            }
+
             $value = $this->normalizeNumberString($value, $decimalPoint);
         }
 
@@ -47,13 +55,16 @@ final class Floating extends CastBase
             return (float) $value;
         }
 
-        throw CastingException::castingFailure(className: $this::class, operand: $value, messageOverride: 'Expected numeric, but got '.gettype($value));
+        throw TransformException::expected(static::class, $value, 'numeric');
     }
 
     public function normalizeNumberString(string $input, string $decimalPoint): string
     {
-        // Keep only digits, minus signs and decimal point characters
-        $cleaned = $this->cleanUp($input, "/[^-0-9{$decimalPoint}]/");
+        // Escape the decimal point for safe regex embedding
+        $escaped = preg_quote($decimalPoint, '/');
+
+        // Keep only digits, minus signs and the decimal point
+        $cleaned = preg_replace("/[^-0-9{$escaped}]/", '', $input) ?? '';
 
         // Normalize decimal
         if ('.' !== $decimalPoint) {
@@ -61,22 +72,7 @@ final class Floating extends CastBase
         }
 
         // remove extra minus signs, and keep only last decimal point
-        return $this->cleanUp($cleaned, '/(?!^)-|\.(?=.*\.)/');
-    }
-
-    /**
-     * Applies a regex replacement to the input string and returns the result.
-     * Throws an exception if the result is null.
-     *
-     * @param non-empty-string $pattern
-     *
-     * @throws CastingException
-     */
-    private function cleanUp(string $input, string $pattern, string $replacement = ''): string
-    {
-        $cleaned = preg_replace($pattern, $replacement, $input);
-        // What $input could make $cleaned null? Unlikely, but just in case...
-        null !== $cleaned or throw CastingException::castingFailure(className: $this::class, operand: $input, messageOverride: 'Failed to normalize number string');
+        $cleaned = preg_replace('/(?!^)-|\.(?=.*\.)/', '', $cleaned) ?? '';
 
         return $cleaned;
     }

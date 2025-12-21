@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
 use Nandan108\DtoToolkit\CastTo\Floating;
@@ -20,10 +22,10 @@ final class NumericStringParsingTest extends TestCase
     {
         $dtoClass = new class extends FullDto {
             #[Floating(decimalPoint: ',')]
-            public string|float|null $num = null;
+            public string | float | null $num = null;
 
             #[Floating(decimalPoint: '.')]
-            public float|string|null $amount = null;
+            public float | string | null $amount = null;
         };
 
         $dto = $dtoClass::fromArray(['num' => "1\u{202F}234,56"]);
@@ -47,5 +49,13 @@ final class NumericStringParsingTest extends TestCase
 
         $dto = $dtoClass::fromArray(['amount' => '1\'234.56 CHF']);
         $this->assertSame(1234.56, $dto->amount);
+    }
+
+    public function testRejectsEmptyDecimalPoint(): void
+    {
+        $caster = new Floating(decimalPoint: '');
+
+        $this->expectException(\Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException::class);
+        $caster->cast('1.23', ['']);
     }
 }

@@ -9,6 +9,7 @@ use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Contracts\Bootable;
 use Nandan108\DtoToolkit\Contracts\Injectable;
 use Nandan108\DtoToolkit\Core\FullDto;
+use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
 use Nandan108\DtoToolkit\Support\ContainerBridge;
 use Nandan108\DtoToolkit\Traits\IsInjectable;
 use PHPUnit\Framework\TestCase;
@@ -54,7 +55,7 @@ final class FooBarDto1 extends FullDto implements Injectable, Bootable
     public function castToSlug(string $value): string
     {
         if (null === $this->slugger) {
-            throw new \RuntimeException('Slugger not injected');
+            throw new InvalidConfigException('Slugger not injected');
         }
 
         return $this->slugger->slugify($value);
@@ -99,7 +100,7 @@ final class InjectIntoDtoTest extends TestCase
             abstract: DtoWithInjectedDummySlugger::class,
             concrete: function () {
                 return new DtoWithInjectedDummySlugger(new DummySluggerForDtoInjection('++'));
-            }
+            },
         );
 
         // create a DTO instance from an array and check that the
@@ -111,7 +112,7 @@ final class InjectIntoDtoTest extends TestCase
 
     public function testCallToProtectedMethodThrowsException(): void
     {
-        $this->expectException(\BadMethodCallException::class);
+        $this->expectException(InvalidConfigException::class);
         $class = DtoWithInjectedDummySlugger::class;
         $this->expectExceptionMessage("Protected method $class::getSlugger() is not reachable from calling context.");
 

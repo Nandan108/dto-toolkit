@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\CastTo;
 
 use Nandan108\DtoToolkit\Core\CastBase;
@@ -25,6 +27,6 @@ final class RemoveDiacritics extends CastBase
     {
         [$useIntlExtension] = $args;
 
-        return static::removeDiacritics($this->throwIfNotStringable($value), $useIntlExtension);
+        return static::removeDiacritics($this->ensureStringable($value), $useIntlExtension);
     }
 }

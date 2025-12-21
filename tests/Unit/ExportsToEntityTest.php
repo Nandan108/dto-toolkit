@@ -1,14 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\Tests\Unit;
 
 use Nandan108\DtoToolkit\Attribute\MapTo;
 use Nandan108\DtoToolkit\CastTo;
-use Nandan108\DtoToolkit\Contracts\NormalizesInterface;
+use Nandan108\DtoToolkit\Contracts\ProcessesInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Core\FullDto;
+use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
 use Nandan108\DtoToolkit\Traits\ExportsToEntity;
-use Nandan108\DtoToolkit\Traits\NormalizesFromAttributes;
+use Nandan108\DtoToolkit\Traits\ProcessesFromAttributes;
 use Nandan108\PropAccess\Exception\AccessorException;
 use Nandan108\PropAccess\PropAccess;
 use PHPUnit\Framework\TestCase;
@@ -53,7 +56,7 @@ final class ExportsToEntityTest extends TestCase
         $entity = \Mockery::mock(new class {
             public ?int $id = null;
             public ?string $name = null;
-            public int|string|null $age = null;
+            public int | string | null $age = null;
             public ?string $email = null;
 
             // note, these setters are not being used because the entity is mocked
@@ -88,8 +91,8 @@ final class ExportsToEntityTest extends TestCase
 
         // Create DTO
         /** @psalm-suppress ExtensionRequirementViolation (psalm = dumb+blind+crazy! Aaargh!) */
-        $dto = new class extends BaseDto implements NormalizesInterface {
-            use NormalizesFromAttributes;
+        $dto = new class extends BaseDto implements ProcessesInterface {
+            use ProcessesFromAttributes;
             use ExportsToEntity;
             // use CanCastBasicValues;
 
@@ -97,7 +100,7 @@ final class ExportsToEntityTest extends TestCase
             #[CastTo\Trimmed]
             public ?string $name = null;
             #[CastTo\Integer]
-            public int|string|null $age = null;
+            public int | string | null $age = null;
             #[CastTo('trimmedString')]
             public ?string $email = null;
 
@@ -139,7 +142,7 @@ final class ExportsToEntityTest extends TestCase
             }
         };
 
-        $this->expectException(\LogicException::class);
+        $this->expectException(InvalidConfigException::class);
         $this->expectExceptionMessage('Entity class NonExistentClass does not exist');
 
         $dto->toEntity();
@@ -151,7 +154,7 @@ final class ExportsToEntityTest extends TestCase
             use ExportsToEntity;
         };
 
-        $this->expectException(\LogicException::class);
+        $this->expectException(InvalidConfigException::class);
         $this->expectExceptionMessage('No entity class specified on DTO');
 
         $dto->toEntity();
@@ -164,7 +167,7 @@ final class ExportsToEntityTest extends TestCase
             use ExportsToEntity;
         };
 
-        $this->expectException(\LogicException::class);
+        $this->expectException(InvalidConfigException::class);
         $this->expectExceptionMessage('DTO must extend BaseDto to use ExportsToEntity trait.');
 
         $dto->toEntity();
@@ -206,7 +209,7 @@ final class ExportsToEntityTest extends TestCase
             protected function newEntityInstance(array $inputData = []): array
             {
                 if (null === static::$entityClass) {
-                    throw new \LogicException('Entity class must not be null');
+                    throw new InvalidConfigException('Entity class must not be null');
                 }
                 $entity = new static::$entityClass();
                 $entity->fooProp = $inputData['fooProp'] ?? null;

@@ -1,21 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
 use Nandan108\DtoToolkit\Attribute\ChainModifier\Groups;
 use Nandan108\DtoToolkit\Attribute\Outbound;
 use Nandan108\DtoToolkit\Attribute\PropGroups;
 use Nandan108\DtoToolkit\CastTo;
-use Nandan108\DtoToolkit\Contracts\NormalizesInterface;
+use Nandan108\DtoToolkit\Contracts\ProcessesInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Core\FullDto;
-use Nandan108\DtoToolkit\Traits\NormalizesFromAttributes;
+use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
+use Nandan108\DtoToolkit\Traits\ProcessesFromAttributes;
 use PHPUnit\Framework\TestCase;
 
-/**
- * @method static static fromArray(array $input, bool $ignoreUnknownProps = false)
- * @method static static withGroups(array|string $all = [], array|string $inbound = [], array|string $inboundCast = [], array|string $outbound = [], array|string $outboundCast = [], array|string $validation = [])
- */
 final class GroupsTestFooBarDto extends FullDto
 {
     /** @psalm-suppress PossiblyUnusedProperty */
@@ -54,9 +53,9 @@ final class CasterGroupsTestDto extends FullDto
     public ?string $baz = null; // default value provided for the example
 }
 
-final class NotImplmementingUsesGroupsDto extends BaseDto implements NormalizesInterface
+final class NotImplmementingUsesGroupsDto extends BaseDto implements ProcessesInterface
 {
-    use NormalizesFromAttributes;
+    use ProcessesFromAttributes;
     /** @psalm-suppress PossiblyUnusedProperty */
     #[Groups('foo')]
     #[CastTo\Lowercase]
@@ -76,7 +75,6 @@ final class GroupsTest extends TestCase
 
         $output = $dto->toOutboundArray();
 
-        $this->assertIsArray($output);
         $this->assertArrayNotHasKey('baz', $output, 'Property "baz" should not be exported if not in scope');
         $this->assertSame([], $output, 'Output array should be empty if no filled fields are in scope');
     }
@@ -143,10 +141,10 @@ final class GroupsTest extends TestCase
 
     public function testNormalizationThrowsIfGroupsAreUsedWithoutImplmementingUsesGroups(): void
     {
-        $this->expectException(\LogicException::class);
+        $this->expectException(InvalidConfigException::class);
         $this->expectExceptionMessage('To use #[Groups], DTO must use UsesGroups trait or implement HasGroupsInterface');
 
         $dto = new NotImplmementingUsesGroupsDto();
-        $dto->normalizeInbound();
+        $dto->processInbound();
     }
 }

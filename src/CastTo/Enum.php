@@ -1,9 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\CastTo;
 
 use Nandan108\DtoToolkit\Core\CastBase;
-use Nandan108\DtoToolkit\Exception\CastingException;
+use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
+use Nandan108\DtoToolkit\Exception\Process\TransformException;
 
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class Enum extends CastBase
@@ -11,11 +14,11 @@ final class Enum extends CastBase
     public function __construct(string $enumClass)
     {
         if (!enum_exists($enumClass)) {
-            throw new \InvalidArgumentException("Enum caster: '{$enumClass}' is not a valid enum.");
+            throw new InvalidArgumentException("Enum caster: '{$enumClass}' is not a valid enum.");
         }
 
         if (!is_a($enumClass, \BackedEnum::class, true)) {
-            throw new \InvalidArgumentException("Enum caster: '{$enumClass}' is not a backed enum.");
+            throw new InvalidArgumentException("Enum caster: '{$enumClass}' is not a backed enum.");
         }
 
         parent::__construct([$enumClass]);
@@ -31,12 +34,15 @@ final class Enum extends CastBase
             /** @psalm-suppress InvalidStringClass */
             return $enumClass::tryFrom($value);
         } catch (\Throwable $t) {
-            $value = json_encode($value);
-            if (false === $value) {
-                $value = '?'.json_last_error_msg().'?';
-            }
-
-            throw CastingException::castingFailure(className: self::class, operand: $value, messageOverride: "Invalid enum backing value: $value.");
+            throw TransformException::reason(
+                methodOrClass: self::class,
+                value: $value,
+                template_suffix: 'enum.unable_to_cast',
+                parameters: [
+                    'enum'    => $enumClass,
+                    'message' => $t->getMessage(),
+                ],
+            );
         }
     }
 }

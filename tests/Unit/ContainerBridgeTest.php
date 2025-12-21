@@ -1,8 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\Tests\Unit;
 
 use Mockery\Container;
+use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
 use Nandan108\DtoToolkit\Support\ContainerBridge;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -41,7 +44,7 @@ final class ContainerBridgeTest extends TestCase
 
     public function testThrowsWhenUnresolvable(): void
     {
-        $this->expectException(\LogicException::class);
+        $this->expectException(InvalidConfigException::class);
         ContainerBridge::get('NonExistentClassOrBinding');
     }
 

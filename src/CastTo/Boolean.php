@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\CastTo;
 
 use Nandan108\DtoToolkit\Core\CastBaseNoArgs;
-use Nandan108\DtoToolkit\Exception\CastingException;
+use Nandan108\DtoToolkit\Exception\Process\TransformException;
 
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class Boolean extends CastBaseNoArgs
@@ -27,6 +29,10 @@ final class Boolean extends CastBaseNoArgs
             }
         }
 
-        throw CastingException::castingFailure(className: $this::class, operand: $value);
+        throw TransformException::reason(
+            methodOrClass: self::class,
+            value: $value,
+            template_suffix: 'boolean.unable_to_cast',
+        );
     }
 }

@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\CastTo;
 
 use Nandan108\DtoToolkit\Core\CastBase;
 use Nandan108\DtoToolkit\Enum\IntCastMode;
-use Nandan108\DtoToolkit\Exception\CastingException;
+use Nandan108\DtoToolkit\Exception\Process\TransformException;
 
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class Integer extends CastBase
@@ -46,6 +48,6 @@ final class Integer extends CastBase
             };
         }
 
-        throw CastingException::castingFailure(className: $this::class, operand: $value, messageOverride: 'Expected numeric, but got '.gettype($value));
+        throw TransformException::expected(static::class, $value, 'numeric');
     }
 }

@@ -1,9 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
 use Nandan108\DtoToolkit\CastTo;
-use Nandan108\DtoToolkit\Exception\CastingException;
+use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException as ConfigInvalidArgumentException;
+use Nandan108\DtoToolkit\Exception\Process\TransformException;
 use Nandan108\DtoToolkit\Tests\Traits\CanTestCasterClassesAndMethods;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -26,19 +29,19 @@ final class EnumCastTest extends TestCase
         return [
             // Valid string-backed enum
             // Valid string-backed enum
-            'Enum(Status):[] (array)'         => [new CastTo\Enum(Status::class), [], CastingException::class],
+            'Enum(Status):[] (array)'         => [new CastTo\Enum(Status::class), [], TransformException::class, 'processing.transform.enum.unable_to_cast'],
             'Enum(Status):draft'              => [new CastTo\Enum(Status::class), 'draft', Status::Draft],
             'Enum(Status):Published'          => [new CastTo\Enum(Status::class), 'published', Status::Published],
             // Invalid value (non-existent key)
-            'Enum(Status):invalid'            => [new CastTo\Enum(Status::class), 'archived', CastingException::class, 'Invalid enum backing value: "archived"'],
+            'Enum(Status):invalid'            => [new CastTo\Enum(Status::class), 'archived', TransformException::class, 'processing.transform.enum.unable_to_cast'],
             // Nullable enum
-            'Enum(Status):null'               => [new CastTo\Enum(Status::class), null, CastingException::class, 'Invalid enum backing value: null'],
+            'Enum(Status):null'               => [new CastTo\Enum(Status::class), null, TransformException::class, 'processing.transform.enum.unable_to_cast'],
             // Integer-backed enum
             'Enum(Code):200'                  => [new CastTo\Enum(Code::class), 200, Code::OK],
             'Enum(Code):404'                  => [new CastTo\Enum(Code::class), 404, Code::NotFound],
             // Invalid integer
-            'Enum(Code):500'                  => [new CastTo\Enum(Code::class), 500, CastingException::class, 'Invalid enum backing value: 500'],
-            'Enum(Status):circular-ref'       => [new CastTo\Enum(Status::class), $circular, CastingException::class, 'Invalid enum backing value'],
+            'Enum(Code):500'                  => [new CastTo\Enum(Code::class), 500, TransformException::class, 'processing.transform.enum.unable_to_cast'],
+            'Enum(Status):circular-ref'       => [new CastTo\Enum(Status::class), $circular, TransformException::class, 'processing.transform.enum.unable_to_cast'],
         ];
     }
 
@@ -48,14 +51,14 @@ final class EnumCastTest extends TestCase
         // otherwise, the parent::__construct([$enumClass]); line is not covered for buggy reasons.
         new CastTo\Enum(Status::class);
 
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(ConfigInvalidArgumentException::class);
         $this->expectExceptionMessage('Enum caster: \'Invalid\' is not a valid enum.');
         new CastTo\Enum('Invalid');
     }
 
     public function testInstantiationWithInvalidEnumClass(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(ConfigInvalidArgumentException::class);
         $this->expectExceptionMessage('Enum caster: \''.NotBacked::class.'\' is not a backed enum.');
         new CastTo\Enum(NotBacked::class);
     }

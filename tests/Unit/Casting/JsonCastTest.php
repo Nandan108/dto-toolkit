@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
 use Nandan108\DtoToolkit\CastTo;
-use Nandan108\DtoToolkit\Exception\CastingException;
+use Nandan108\DtoToolkit\Exception\Process\TransformException;
 use Nandan108\DtoToolkit\Tests\Traits\CanTestCasterClassesAndMethods;
 use Nandan108\PropAccess\PropAccess;
 use PHPUnit\Framework\TestCase;
@@ -26,6 +28,6 @@ final class JsonCastTest extends TestCase
         $this->casterTest(new CastTo\FromJson(), '{"0":"baz","foo": {"bar": ["a","b","c"]}}', ['baz', 'foo' => ['bar' => ['a', 'b', 'c']]]);
 
         // FromJson with invalid input
-        $this->casterTest(new CastTo\FromJson(), '{"0":"baz","foo": {"bar": "a","b","c"]}}', CastingException::class);
+        $this->casterTest(new CastTo\FromJson(), '{"0":"baz","foo": {"bar": "a","b","c"]}}', TransformException::class);
     }
 }

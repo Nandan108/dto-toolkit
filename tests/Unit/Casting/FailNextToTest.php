@@ -1,11 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
 use Nandan108\DtoToolkit\Attribute\ChainModifier\FailNextTo;
 use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Core\FullDto;
+use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException as ConfigInvalidArgumentException;
+use Nandan108\DtoToolkit\Validate as V;
 use PHPUnit\Framework\TestCase;
 
 final class FailNextToTest extends TestCase
@@ -20,11 +24,11 @@ final class FailNextToTest extends TestCase
         };
 
         // 'foo' gets replaced by 'bar' and then fails to be cast to string, falling back to 'fallback'
-        $dto->fill(['value' => 'foo'])->normalizeInbound();
+        $dto->fill(['value' => 'foo'])->processInbound();
         $this->assertSame('fallback', $dto->value);
 
         // 'bar' doesn't get replaced and is cast to string successfully
-        $dto->fill(['value' => 'bar'])->normalizeInbound();
+        $dto->fill(['value' => 'bar'])->processInbound();
         /** @psalm-suppress DocblockTypeContradiction */
         $this->assertSame('bar', $dto->value);
     }
@@ -37,11 +41,11 @@ final class FailNextToTest extends TestCase
             public mixed $value = null;
         };
 
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(ConfigInvalidArgumentException::class);
         $this->expectExceptionMessage('FailNextTo: $count cannot be zero.');
 
         $dto->fill(['value' => new \stdClass()]);
-        $dto->normalizeInbound();
+        $dto->processInbound();
     }
 
     public function testMethodHandlerOnDtoIsCalled(): void
@@ -72,15 +76,24 @@ final class FailNextToTest extends TestCase
             'value_1' => new \stdClass(),
             'value_2' => new \stdClass(),
         ]);
-        $dto->normalizeInbound();
+        $dto->processInbound();
 
         $this->assertSame('RECOVERED TO FALLBACK', $dto->value_1);
         $this->assertSame('UNCOVERED TO BACKFALL', $dto->value_2);
         $this->assertTrue($dto->context['called']);
-        $this->assertMatchesRegularExpression(
-            '/Expected: numeric, string or Stringable/',
-            $dto->context['message'],
-        );
+        $this->assertSame('processing.transform.stringable.expected', $dto->context['message']);
+    }
+
+    public function testFallbackCatchesValidationFailure(): void
+    {
+        $dto = new class extends FullDto {
+            #[FailNextTo('fallback', count: 1)]
+            #[V\NotBlank]
+            public mixed $name = null;
+        };
+
+        $dto->fill(['name' => '   '])->processInbound();
+        $this->assertSame('fallback', $dto->name);
     }
 }
 

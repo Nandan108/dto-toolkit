@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\Tests\Unit;
 
 use Nandan108\DtoToolkit\Attribute\ChainModifier\Groups;
@@ -9,7 +11,8 @@ use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Core\FullDto;
 use Nandan108\DtoToolkit\Enum\Phase;
-use Nandan108\DtoToolkit\Traits\NormalizesFromAttributes;
+use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
+use Nandan108\DtoToolkit\Traits\ProcessesFromAttributes;
 use PHPUnit\Framework\TestCase;
 
 /** @psalm-suppress UnusedClass */
@@ -24,12 +27,11 @@ final class WithDefaultGroupsTest extends TestCase
         $this->assertSame($dto->getActiveGroups(Phase::InboundCast), ['baz']);
         $this->assertSame($dto->getActiveGroups(Phase::OutboundCast), ['foo']);
         $this->assertSame($dto->getActiveGroups(Phase::OutboundExport), ['foo']);
-        $this->assertSame($dto->getActiveGroups(Phase::Validation), ['foo']);
     }
 
     public function testUsingWithDefaultGroupsOnClassNotImplementingHasGroupsInterfaceThrowsException(): void
     {
-        $this->expectException(\LogicException::class);
+        $this->expectException(InvalidConfigException::class);
         $this->expectExceptionMessage('The WithDefaultGroups attribute can only be used on DTOs that implement the HasGroupsInterface');
 
         ClassNotImplementingHasGroupsInterface::newInstance();
@@ -45,7 +47,7 @@ final class WithDefaultGroupsTest extends TestCase
 )]
 final class WithGroupsDto extends FullDto
 {
-    use NormalizesFromAttributes;
+    use ProcessesFromAttributes;
 
     /** @psalm-suppress PossiblyUnusedProperty */
     #[Groups('foo'), CastTo\PascalCase]

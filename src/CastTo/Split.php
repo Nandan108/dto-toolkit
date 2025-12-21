@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\CastTo;
 
 use Nandan108\DtoToolkit\Core\CastBase;
@@ -17,7 +19,7 @@ final class Split extends CastBase
     {
         [$separator] = $args;
 
-        $value = $this->throwIfNotStringable($value);
+        $value = $this->ensureStringable($value);
 
         return explode($separator, $value);
     }

@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\CastTo;
 
 use Nandan108\DtoToolkit\Core\CastBase;
-use Nandan108\DtoToolkit\Exception\CastingException;
+use Nandan108\DtoToolkit\Exception\Process\TransformException;
 
 /**
  * Converts a value to bool.
@@ -35,7 +37,7 @@ final class Rounded extends CastBase
         }
 
         if (!isset($floatValue)) {
-            throw CastingException::castingFailure(className: $this::class, operand: $value, messageOverride: 'Expected numeric, but got '.gettype($value));
+            throw TransformException::expected(static::class, $value, 'numeric');
         }
 
         return round($floatValue, $precision);

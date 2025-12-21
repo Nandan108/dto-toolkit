@@ -1,22 +1,22 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\Attribute;
 
 use Nandan108\DtoToolkit\Contracts\HasContextInterface;
 use Nandan108\DtoToolkit\Contracts\PhaseAwareInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Enum\Phase;
-use Nandan108\DtoToolkit\Exception\ExtractionSyntaxError;
-use Nandan108\DtoToolkit\Exception\LoadingException;
+use Nandan108\DtoToolkit\Exception\Config\ExtractionSyntaxError;
+use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
+use Nandan108\DtoToolkit\Exception\Process\ExtractionException;
 use Nandan108\DtoToolkit\Traits\HasPhase;
 use Nandan108\PropPath\Exception\SyntaxError;
 use Nandan108\PropPath\PropPath;
 use Nandan108\PropPath\Support\ExtractContext;
 
 /**
- * This attribute is used to specify the scoping groups for a property.
- * If it is positioned after a #[Outbound] attribute, the groups will be set for the outbound phase.
- *
  * @psalm-api
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY)]
@@ -30,7 +30,7 @@ class MapFrom implements PhaseAwareInterface
     /** @var \Closure(string, ExtractContext):never */
     private \Closure $evalErrorHandler;
 
-    public function __construct(string|array $paths)
+    public function __construct(string | array $paths)
     {
         $this->isIoBound = true;
 
@@ -42,8 +42,12 @@ class MapFrom implements PhaseAwareInterface
             throw new ExtractionSyntaxError(message: "MapFrom: Invalid path provided: $jsonPath.", previous: $e);
         }
 
-        $this->evalErrorHandler = function (string $msg, ExtractContext $context): never {
-            throw new LoadingException($context->getEvalErrorMessage($msg));
+        $this->evalErrorHandler = function (string $message, ExtractContext $context): never {
+            throw ExtractionException::extractFailed(
+                self::class,
+                $message,
+                $context,
+            );
         };
     }
 
@@ -65,7 +69,7 @@ class MapFrom implements PhaseAwareInterface
     public function setOutbound(bool $isOutbound): void
     {
         if ($isOutbound) {
-            throw new \LogicException('The MapFrom attribute cannot be used in the outbound phase.');
+            throw new InvalidConfigException('The MapFrom attribute cannot be used in the outbound phase.');
         }
     }
 

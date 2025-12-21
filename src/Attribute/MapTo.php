@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\Attribute;
 
 use Nandan108\DtoToolkit\Contracts\PhaseAwareInterface;

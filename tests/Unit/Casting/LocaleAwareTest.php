@@ -1,28 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
 use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\CastTo\LocalizedNumber;
 use Nandan108\DtoToolkit\Core\FullDto;
-use Nandan108\DtoToolkit\Exception\CastingException;
+use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException as ConfigInvalidArgumentException;
+use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
+use Nandan108\DtoToolkit\Exception\Process\TransformException;
 use Nandan108\DtoToolkit\Tests\Traits\CanTestCasterClassesAndMethods;
 use PHPUnit\Framework\TestCase;
-
-/*
- TODO: Cover sad paths for UsesLocaleResolver
-
- // protected function resolveLocaleProvider(?string $localeOrProviderClass): \Closure
-- throw new \RuntimeException('Caster must implement CastTo to use UsesLocaleResolver');
-- throw new \InvalidArgumentException('Invalid locale provider class '.$localeOrProviderClass);
-- throw new \RuntimeException(sprintf('No locale provider was configured and the "intl" extension is not loaded. Cannot resolve locale for %s.', static::class));
-- return locale_get_default();
-
-// protected function getLocale(mixed $value, ?string $localeOrProviderClass): string
-- throw new \RuntimeException('resolveLocaleProvider() must be run before calling getLocale()');
-- throw new \RuntimeException('Current property or DTO is not set'); // getLocale() was called directly
-
-*/
 
 final class LocaleAwareTest extends TestCase
 {
@@ -41,7 +30,7 @@ final class LocaleAwareTest extends TestCase
         $dtoClass = new class extends FullDto {
             #[CastTo\Floating]
             #[LocalizedNumber(locale: 'fr_FR', style: \NumberFormatter::DECIMAL)]
-            public int|string|null $number_fr = null;
+            public int | string | null $number_fr = null;
         };
 
         $dto = $dtoClass::fromArray([
@@ -56,37 +45,37 @@ final class LocaleAwareTest extends TestCase
         $dtoClass = new class extends FullDto {
             #[CastTo\Floating]
             #[LocalizedNumber(locale: 'fr_FR', style: \NumberFormatter::DECIMAL)]
-            public int|string|null $number_fr = null;
+            public int | string | null $number_fr = null;
 
             #[LocalizedNumber(locale: LocaleAwareTest_DeLocaleProvider::class, style: \NumberFormatter::DECIMAL)]
-            public float|string|null $number_de = null;
+            public float | string | null $number_de = null;
 
             #[CastTo\Floating]
             #[LocalizedNumber(locale: LocalAwareTestLocaleProvider_ValueDependent::class, style: \NumberFormatter::DECIMAL)]
-            public int|string|null $low_number = null;
+            public int | string | null $low_number = null;
 
             #[CastTo\Floating]
             #[LocalizedNumber(locale: LocalAwareTestLocaleProvider_ValueDependent::class, style: \NumberFormatter::DECIMAL)]
-            public int|string|null $high_number = null;
+            public int | string | null $high_number = null;
 
             #[CastTo\Floating]
             #[LocalizedNumber(locale: LocalAwareTestLocaleProvider_PropNameDependent::class, style: \NumberFormatter::CURRENCY_ACCOUNTING)]
-            public int|string|null $num_en_US = null;
+            public int | string | null $num_en_US = null;
 
             #[CastTo\Floating]
             #[LocalizedNumber(locale: LocalAwareTestLocaleProvider_PropNameDependent::class, style: \NumberFormatter::CURRENCY_ACCOUNTING)]
-            public int|string|null $num_fr = null;
+            public int | string | null $num_fr = null;
 
             #[CastTo\Floating]
             #[LocalizedNumber(locale: LocalAwareTestLocaleProvider_PropNameDependent::class, style: \NumberFormatter::CURRENCY_ACCOUNTING)]
-            public int|string|null $num_fr_FR = null;
+            public int | string | null $num_fr_FR = null;
 
             #[CastTo\Floating]
             #[LocalizedNumber(style: \NumberFormatter::CURRENCY_ACCOUNTING)]
-            public int|string|null $num = null;
+            public int | string | null $num = null;
 
             #[CastTo\LocalizedCurrency(currency: 'CHF', locale: 'fr_CH')]
-            public int|string|null $amount_chf = null;
+            public int | string | null $amount_chf = null;
 
             // #[CastTo\Floating]
             // #[CastTo\LocaleAwareCurrency(LocalAwareTestLocaleProvider_PropNameDependent::class, )]
@@ -118,8 +107,9 @@ final class LocaleAwareTest extends TestCase
             $dto->unfill()->fromArray(['number_fr' => 'not-a-number']);
 
             $this->fail('Expected CastingException');
-        } catch (CastingException $e) {
-            $this->assertStringStartsWith('Prop `number_fr`: Expected numeric, but got string:', $e->getMessage());
+        } catch (TransformException $e) {
+            $this->assertSame('processing.transform.expected', $e->getMessageTemplate());
+            $this->assertSame('number_fr', $e->getPropertyPath());
         }
 
         try {
@@ -127,8 +117,9 @@ final class LocaleAwareTest extends TestCase
             $dto->unfill()->fromArray(['amount_chf' => 'not numeric']);
 
             $this->fail('Expected CastingException');
-        } catch (CastingException $e) {
-            $this->assertStringContainsString('Value is not numeric', $e->getMessage());
+        } catch (TransformException $e) {
+            $this->assertSame('processing.transform.expected', $e->getMessageTemplate());
+            $this->assertSame('amount_chf', $e->getPropertyPath());
         }
     }
 
@@ -138,7 +129,7 @@ final class LocaleAwareTest extends TestCase
             public string $locale = 'fr_FR';
 
             #[LocalizedNumber(style: \NumberFormatter::DECIMAL)]
-            public float|string|null $number = null;
+            public float | string | null $number = null;
 
             public function getLocale(): string
             {
@@ -155,9 +146,9 @@ final class LocaleAwareTest extends TestCase
             /** @psalm-suppress UndefinedMagicMethod */
             $dto->unfill()->fromArray(['number' => 'not-a-number']);
             $this->fail('Expected CastingException');
-        } catch (CastingException $e) {
-            // $this->assertStringStartsWith('$dto->getContext(\'locale\') returned an invalid locale "bad-locale"', $e->getMessage());
-            $this->assertStringStartsWith('Prop `number`: Expected: numeric, but got non-numeric string', $e->getMessage());
+        } catch (TransformException $e) {
+            $this->assertSame('processing.transform.expected', $e->getMessageTemplate());
+            $this->assertSame('number', $e->getPropertyPath());
         }
     }
 
@@ -166,7 +157,7 @@ final class LocaleAwareTest extends TestCase
         $dtoClass = new class extends FullDto {
             #[CastTo\Floating]
             #[LocalizedNumber(locale: LocaleAwareTest_DeLocaleProvider::class, style: \NumberFormatter::DECIMAL)]
-            public int|string|null $number_de = null;
+            public int | string | null $number_de = null;
         };
 
         $dto = $dtoClass::fromArray([
@@ -180,15 +171,13 @@ final class LocaleAwareTest extends TestCase
     {
         $dtoClass = new class extends FullDto {
             #[LocalizedNumber(locale: 'bad-locale', style: \NumberFormatter::DECIMAL)]
-            public int|string|null $number = null;
+            public int | float | string | null $number = null;
         };
 
-        try {
-            $dtoClass::fromArray(['number' => 1234.56]);
-            $this->fail('Expected CastingException');
-        } catch (\RuntimeException $e) {
-            $this->assertStringStartsWith('Cannot resolve locale from "bad-locale"', $e->getMessage());
-        }
+        $this->expectException(InvalidConfigException::class);
+        $this->expectExceptionMessage('Cannot resolve locale from "bad-locale"');
+
+        $dtoClass::fromArray(['number' => 1234.56]);
     }
 
     public function testUsesLocaleProviderTakesLocaleFromContext(): void
@@ -199,7 +188,7 @@ final class LocaleAwareTest extends TestCase
 
         $dtoClass = new class extends FullDto {
             #[LocalizedNumber(style: \NumberFormatter::DECIMAL)]
-            public float|string|null $amount = null;
+            public float | string | null $amount = null;
         };
 
         // Pass a locale via context and check if it is used
@@ -222,8 +211,8 @@ final class LocaleAwareTest extends TestCase
             /** @psalm-suppress UndefinedMagicMethod */
             $dto->unfill()->contextSet('locale', 'bad-locale')->fromArray(['amount' => 1234.56]);
             $this->fail('Expected CastingException');
-        } catch (\RuntimeException $e) {
-            $this->assertStringStartsWith('Prop `amount`: $dto->getContext(\'locale\') returned an invalid value "bad-locale"', $e->getMessage());
+        } catch (InvalidConfigException $e) {
+            $this->assertStringContainsString('returned an invalid value "bad-locale"', $e->getMessage());
         }
     }
 
@@ -231,11 +220,11 @@ final class LocaleAwareTest extends TestCase
     {
         $dtoClass = new class extends FullDto {
             #[LocalizedNumber]
-            public int|string|null $number = null;
+            public int | string | null $number = null;
         };
 
-        $this->expectException(CastingException::class);
-        $this->expectExceptionMessage('Expected: numeric, but got non-numeric string:');
+        $this->expectException(TransformException::class);
+        $this->expectExceptionMessage('processing.transform.expected');
         $dtoClass::fromArray(['number' => 'not-a-number']);
     }
 
@@ -243,51 +232,64 @@ final class LocaleAwareTest extends TestCase
     {
         $dtoClass = new class extends FullDto {
             #[LocalizedNumber(\NumberFormatter::DECIMAL, locale: 'stdClass')]
-            public int|string|null $number = null;
+            public int | float | string | null $number = null;
         };
 
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(ConfigInvalidArgumentException::class);
         $this->expectExceptionMessage('Class stdClass does not have a getLocale() method.');
 
         $dtoClass::fromArray(['number' => 1234.56]);
+    }
+
+    private function getMontaryDecimalSeparator(string $locale): string
+    {
+        $formatter = new \NumberFormatter($locale, \NumberFormatter::CURRENCY);
+
+        return $formatter->getSymbol(\NumberFormatter::MONETARY_SEPARATOR_SYMBOL);
     }
 
     public function testUsesLocaleProviderDefaultPath(): void
     {
         $dtoClass = new class extends FullDto {
             #[LocalizedNumber(style: \NumberFormatter::CURRENCY)]
-            public float|string|null $number = null;
+            public float | string | null $number = null;
         };
 
+        $locale = 'fr_CH.UTF-8';
+        $decSep = $this->getMontaryDecimalSeparator($locale);
+
         /** @psalm-suppress UnusedFunctionCall */
-        locale_set_default('fr_CH.UTF-8');
+        locale_set_default($locale);
         $dto = $dtoClass::fromArray(['number' => 1234.56]);
 
-        $this->assertSame("1\u{202F}234,56\u{A0}CHF", $dto->number);
+        $this->assertSame("1\u{202F}234{$decSep}56\u{A0}CHF", $dto->number);
     }
 
     public function testUsesLocaleProviderDefaultPathWithIntlExtension(): void
     {
         $dtoClass = new class extends FullDto {
             #[LocalizedNumber(style: \NumberFormatter::CURRENCY)]
-            public float|string|null $number = null;
+            public float | string | null $number = null;
         };
 
+        $locale = 'fr_CH.UTF-8';
+        $decSep = $this->getMontaryDecimalSeparator($locale);
+
         /** @psalm-suppress UnusedFunctionCall */
-        locale_set_default('fr_CH.UTF-8');
+        locale_set_default($locale);
         $dto = $dtoClass::fromArray(['number' => 1234.56]);
 
-        $this->assertSame("1\u{202F}234,56\u{A0}CHF", $dto->number);
+        $this->assertSame("1\u{202F}234{$decSep}56\u{A0}CHF", $dto->number);
     }
 
     public function testLocalizedNumberFormatterThrowsWhenPrecisionIsNegative(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(ConfigInvalidArgumentException::class);
         $this->expectExceptionMessage('Precision must be a non-negative integer.');
 
         $dtoClass = new class extends FullDto {
             #[LocalizedNumber(locale: 'en_US', precision: -1)]
-            public string|float|null $num = null;
+            public string | float | null $num = null;
         };
 
         $dtoClass::fromArray(['num' => 10]);

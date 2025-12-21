@@ -1,10 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\CastTo;
 
 use Nandan108\DtoToolkit\Contracts\HasContextInterface;
 use Nandan108\DtoToolkit\Core\CastBase;
-use Nandan108\DtoToolkit\Exception\CastingException;
+use Nandan108\DtoToolkit\Exception\Config\ExtractionSyntaxError;
+use Nandan108\DtoToolkit\Exception\Process\ExtractionException;
 use Nandan108\PropPath\Exception\SyntaxError;
 use Nandan108\PropPath\PropPath;
 use Nandan108\PropPath\Support\ExtractContext;
@@ -25,7 +28,7 @@ final class Extract extends CastBase
     /** @var \Closure(string, ExtractContext):never */
     private \Closure $evalErrorHandler;
 
-    public function __construct(string|array $paths)
+    public function __construct(string | array $paths)
     {
         parent::__construct(constructorArgs: [$paths]);
 
@@ -34,12 +37,15 @@ final class Extract extends CastBase
         } catch (SyntaxError $e) {
             /** @var string $jsonPath */
             $jsonPath = json_encode($paths, JSON_THROW_ON_ERROR);
-            throw new \InvalidArgumentException("Invalid path provided: $jsonPath.", previous: $e);
+            throw new ExtractionSyntaxError("Invalid path provided: $jsonPath.", previous: $e);
         }
 
-        $this->evalErrorHandler = function (string $msg, ExtractContext $context): never {
-            $errorMessage = $context->getEvalErrorMessage($msg);
-            throw new CastingException($errorMessage, self::class, $context->roots['value']);
+        $this->evalErrorHandler = function (string $message, ExtractContext $context): never {
+            throw ExtractionException::extractFailed(
+                methodOrClass: self::class,
+                message: $message,
+                context: $context,
+            );
         };
     }
 

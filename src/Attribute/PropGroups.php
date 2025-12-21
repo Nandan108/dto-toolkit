@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\Attribute;
 
 use Nandan108\DtoToolkit\Contracts\PhaseAwareInterface;
@@ -17,7 +19,7 @@ class PropGroups implements PhaseAwareInterface
     use HasPhase;
 
     public function __construct(
-        public array|string $groups,
+        public array | string $groups,
     ) {
         $this->isIoBound = true;
     }

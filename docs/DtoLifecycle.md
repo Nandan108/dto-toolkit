@@ -5,71 +5,64 @@ Understanding the lifecycle of a DTO helps clarify when casting, validation, hoo
 This section outlines the phases your DTO goes through, from input to output, separated in two distinct phases: _inbound_ then _outbound_.
 
 ---
-## Inbound Phase
+## Inbound Phase (processing: validation + casting)
 
 ### 1. 🏗️ DTO Creation (from Input)
 
-A new DTO instance is generally created by a static call to either a `from*` or a `with*` function. `from*` function will populate the new DTO instance's properties, while `with*` will populate its context, which may be necessary before a `from*` call.
-Behind the scenes, static calls to these `from*` and `with*` calls are handled by `__callStatic()`, which will first generate a new instance with `::newInstance()`, before forwarding the inital call to a `_from*` or `_with*` method on the new instance. Existing methods are as follows:
+A new DTO instance is generally created by a static call to either a `from*` or a `with*` function. `from*` functions populate the new DTO instance's properties, while `with*` populates its context (often needed before a `from*` call).
+Behind the scenes, static calls to these `from*` and `with*` calls are handled by `__callStatic()`, which first generates a new instance with `::newInstance()`, then forwards the initial call to a `_from*` or `_with*` method on the new instance. Existing methods are:
 - **`_fromArray(array $input)`** takes an array of values to populate the DTO
 - **`_fromEntity(object $entity)`** takes an object to extract values from to populate the DTO
 - **`_fromModel(Model $model)`** to populate a DTO from an Eloquent Model *(planned for the Laravel adapter)*
 - **`_fromRequest(Request)`** to populate a DTO from an HTTP request *(planned for both Laravel and Symfony adapters)*
 - **`_withContext(array $values)`** takes an associative array of values and sets its elements to the DTO's context
-- **`_withGroups($all, $inbound, ...)`** allows setting an "operational scope" by specifying groups for all or individual DTO lifecycle phases. This will affect which properties and casters are applied depending on the use of #[PropGroups(...)] and #[Groups(...)] attributes.
+- **`_withGroups($all, $inbound, ...)`** allows setting an "operational scope" by specifying groups for all or individual DTO lifecycle phases. This affects which properties and processing steps (nodes) are applied depending on the use of #[PropGroups(...)] and #[Groups(...)] attributes.
 
 1. Under the hood, the `::newInstance()` static method is used to instantiate the DTO, possibly injecting necessary dependencies ([See DI doc for more details](DI.md)).
   ⚠️ DTO props are not initialized in the constructor, therefore each must have a default value (generally null).
 2. Public properties are populated with raw input values.
   ⚠️ This means that the types of public properties must allow raw input value types to be stored.
 3. Each property filled by a non-null value is recorded in `$this->_filled`.
-4. Property values are cast/transformed as specified by `#[CastTo\...]` attributes (see section 3. on Normalization)
-  ⚠️ This means that the types of public properties must also accomodate their post-cast type.
+4. Property values then flow through the inbound **processing chain** (validators + casters, optionally wrapped/controlled by modifiers) defined by attributes on the property (see section 2).
+  ⚠️ This means that the types of public properties must also accomodate their post-processing type.
 
-E.g. a birthdate property could have type `null|string|DateTimeImmutable`, to supports
+E.g. a birthdate property could have type `null|string|DateTimeImmutable`, to support:
    1. the initial, pre-load null value
-   2. the post-load, pre-normalization raw string value
-   3. the post-normalization date-time object's type
+   2. the post-load, pre-processing raw string value
+   3. the post-processing date-time object's type
 
 
 ---
 
-### 2. ✅ Validation (on Raw Input)
+### 2. 🔄 Processing (validators + casters, modifiers control flow)
 
-Validation — when enabled via an adapter — is performed **before normalization**, directly on the raw values assigned from input.
-
-This ensures:
-
-- Accurate feedback tied to original input
-- No risk of hiding invalid input due to coercion or default-casting
-- Predictable error reporting
-
-> ⚠️ Validating normalized values can lead to misleading errors, especially for formats like dates, booleans, or numbers.
-
----
-
-### 3. 🔄 Normalization
-
-If the DTO implements `NormalizesInboundInterface`, all `#[CastTo\...]` attributes before `#[Outbound]` are applied.
+If the DTO implements `ProcessesInterface` (via the `ProcessesFromAttributes` trait), all processing nodes before `#[Outbound]` are applied in order:
+- **Validators** (`#[Validate\...]`) run in-chain and fail fast on the first violation
+- **Casters** (`#[CastTo\...]`) transform the value
+- **Modifiers** (`#[Mod\...]`) alter the control flow of whatever follows (validators or casters). For example `#[Mod\FirstSuccess]` can wrap multiple validators to accept any one passing range check.
 
 For properties marked as *`filled`*, this phase:
-- Applies method-based or class-based casters (like `#[CastTo\Floating]`)
-- Transforms raw values of  into the appropriate internal types
-  ⚠️ This means that the types of public properties must also allow post-transformation value types to be stored.
+- Applies method-based or class-based validators, casters, and modifiers
+- Transforms raw values into the appropriate internal types
+  ⚠️ Public property types must allow post-processing value types to be stored.
 
-Only properties marked as filled will be normalized unless future features (e.g., `#[AlwaysCast]`) are added.
+Only properties marked as filled will be processed unless future features (e.g., `#[AlwaysCast]`) are added.
 
 ---
 
-### 4. 🧩 Post-Processing (`postLoad()` Hook)
+### 3. 🧩 Post-Processing and Pre-Export hooks (`postLoad() / preOutput()`)
 
-If the DTO class defines a `postLoad()` method, it will be invoked **after normalization**.
+If the DTO class defines a `postLoad()` method, it will be invoked **after inbound processing**.
 
 Use this to:
 - Derive or compute additional values
 - Perform cross-field logic
 - Modify the DTO in-place before application logic
 
+Similarely, if the DTO class defines a `preOutput($outputData)` method, it will be invoked **after outbound processing**.
+Use this hook for final preparation or modification of `$outputData`, right before it is returned.
+
+> Note that hooks **should not** introduce side effects outside the DTO
 ---
 
 ## Outbound Phase
@@ -107,9 +100,7 @@ Inbound :
       ↓
       Raw values assigned
       ↓
-      Validation (on raw input, using external validator)
-      ↓
-      Normalization (inbound casting)
+      Inbound Processing (validation and normalization)
       ↓
       postLoad() hook
       ↓
@@ -118,17 +109,17 @@ Inbound :
 Outbound :
    $dto->toOutboundArray()
       ↓
-      Outbound casting
+      Outbound processing (validators/casters after #[Outbound])
       ↓
       preOutput() hook
       ↓
-      returns entity
+      returns array
 or:
    $dto->toEntity() / toResponse() / ...
       ↓
       toOutboundArray()
             ↓
-            Outbound casting
+            Outbound processing (validators/casters after #[Outbound])
       ↓
       hydrate output object
       ↓

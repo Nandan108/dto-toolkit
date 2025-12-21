@@ -1,0 +1,227 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Nandan108\DtoToolkit\Exception\Process;
+
+use Nandan108\DtoToolkit\Contracts\DtoToolkitException;
+use Nandan108\DtoToolkit\Contracts\ProcessingExceptionInterface;
+use Nandan108\DtoToolkit\Internal\ProcessingNodeBase;
+
+/**
+ * Base exception for processing nodes (casting + validation).
+ */
+class ProcessingException extends \RuntimeException implements DtoToolkitException, ProcessingExceptionInterface
+{
+    /** @var non-empty-string */
+    public const DOMAIN = 'processing';
+    protected static string $defaultErrorCode = self::DOMAIN.'.failure';
+    public static int $max_text_length = 100;
+
+    protected string $template;
+
+    /**
+     * Parameters should contain only public information to be used in messages:
+     * - no internal class names, implementation details, stack traces or DTO structure leakage
+     * - no sensitive information = no value contents unless sanitized
+     */
+    protected array $parameters = [];
+    protected array $debug = [];
+    protected string | int | null $errorCode = null;
+    protected ?string $propertyPath = null;
+
+    public function __construct(
+        string $template_suffix = '',
+        array $parameters = [],
+        array $debug = [],
+        string | int | null $errorCode = null,
+        int $httpCode = 422,
+    ) {
+        $this->template = static::DOMAIN.($template_suffix ? ".$template_suffix" : '');
+        $this->parameters = $parameters;
+        $this->debug = $debug;
+        $this->errorCode = $errorCode ?? static::$defaultErrorCode;
+        $this->propertyPath = ProcessingNodeBase::getPropPath();
+
+        parent::__construct($this->template, $httpCode);
+    }
+
+    final public static function reason(
+        string $methodOrClass,
+        mixed $value,
+        string $template_suffix = '',
+        array $parameters = [],
+        string | int | null $errorCode = null,
+        array $debugExtras = [],
+    ): self {
+        $public = array_merge([
+            'methodOrClass' => $methodOrClass,
+            'type'          => get_debug_type($value),
+        ], $parameters);
+
+        $debug = [
+            'value'         => self::prepareOperandForDebug($value),
+            'type'          => get_debug_type($value),
+            'orig_value'    => $value,
+        ] + $debugExtras;
+
+        /** @psalm-suppress UnsafeInstantiation */
+        return new static(
+            template_suffix: $template_suffix,
+            parameters: $public,
+            debug: $debug,
+            errorCode: $errorCode ?? static::$defaultErrorCode,
+        );
+    }
+
+    /**
+     * Basic “validation/transformation failed” builder.
+     *
+     * @param non-empty-string $template_suffix
+     */
+    public static function failed(
+        string $template_suffix,
+        array $parameters = [],
+        string | int | null $errorCode = null,
+        ?int $httpCode = 422,
+        array $debug = [],
+    ): self {
+        /** @psalm-suppress UnsafeInstantiation */
+        return new static(
+            template_suffix: $template_suffix,
+            parameters: $parameters,
+            errorCode: $errorCode ?? static::$defaultErrorCode,
+            httpCode: $httpCode ?? 422,
+            debug: $debug,
+        );
+    }
+
+    /**
+     * Expected $expected, but got type($operand).
+     *
+     * @param non-empty-string $
+     * @param ?non-empty-string $templateSuffix
+     */
+    public static function expected(
+        string $methodOrClass,
+        mixed $operand,
+        string $expected,
+        ?string $templateSuffix = null,
+        array $parameters = [],
+    ): static {
+        /** @var static */
+        return static::failed(
+            template_suffix: $templateSuffix ?? 'expected',
+            errorCode: static::DOMAIN.'.expected',
+            parameters: [
+                'expected'      => $expected,
+                'methodOrClass' => $methodOrClass,
+            ] + $parameters,
+            debug: [
+                'value'      => self::prepareOperandForDebug($operand),
+                'orig_value' => $operand,
+                'type'       => get_debug_type($operand),
+            ],
+        );
+    }
+
+    public static function expectedStringable(
+        string $methodOrClass,
+        mixed $value,
+        bool $expectNonEmpty = false,
+    ): ProcessingException {
+
+        $template = $expectNonEmpty ? 'stringable.non_empty_expected' : 'stringable.expected';
+
+        return static::expected(
+            methodOrClass: $methodOrClass,
+            operand: $value,
+            expected: $expectNonEmpty ? 'non-empty stringable' : 'stringable',
+            templateSuffix: $template,
+        );
+    }
+
+    // ProcessingExceptionInterface methods:
+    #[\Override]
+    public function getMessageTemplate(): string
+    {
+        return $this->template;
+    }
+
+    #[\Override]
+    public function getMessageParameters(): array
+    {
+        return $this->parameters;
+    }
+
+    #[\Override]
+    public function getErrorCode(): string | int | null
+    {
+        return $this->errorCode;
+    }
+
+    #[\Override]
+    public function getPropertyPath(): ?string
+    {
+        return $this->propertyPath;
+    }
+
+    public function getDebugInfo(): array
+    {
+        return $this->debug;
+    }
+
+    /**
+     * Extracted from old CastingException::castingFailure()
+     * but now returns a string for the `debug` parameter.
+     */
+    protected static function prepareOperandForDebug(mixed $operand): string
+    {
+        // Scalar, empty, or array → try json
+        if (null === $operand || is_scalar($operand) || is_array($operand)) {
+            $txt = json_encode(
+                $operand,
+                JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
+            );
+
+            if (false === $txt) {
+                return '[json-encode-error]';
+            }
+
+            return self::truncate($txt);
+        }
+
+        // Object
+        if (is_object($operand)) {
+            // Try __toString()
+            if (method_exists($operand, '__toString')) {
+                $s = (string) $operand;
+
+                return self::truncate($s);
+            }
+
+            // Try JsonSerializable
+            if ($operand instanceof \JsonSerializable) {
+                $txt = json_encode(
+                    $operand->jsonSerialize(),
+                    JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
+                );
+
+                return false !== $txt ? self::truncate($txt) : '[json-error]';
+            }
+
+            // Fallback: var_export
+            return self::truncate(var_export($operand, true));
+        }
+
+        // Fallback
+        return '[unrepresentable]';
+    }
+
+    protected static function truncate(string $txt): string
+    {
+        return (strlen($txt) > self::$max_text_length)
+            ? substr($txt, 0, self::$max_text_length).'...'
+            : $txt;
+    }
+}

@@ -1,9 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\Attribute;
 
 use Nandan108\DtoToolkit\Contracts\HasGroupsInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
+use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
 
 /**
  * This attribute is used to specify the scoping groups for a property.
@@ -15,19 +18,18 @@ use Nandan108\DtoToolkit\Core\BaseDto;
 class WithDefaultGroups
 {
     public function __construct(
-        public array|string $all = [], // applies to all phases
-        public array|string $inbound = [],
-        public array|string $inboundCast = [],
-        public array|string $outbound = [],
-        public array|string $outboundCast = [],
-        public array|string $validation = [],
+        public array | string $all = [], // applies to all phases
+        public array | string $inbound = [],
+        public array | string $inboundCast = [],
+        public array | string $outbound = [],
+        public array | string $outboundCast = [],
     ) {
     }
 
     public function applyToDto(BaseDto $dto): void
     {
         if (!($dto instanceof HasGroupsInterface)) {
-            throw new \LogicException('The WithDefaultGroups attribute can only be used on DTOs that implement the HasGroupsInterface.');
+            throw new InvalidConfigException('The WithDefaultGroups attribute can only be used on DTOs that implement the HasGroupsInterface.');
         }
         $dto->_withGroups(
             all: $this->all,
@@ -35,7 +37,6 @@ class WithDefaultGroups
             inboundCast: $this->inboundCast,
             outbound: $this->outbound,
             outboundCast: $this->outboundCast,
-            validation: $this->validation
         );
     }
 }

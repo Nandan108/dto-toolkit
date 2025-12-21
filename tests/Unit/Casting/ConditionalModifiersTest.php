@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
 use Nandan108\DtoToolkit\Attribute\ChainModifier as Mod;
@@ -28,7 +30,7 @@ final class ConditionalModifiersTest extends TestCase
 
             public string $desiredCase = 'pascal';
 
-            public function desiredCaseIs(mixed $value, string $prop, string|array $case): bool
+            public function desiredCaseIs(mixed $value, string $prop, string | array $case): bool
             {
                 return in_array($this->desiredCase, (array) $case);
             }

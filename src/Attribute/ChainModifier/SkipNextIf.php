@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\Attribute\ChainModifier;
 
 use Nandan108\DtoToolkit\Traits\UsesParamResolver;
@@ -22,7 +24,7 @@ class SkipNextIf extends ApplyNextIf
         parent::__construct(
             condition: $condition,
             count: $count,
-            negate: true
+            negate: true,
         );
     }
 }

@@ -1,29 +1,32 @@
 # DTO Toolkit Backlog
 
 ## Product Backlog Items
-
+- **[078]** Introduce PresencePolicy to clear up semantics around `null` vs `missing` input values.
+- **[073]** Refactor DTO pipeline methods (from*, with*) to get psalm happy w/o suppress.
+  - Rename `BaseDto::newInstance()` to `::new()`,
+  - Rename `from*` instance methods to `load*`,
+  - Rename `with*` static magic methods to `newWith*` (keep instance as `with*`)
+- **[074]** Consider renaming or aliasing Validate namespace to Assert, and revise namespace aliasing suggestions.
+- **[075]** Port a majority of Symfony validation constraints (`#[Assert\...]`) to DTOT Core
 - **[071]** Add `#[CastTo\Coalesce(array, $ignore = [null])]` - takes an array and return first element not in $ignore list.
+- **[077]** Add `#[Validate\CompareTo($operator, $value)]`, `#[Validate\CompareToExtract($operator, $path)]`
+- **[088]** Introduce new processor node type more similar to modifiers: rather than having a single cast() or validate() method, they'd have a makeValidator()/makeCaster() method, that can return an optimized Closure, which might be different depending on $constructorArgs.
 - **[046]** Add modifier `#[SkipIfMatch(array $values, $return=null)]`, allows short-circuitting following caster(s) by returning \$return if input is found in \$values or input in $values.
 - **[056]** Support multi-step casting by making withGroups(inboundCast: ...) take a sequence of group(s)
   Then apply each step in sequence. Same with outboundCast.
 - **[044]** Add support for DTO transforms (`\$dto->toDto($otherDtoClass)`) [See details](#PBI-044)
-- **[028]** Add nested DTO support with `CastTo\Dto(class, groups: 'api')` (from array or object), recursive normalization and validation
+- **[028]** Add nested DTO support with `CastTo\Dto(class, groups: 'api')` (from array or object)
+  - support recursive normalization and validation
 - **[034]** Add support for logging failed casts in FailTo/FailNextTo. `CastTo::$castSoftFailureLogger = function (CastingException $e, $returnedVal)`
 - **[062]** Add support for getCaster() debug mode
   - When enabled, caster closures push/pop debug context during execution
-  - On casting failure, CastingException::castingFailure() can include full chain trace
+  - On casting failure, TransformExceptions can include full chain trace
   - Example message: "PropName: Caster1->Caster2->FailNextTo(PerItem(Caster3 -> Caster4))"
-- **[048]** Add debug mode setting. When enabled, add casting stack tracking (push/pop) to enable logging full context when failing within a chain.
+- **[048]** *Add debug mode setting. When enabled, add casting stack tracking (push/pop) to enable logging full context when failing within a chain.*
 - **[050]** Add `#[LogCast($debugOnly = true)]` to also allow logging non-failing chains.
-- **[036]** Add support for `#[AlwaysCast(fromVal:...)]`. Forces casting unfilled props by auto-filling with a default value.
-- **[045]** Add support for validation [See details](#PBI-045)
+- **[036]** Add support for `#[AlwaysFilled]`: marks prop as filled immediately on DTO instantiation.
   The mapping source will be different for inbound and outbound casting, this needs reflexion.
-  **[058]** Add a doc about FullDto and making one's own slimmed-down version if not all features are needed
-- **[072]** Add support for continued processing after failure, throwing the full list of errors at the end, with pluggable error processing.
-- **[063]** Rename Caster Chains to Processing Chains and add Validation attributes as part of chains
-  - E.g., #[Valid\Range(min, max)], #[Valid\StrLength()]
-  - Non-mutating steps: must have validate($value): void, can throw ValidationException
-  - Must be phase-aware like other processing chain elements
+- **[058]** Add a doc about FullDto and making one's own slimmed-down version if not all features are needed
 - **[064]** Add framework-specific ValidationException mappers in adapters
   - Add a "ProcessingErrorMapperInterface" for adapter overrides
   - Core DTOT will throw a generic ValidationException on validation failure
@@ -51,7 +54,7 @@
 - [012] Implement default castToIntOrNull, castToStringOrNull, castToDateTimeOrNull
 - [013] Implement entity setter map with reflection and fallback
 - [014] Rename BaseInputDto to BaseDto
-- [015] Extract trait NormalizesFromAttributes
+- [015] Extract trait ProcessesFromAttributes
 - [016] Add support for #[CastTo(..., outbound: true)] on output DTOs
 - [017] Allow parameterized casts (e.g. separator for CSV)
 - [018] Implement unit tests for existing features (and add testing to DoD)
@@ -88,6 +91,9 @@
 - [069] Add  #[WithDefaultGroups(...)] class attribute, takes same params as UsesGroups::_withGroups() and auto-applies them after instanciation
 - [020] Add `#[MapTo(...)]` Attribute [See details](Mapping.md)
 - [055] Add `#[Extract(string|array $roots)]` to allow mapping from one or more internal properties or values already cast in a previous step, rather than external input.
+- [045] Add support for validation [See details](#PBI-045)
+- [063] Rename Caster Chains to Processing Chains and add Validation attributes as part of chains
+- [072] Add support for flexible error handling and error collection, so adapters can support native framework error handling.
 
 
 ---
@@ -102,8 +108,8 @@
     - `BaseDto::toArray(array $props = [], array $groups = [])` should filter properties based on group matching
     - Downstream consumers (`fromArray`, `fromDto`, `toOutboundArray`, `toEntity`) must accept and pass `?array $groups` to `toArray`
 - **Casting**
-    - `CastTo::getCastingClosureMap(BaseDto $dto, array $groups = [])` should filter out caster attributes that declare `groups` not intersecting with the active group set
-    - `NormalizesFromAttributes` must pass `groups` into casting closure map resolution
+    - `CastTo::getProcessingNodeClosureMap(BaseDto $dto, array $groups = [])` should filter out processing attributes that declare `groups` not intersecting with the active group set
+    - `ProcessesFromAttributes` must pass `groups` into processing closure map resolution
 - **Caster syntax**: Caster attributes should allow optional `groups: string|array`
     - `#[CastTo\Slug(groups: ['public', 'seo'])]`
 - **Future-compatible**
@@ -123,53 +129,4 @@
   - This supports overriding `fromDto()` to customize data interpretation, grouping, or mapping logic
 
 - **Optional override hooks**: Subclasses may override `fromDto()` to bypass outbound casting, apply custom property mapping or normalize derived data.
-
----
-
-### <a id="PBI-045"></a> 🧩 PBI 45: Add framework-agnostic validation support with pluggable validator registry
-
-> “Allow DTOs to be validated in a clean, explicit, framework-neutral way, supporting one or more registered validation engines transparently.”
-
-#### 🔹 Implementation concerns:
-
-- **Define `ValidationInterface` in Core**
-  - Contract:
-    ```php
-    public function validate(object $dto, ?array $groups = null): void;
-    ```
-  - May throw a shared `ValidationException` for any failure
-
-- **Add a `HasValidatorRegistry` trait**
-  - Provides static methods to register one or more validators:
-    ```php
-    BaseDto::setValidator('symfony', new SymfonyValidatorBridge());
-    BaseDto::setValidator('laravel', new LaravelValidatorBridge());
-    BaseDto::clearValidators(); // optional for testing
-    ```
-
-- **Integrate into `BaseDto`**
-  - Add a `validate(?string $with = null): void` method
-  - Behavior:
-    - If `with` is provided, only that validator is used
-    - If `with` is `null`, all registered validators are applied in order
-
-- **Group support**
-  - Call each registered validator with optional `string|array $groups = []`
-
-- **Usage examples**
-  ```php
-  // run all registered validators, passing groups: ['api']
-  $dto->validate(groups: 'api');
-  // run only the Symfony one
-  $dto->validate(groups: ['api', 'admin'], with: 'symfony');
-  ```
-
-- **Optional fallback validator**
-  - Provide a `NullValidator` that implements `ValidationInterface` and always passes (useful in testing or CLI tools)
-
-- **Adapter registration**
-  - Symfony and Laravel adapters can auto-register their validator bridges during bootstrapping
-
-- **Keeps core decoupled**
-  - No dependency on Symfony, Laravel, or any validation engine
 

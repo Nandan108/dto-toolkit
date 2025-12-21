@@ -1,0 +1,27 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Nandan108\DtoToolkit\Validate;
+
+use Nandan108\DtoToolkit\Core\ValidateBaseNoArgs;
+use Nandan108\DtoToolkit\Exception\Process\GuardException;
+
+#[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
+final class Uuid extends ValidateBaseNoArgs
+{
+    private const REGEX = '/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/';
+
+    #[\Override]
+    public function validate(mixed $value, array $args = []): void
+    {
+        if (!is_string($value) || 1 !== preg_match(self::REGEX, $value)) {
+            throw GuardException::invalidValue(
+                value: $value,
+                template_suffix: 'invalid_uuid',
+                methodOrClass: self::class,
+                errorCode: 'validate.uuid.invalid',
+            );
+        }
+    }
+}

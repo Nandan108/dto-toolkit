@@ -1,11 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
 use Nandan108\DtoToolkit\CastTo\DateTime;
 use Nandan108\DtoToolkit\CastTo\LocalizedDateTime;
 use Nandan108\DtoToolkit\Core\FullDto;
 use Nandan108\DtoToolkit\Enum\DateTimeFormat;
+use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
 use PHPUnit\Framework\TestCase;
 
 final class UsesTimezoneResolverTest extends TestCase
@@ -23,7 +26,7 @@ final class UsesTimezoneResolverTest extends TestCase
         // normal path
         $dto = new class extends FullDto {
             #[DateTime(DateTimeFormat::SQL, timezone: 'Europe/Paris')]
-            public \DateTimeInterface|string|null $date = null;
+            public \DateTimeInterface | string | null $date = null;
         };
         /** @psalm-suppress UndefinedMagicMethod */
         $date = $dto->fromArray(['date' => '2025-10-05 12:34:00'])->date;
@@ -35,7 +38,7 @@ final class UsesTimezoneResolverTest extends TestCase
         // normal path a second time - covers cached value path
         $dto = new class extends FullDto {
             #[DateTime(DateTimeFormat::SQL, timezone: 'Europe/Paris')]
-            public \DateTimeInterface|string|null $date = null;
+            public \DateTimeInterface | string | null $date = null;
         };
         /** @psalm-suppress UndefinedMagicMethod */
         $date = $dto->fromArray(['date' => '2025-10-05 12:34:00'])->date;
@@ -48,7 +51,7 @@ final class UsesTimezoneResolverTest extends TestCase
         // -> keeps default timezone from parsed value, which is UTC for SQL format
         $dto = new class extends FullDto {
             #[DateTime(DateTimeFormat::SQL)]
-            public \DateTimeInterface|string|null $date = null;
+            public \DateTimeInterface | string | null $date = null;
         };
         /** @psalm-suppress UndefinedMagicMethod */
         $date = $dto->fromArray(['date' => '2025-10-05 12:34:00'])->date;
@@ -63,7 +66,7 @@ final class UsesTimezoneResolverTest extends TestCase
                 timeStyle: \IntlDateFormatter::SHORT,
                 locale: 'fr_CH',
             )]
-            public \DateTimeInterface|string|null $date = null;
+            public \DateTimeInterface | string | null $date = null;
         };
         /** @psalm-suppress UndefinedMagicMethod */
         $dto->fromArray(['date' => new \DateTimeImmutable('2025-10-05T12:34:00+02:00')]);
@@ -73,11 +76,11 @@ final class UsesTimezoneResolverTest extends TestCase
         try {
             $dto = new class extends FullDto {
                 #[DateTime(DateTimeFormat::SQL, timezone: 'not-a-timezone')]
-                public \DateTimeInterface|string|null $date = null;
+                public \DateTimeInterface | string | null $date = null;
             };
             /** @psalm-suppress UndefinedMagicMethod */
             $dto->fromArray(['date' => '2025-10-05 12:34:00']);
-        } catch (\RuntimeException $e) {
+        } catch (InvalidConfigException $e) {
             $this->assertStringContainsString('Cannot resolve timezone from "not-a-timezone"', $e->getMessage());
         }
     }

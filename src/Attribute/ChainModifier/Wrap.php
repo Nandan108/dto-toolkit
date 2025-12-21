@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\Attribute\ChainModifier;
 
 use Nandan108\DtoToolkit\Core\BaseDto;
-use Nandan108\DtoToolkit\Internal\CasterChain;
+use Nandan108\DtoToolkit\Internal\ProcessingChain;
 
 /**
  * The Wrap attribute is used only to wrap zero or more nodes in the chain.
@@ -27,12 +29,12 @@ class Wrap extends ChainModifierBase
      * @param \ArrayIterator $queue The queue of attributes to be processed
      * @param BaseDto        $dto   The DTO instance
      *
-     * @return CasterChain Just wraps the next $this->count CastTo attributes
+     * @return ProcessingChain Just wraps the next $this->count CastTo attributes
      */
     #[\Override]
-    public function getCasterChainNode(BaseDto $dto, ?\ArrayIterator $queue): CasterChain
+    public function getProcessingNode(BaseDto $dto, ?\ArrayIterator $queue): ProcessingChain
     {
         // Grab a subchain made of the next $this->count CastTo attributes from the queue
-        return new CasterChain($queue, $dto, $this->count, "Wrap($this->count)");
+        return new ProcessingChain($queue, $dto, $this->count, "Wrap($this->count)");
     }
 }

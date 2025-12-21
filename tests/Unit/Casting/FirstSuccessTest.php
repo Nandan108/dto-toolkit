@@ -1,13 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
 use Nandan108\DtoToolkit\Attribute\ChainModifier as Mod;
 use Nandan108\DtoToolkit\Attribute\ChainModifier\FailIf;
 use Nandan108\DtoToolkit\CastTo;
+use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Core\FullDto;
-use Nandan108\DtoToolkit\Exception\CastingException;
+use Nandan108\DtoToolkit\Exception\Process\ProcessingException;
 use Nandan108\DtoToolkit\Tests\Traits\CanTestCasterClassesAndMethods;
+use Nandan108\DtoToolkit\Validate as Valid;
 use PHPUnit\Framework\TestCase;
 
 final class FirstSuccessTest extends TestCase
@@ -46,9 +50,61 @@ final class FirstSuccessTest extends TestCase
         $dto->withContext(['allowArray' => false])->withGroups('qux')->fromArray(['value' => $input]);
         $this->assertSame('123.4', $dto->value);
 
-        $this->expectException(CastingException::class);
-        $this->expectExceptionMessage('All 4 nodes wrapped by FirstSuccess have failed');
-        /** @psalm-suppress UndefinedMagicMethod */
-        $dto->withGroups('fux')->fromArray(['value' => $input]);
+        try {
+            // Test that FirstSuccess fails when all nodes fail
+            /** @psalm-suppress UndefinedMagicMethod */
+            $dto->withGroups('fux')->fromArray(['value' => $input]);
+        } catch (ProcessingException $e) {
+            $this->assertStringContainsString('processing.modifier.first_success.all_failed', $e->getMessage());
+            $this->assertSame(4, $e->getMessageParameters()['strategy_count']);
+        }
+    }
+
+    public function testFirstSuccessWithValidators(): void
+    {
+        $dto = new class extends FullDto {
+            #[Mod\FirstSuccess(2)]
+            #[Valid\Range(min: 1, max: 3)]
+            #[Valid\Range(min: 10, max: 12)]
+            public mixed $num = null;
+        };
+
+        $dto->fill(['num' => 11])->processInbound();
+        $dto->fill(['num' => 2])->processInbound();
+
+        try {
+            $dto->fill(['num' => 100])->processInbound();
+            $this->fail('Expected ProcessingException not thrown');
+        } catch (ProcessingException $e) {
+            $this->assertStringContainsString('processing.modifier.first_success.all_failed', $e->getMessage());
+            $this->assertSame(2, $e->getMessageParameters()['strategy_count']);
+
+        }
+    }
+
+    public function testFailIfThrowsProcessingException(): void
+    {
+        $dto = new class extends FullDto {
+            #[FailIf(AlwaysTrueCondition::class.'::provide')]
+            public mixed $value = null;
+        };
+
+        $caught = false;
+        try {
+            $dto->fill(['value' => 'anything'])->processInbound();
+        } catch (ProcessingException $e) {
+            $caught = true;
+            $this->assertStringContainsString('processing.modifier.fail_if.condition_failed', $e->getMessage());
+        }
+        $this->assertTrue($caught);
+    }
+}
+
+final class AlwaysTrueCondition
+{
+    /** @psalm-suppress UnusedParam, PossiblyUnusedMethod */
+    public static function provide(mixed $value, ?string $prop, BaseDto $dto): bool
+    {
+        return true;
     }
 }

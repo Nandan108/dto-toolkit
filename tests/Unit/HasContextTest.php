@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Unit\Traits;
 
 use Nandan108\DtoToolkit\Contracts\HasContextInterface;

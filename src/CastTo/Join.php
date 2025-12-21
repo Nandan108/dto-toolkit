@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\CastTo;
 
 use Nandan108\DtoToolkit\Core\CastBase;
-use Nandan108\DtoToolkit\Exception\CastingException;
+use Nandan108\DtoToolkit\Exception\Process\TransformException;
 
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class Join extends CastBase
@@ -19,12 +21,12 @@ final class Join extends CastBase
         [$separator] = $args;
         /** @var string $separator */
         if (!is_array($value)) {
-            throw CastingException::castingFailure(className: self::class, operand: $value, messageOverride: 'Expected array, but got '.gettype($value));
+            throw TransformException::expected(static::class, $value, 'array');
         }
 
         $value = array_map(
-            fn ($item) => $this->throwIfNotStringable($item),
-            $value
+            fn ($value) => $this->ensureStringable($value),
+            $value,
         );
 
         return implode($separator, $value);

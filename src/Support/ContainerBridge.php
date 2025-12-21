@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\Support;
 
+use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
 use Psr\Container\ContainerInterface;
 
 /**
@@ -17,7 +20,7 @@ final class ContainerBridge
     private static ?ContainerInterface $container = null;
     private static array $manualBindings = [];
 
-    public static function register(string $abstract, string|object $concrete): void
+    public static function register(string $abstract, string | object $concrete): void
     {
         self::$manualBindings[$abstract] = $concrete;
     }
@@ -59,7 +62,7 @@ final class ContainerBridge
             }
         }
 
-        throw new \LogicException('No DI container was configured, unable to resolve type '.$concrete.'.');
+        throw new InvalidConfigException('No DI container was configured, unable to resolve type '.$concrete.'.');
     }
 
     public static function has(string $id): bool

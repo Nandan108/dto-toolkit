@@ -1,0 +1,44 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Nandan108\DtoToolkit\Validate;
+
+use Nandan108\DtoToolkit\Core\ValidateBase;
+use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
+use Nandan108\DtoToolkit\Exception\Process\GuardException;
+
+#[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
+final class DateFormat extends ValidateBase
+{
+    /** @psalm-suppress PossiblyUnusedMethod */
+    public function __construct(string $format)
+    {
+        if ('' === $format) {
+            throw new InvalidConfigException('DateFormat validator requires a format string.');
+        }
+        parent::__construct([$format]);
+    }
+
+    #[\Override]
+    public function validate(mixed $value, array $args = []): void
+    {
+        $format = $args[0];
+
+        $value = $this->ensureStringable($value, false);
+
+        $dt = \DateTimeImmutable::createFromFormat($format, $value);
+        $errors = \DateTimeImmutable::getLastErrors();
+        if (!$dt || $errors && ($errors['warning_count'] || $errors['error_count'])) {
+            // Date does not match date format
+            throw GuardException::invalidValue(
+                value: $value,
+                template_suffix: 'date.format_mismatch',
+                methodOrClass: self::class,
+                parameters: ['format' => $format],
+                debug: $errors ?: [],
+                errorCode: 'validate.date.format_mismatch',
+            );
+        }
+    }
+}

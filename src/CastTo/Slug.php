@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\CastTo;
 
 use Nandan108\DtoToolkit\Core\CastBase;
@@ -23,7 +25,7 @@ final class Slug extends CastBase
     {
         [$separator] = $args;
 
-        $value = $this->throwIfNotStringable($value);
+        $value = $this->ensureStringable($value);
         $value = static::removeDiacritics($value);
         $value = preg_replace('/[^A-Za-z0-9]+/', $separator, $value) ?? '';
 

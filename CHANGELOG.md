@@ -4,6 +4,37 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [0.8.0] - 2025-12-05
+
+### Added
+- Processing chains now support **validation nodes alongside casters**, enabling end-to-end processing flows (casting + validation) on DTO properties.
+- Introduced **error-collection modes** (`ErrorMode` enum) and the `ProcessingErrorList` container.
+  Processing can now continue after node failures and accumulate errors using four modes:
+  - `FailFast` (default)
+  - `CollectFailToInput`
+  - `CollectFailToNull`
+  - `CollectNone`
+  These modes apply uniformly to inbound (`fromArray()`) and outbound (`toOutboundArray()`) processing.
+- New exception layout with domain-specific namespaces (`Config\*`, `Process\*`, `Context\*`) and `ProcessingExceptionInterface` to standardize adapter-facing error contracts.
+- Guard/Transform/Extraction exception builders now expose structured template parameters to support downstream **i18n** in adapters.
+- Added `ProcessingErrorList` (core utility) for frameworks to convert collected errors into native structures such as Symfony `ConstraintViolationList` or Laravel `MessageBag`.
+
+### Changed
+- Processing pipeline refactored to use generic **processing nodes** (casters and validators) rather than casting-only nodes; `ValidateBase` inherits the same lifecycle, context, and error semantics as casters.
+- Exception subsystem refactored to align with best practices: clear domain separation, consistent error codes/templates, and enriched debug payloads for adapter and tooling integrations.
+- Inbound and outbound normalization now support structured error reporting via the new error-collection system.
+- Documentation updated to reflect processing/validation unification and the new exception hierarchy.
+
+### Removed
+- Legacy exception classes (`CastingException`, old `ProcessingException`, `ValidationException`) and the old `Exception\ExtractionSyntaxError` / `Exception\LoadingException` namespaces.
+
+### BREAKING
+- Exception class names and namespaces have changed; applications catching old exceptions must update to the new `Config\*` / `Process\*` classes.
+- Processing chain APIs now operate on generic processing nodes; custom extensions that assumed casting-only behavior must adapt to validator-aware semantics.
+- DTO hydration behavior has changed for failure scenarios: inbound and outbound processing now respect `ErrorMode`, affecting how DTO properties are assigned, nullified, or omitted on failure.
+
+---
+
 ## [0.7.0] - 2025-07-04
 
 ### Added

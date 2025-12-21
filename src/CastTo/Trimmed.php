@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\CastTo;
 
 use Nandan108\DtoToolkit\Core\CastBase;
@@ -19,7 +21,7 @@ final class Trimmed extends CastBase
     {
         [$characters, $where] = $args;
 
-        $v = $this->throwIfNotStringable($value);
+        $v = $this->ensureStringable($value);
 
         return match ($where) {
             'left'  => ltrim($v, $characters),

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\Contracts;
 
 use Nandan108\DtoToolkit\Enum\Phase;
@@ -8,12 +10,12 @@ interface HasGroupsInterface
 {
     /** @psalm-suppress PossiblyUnusedMethod, PossiblyUnusedReturnValue*/
     public function _withGroups(
-        array|string $all = [], // all-phases default
-        array|string $inbound = [],
-        array|string $inboundCast = [],
-        array|string $outbound = [],
-        array|string $outboundCast = [],
-        array|string $validation = [],
+        array | string $all = [], // all-phases default
+        array | string $inbound = [],
+        array | string $inboundCast = [],
+        array | string $outbound = [],
+        array | string $outboundCast = [],
+        array | string $validation = [],
     ): static;
 
     /** @psalm-suppress PossiblyUnusedMethod */

@@ -1,11 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\CastTo;
 
 use Nandan108\DtoToolkit\Contracts\BootsOnDtoInterface;
 use Nandan108\DtoToolkit\Contracts\CasterInterface;
 use Nandan108\DtoToolkit\Core\CastBase;
-use Nandan108\DtoToolkit\Exception\CastingException;
+use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
+use Nandan108\DtoToolkit\Exception\Process\TransformException;
 use Nandan108\DtoToolkit\Traits\UsesLocaleResolver;
 use Nandan108\DtoToolkit\Traits\UsesTimeZoneResolver;
 
@@ -23,7 +26,7 @@ final class LocalizedDateTime extends CastBase implements CasterInterface, Boots
         ?string $pattern = null,
         ?string $timezone = null,
     ) {
-        $this->throwIfExtensionNotLoaded('intl');
+        $this->ensureExtensionLoaded('intl');
 
         parent::__construct([$dateStyle, $timeStyle, $pattern], ['locale' => $locale, 'timezone' => $timezone]);
     }
@@ -46,7 +49,7 @@ final class LocalizedDateTime extends CastBase implements CasterInterface, Boots
         [$dateStyle, $timeStyle, $pattern] = $args;
 
         if (!$value instanceof \DateTimeInterface) {
-            throw CastingException::castingFailure(static::class, $value, 'Value must be a DateTimeInterface');
+            throw TransformException::expected(static::class, $value, 'DateTimeInterface');
         }
 
         /** @var string $locale */
@@ -62,9 +65,18 @@ final class LocalizedDateTime extends CastBase implements CasterInterface, Boots
             calendar: \IntlDateFormatter::GREGORIAN,
             pattern: $pattern,
         );
-        if (!$formatter) {
-            $message = 'Invalid date formater arguments: '.json_encode(compact('locale', 'dateStyle', 'timeStyle', 'pattern', 'timezone'), JSON_THROW_ON_ERROR);
-            throw CastingException::castingFailure(static::class, $value, messageOverride: $message);
+
+        if (null === $formatter) {
+            throw new InvalidConfigException(
+                message: 'Failed to create IntlDateFormatter instance.',
+                debug: [
+                    'locale'    => $locale,
+                    'dateStyle' => $dateStyle,
+                    'timeStyle' => $timeStyle,
+                    'pattern'   => $pattern,
+                    'timezone'  => $timezone?->getName(),
+                ],
+            );
         }
 
         $formatted = $formatter->format($value);

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\Traits;
 
 use Nandan108\DtoToolkit\CastTo;
@@ -41,7 +43,7 @@ trait UsesTimeZoneResolver
             },
             // Default value for output timeone is input timezone
             // Since this trait may be used in both directions
-            fallback: fn (string|\DateTimeInterface $value): ?string => $value instanceof \DateTimeInterface
+            fallback: fn (string | \DateTimeInterface $value): ?string => $value instanceof \DateTimeInterface
                 ? $value->getTimezone()->getName() // DateTimeInterface -> string: keep same timezone
                 : null, // string -> DateTimeInterface: Don't change timezone
             // hydrate function to convert the timezone string to a DateTimeZone object

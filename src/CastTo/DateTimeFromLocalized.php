@@ -1,11 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\CastTo;
 
 use Nandan108\DtoToolkit\Contracts\BootsOnDtoInterface;
 use Nandan108\DtoToolkit\Contracts\CasterInterface;
 use Nandan108\DtoToolkit\Core\CastBase;
-use Nandan108\DtoToolkit\Exception\CastingException;
+use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
+use Nandan108\DtoToolkit\Exception\Process\TransformException;
 use Nandan108\DtoToolkit\Traits\UsesLocaleResolver;
 use Nandan108\DtoToolkit\Traits\UsesTimeZoneResolver;
 
@@ -32,11 +35,11 @@ final class DateTimeFromLocalized extends CastBase implements CasterInterface, B
         ?string $pattern = null,
         ?string $timezone = null,
     ) {
-        $this->throwIfExtensionNotLoaded('intl');
+        $this->ensureExtensionLoaded('intl');
 
         parent::__construct(
             args: [$dateStyle, $timeStyle, $pattern],
-            constructorArgs: ['locale' => $locale, 'timezone' => $timezone]
+            constructorArgs: ['locale' => $locale, 'timezone' => $timezone],
         );
     }
 
@@ -53,7 +56,7 @@ final class DateTimeFromLocalized extends CastBase implements CasterInterface, B
     #[\Override]
     public function cast(mixed $value, array $args): \DateTimeInterface
     {
-        $value = $this->throwIfNotStringable($value, 'non-empty date string', true);
+        $value = $this->ensureStringable($value, true);
 
         /** @var ?\DateTimeZone $timezone */
         $timezone = $this->resolveParam('timezone', $value);
@@ -73,14 +76,30 @@ final class DateTimeFromLocalized extends CastBase implements CasterInterface, B
             pattern: $pattern,
         );
 
+        $getParams = fn (): array => [
+            'locale'    => $locale,
+            'dateStyle' => $dateStyle,
+            'timeStyle' => $timeStyle,
+            'pattern'   => $pattern,
+            'timezone'  => $timezone?->getName(),
+        ];
+
         if (null === $formatter) {
-            $message = 'Invalid date formater arguments: '.json_encode(compact('locale', 'dateStyle', 'timeStyle', 'pattern', 'timezone'), JSON_THROW_ON_ERROR);
-            throw CastingException::castingFailure(static::class, $value, $message);
+            throw new InvalidConfigException(
+                message: 'Failed to create IntlDateFormatter instance.',
+                debug: $getParams(),
+            );
         }
 
         $timestamp = $formatter->parse($value);
+
         if (false === $timestamp) {
-            throw CastingException::castingFailure(static::class, $value, messageOverride: 'IntlDateFormatter failed to parse value: '.$formatter->getErrorMessage());
+            throw TransformException::reason(
+                methodOrClass: static::class,
+                value: $value,
+                template_suffix: 'date.parsing_failed',
+                parameters: $getParams(),
+            );
         }
 
         /** @var \DateTimeImmutable $dateTime */

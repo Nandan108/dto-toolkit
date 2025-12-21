@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\CastTo;
 
 use Nandan108\DtoToolkit\Core\CastBaseNoArgs;
@@ -10,6 +12,6 @@ final class Str extends CastBaseNoArgs
     #[\Override]
     public function cast(mixed $value, array $args): string
     {
-        return $this->throwIfNotStringable($value);
+        return $this->ensureStringable($value);
     }
 }

@@ -99,7 +99,7 @@ The `UsesParamResolver` trait simplifies this.
 ```php
 public function __construct(?string $locale = null)
 {
-    $this->throwIfExtensionNotLoaded('intl');
+    $this->ensureExtensionLoaded('intl');
     parent::__construct(args: [], constructorArgs: ['locale' => $locale]);
 }
 
@@ -177,14 +177,14 @@ Always validate input early. Use:
 
 ```php
 if (!is_numeric($value)) {
-    throw CastingException::castingFailure(static::class, $value, 'Expected a numeric value');
+    throw TransformException::expected(static::class, $value, 'numeric');
 }
 ```
 
 Shortcuts:
 
 ```php
-$value = $this->throwIfNotStringable($value);
+$value = $this->ensureStringable($value);
 $value = $this->throwIfNotNumeric($value);
 ```
 

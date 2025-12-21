@@ -1,11 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
 use Nandan108\DtoToolkit\Attribute\ChainModifier\FailTo;
 use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Core\FullDto;
+use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException as ConfigInvalidArgumentException;
+use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
+use Nandan108\DtoToolkit\Validate as V;
 use PHPUnit\Framework\TestCase;
 
 final class FailToTest extends TestCase
@@ -19,7 +24,7 @@ final class FailToTest extends TestCase
         };
 
         $dto->fill(['value' => new \stdClass()]);
-        $dto->normalizeInbound();
+        $dto->processInbound();
         $this->assertSame('fallback', $dto->value);
     }
 
@@ -51,15 +56,12 @@ final class FailToTest extends TestCase
         $dto->fill([
             'value_1' => new \stdClass(),
             'value_2' => new \stdClass(),
-        ])->normalizeInbound();
+        ])->processInbound();
 
         $this->assertSame('RECOVERED TO FALLBACK', $dto->value_1);
         $this->assertSame('UNCOVERED TO BACKFALL', $dto->value_2);
         $this->assertTrue($dto->context['called']);
-        $this->assertMatchesRegularExpression(
-            '/Expected: numeric, string or Stringable/',
-            $dto->context['message'],
-        );
+        $this->assertSame('processing.transform.stringable.expected', $dto->context['message']);
     }
 
     public function testBadFailureHandlerThrows(): void
@@ -71,11 +73,11 @@ final class FailToTest extends TestCase
             public mixed $value_fail = null;
         };
 
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(ConfigInvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid FailTo handler: ["BadClass","wrongHandler"], expected DTO method name or valid [class, staticMethod] callable.');
 
         // use a \stdClass since casting it to a string will throw
-        $dto->normalizeInbound();
+        $dto->processInbound();
     }
 
     public function testBadUsageAsFirstInChain(): void
@@ -86,12 +88,24 @@ final class FailToTest extends TestCase
             public mixed $value_fail = null;
         };
 
-        $this->expectException(\LogicException::class);
+        $this->expectException(InvalidConfigException::class);
         $this->expectExceptionMessage('should not be used as the first element');
 
         // use a \stdClass since casting it to a string will throw
         $dto->fill(['value_fail' => new \stdClass()]);
-        $dto->normalizeInbound();
+        $dto->processInbound();
+    }
+
+    public function testFallbackHandlesValidationFailure(): void
+    {
+        $dto = new class extends FullDto {
+            #[V\NotBlank]
+            #[FailTo(fallback: 'fallback')]
+            public mixed $name = null;
+        };
+
+        $dto->fill(['name' => '   '])->processInbound();
+        $this->assertSame('fallback', $dto->name);
     }
 }
 
