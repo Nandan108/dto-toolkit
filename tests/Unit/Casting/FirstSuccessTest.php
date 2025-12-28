@@ -42,18 +42,18 @@ final class FirstSuccessTest extends TestCase
         $input = "{\"foo\": {\"bar\": $fooBarInput}}";
 
         // Test that FailIf modifier doesn't fail fails when when condition is true
-        /** @psalm-suppress UndefinedMagicMethod */
-        $dto->withContext(['allowArray' => true])->fromArray(['value' => $input]);
+
+        $dto->withContext(['allowArray' => true])->loadArray(['value' => $input]);
         $this->assertSame(json_decode($fooBarInput, true), $dto->value);
         // Test that FailIf modifier fails when condition is false, Floating fails to cast "not-a-number" to float
-        /** @psalm-suppress UndefinedMagicMethod */
-        $dto->withContext(['allowArray' => false])->withGroups('qux')->fromArray(['value' => $input]);
+
+        $dto->withContext(['allowArray' => false])->withGroups('qux')->loadArray(['value' => $input]);
         $this->assertSame('123.4', $dto->value);
 
         try {
             // Test that FirstSuccess fails when all nodes fail
-            /** @psalm-suppress UndefinedMagicMethod */
-            $dto->withGroups('fux')->fromArray(['value' => $input]);
+
+            $dto->withGroups('fux')->loadArray(['value' => $input]);
         } catch (ProcessingException $e) {
             $this->assertStringContainsString('processing.modifier.first_success.all_failed', $e->getMessage());
             $this->assertSame(4, $e->getMessageParameters()['strategy_count']);

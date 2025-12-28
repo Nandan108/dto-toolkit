@@ -23,8 +23,8 @@ final class DateTimeCastTest extends TestCase
             #[CastTo\DateTime(DateTimeFormat::SQL)]
             public string | \DateTimeImmutable | null $dt = null;
         };
-        /** @psalm-suppress UndefinedMagicMethod */
-        $dto->fromArray(['dt' => $dateTime]);
+
+        $dto->loadArray(['dt' => $dateTime]);
 
         $this->assertEquals($dateTimeObj, $dto->dt);
 
@@ -34,8 +34,8 @@ final class DateTimeCastTest extends TestCase
                 #[CastTo\DateTime(DateTimeFormat::SQL)]
                 public string | \DateTimeImmutable | null $dt = null;
             };
-            /** @psalm-suppress UndefinedMagicMethod */
-            $dto->fromArray(['dt' => 'invalid date']);
+
+            $dto->loadArray(['dt' => 'invalid date']);
 
             $this->fail('DateTime cast should not be able to cast "invalid date" string into a DateTimeImmutable');
         } catch (TransformException $e) {
@@ -62,8 +62,8 @@ final class DateTimeCastTest extends TestCase
             #[CastTo\DateTime]
             public string | \DateTimeImmutable | null $dt = null;
         };
-        /** @psalm-suppress UndefinedMagicMethod */
-        $dto->fromArray(['dt' => $dateTimeString]);
+
+        $dto->loadArray(['dt' => $dateTimeString]);
 
         $this->assertEquals($dateTimeObj, $dto->dt);
     }

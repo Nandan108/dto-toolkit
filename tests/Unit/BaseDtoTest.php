@@ -13,8 +13,9 @@ final class BaseDtoTest extends TestCase
     public function testCanAccessPublicStaticFunc(): void
     {
         try {
+            $dto = BaseDtoTestDtoWithProtectedStaticFunc::new();
             /** @psalm-suppress InaccessibleMethod */
-            BaseDtoTestDtoWithProtectedStaticFunc::protectedMakeSpecialObject(new \stdClass());
+            BaseDtoTestDtoWithProtectedStaticFunc::protectedMakeSpecialObject($dto, new \stdClass());
             $this->fail('Expected exception not thrown');
         } catch (\Exception $e) {
             $this->assertInstanceOf(\Exception::class, $e);
@@ -31,7 +32,7 @@ final class BaseDtoTest extends TestCase
 
     public function testCanUseMagicFunc(): void
     {
-        $dto = BaseDtoTestDtoWithProtectedStaticFunc::fromSpecialObject((object) ['foo' => 'bar']);
+        $dto = BaseDtoTestDtoWithProtectedStaticFunc::newFromSpecialObject((object) ['foo' => 'bar']);
         $this->assertInstanceOf(BaseDtoTestDtoWithProtectedStaticFunc::class, $dto);
         $this->assertSame(['foo' => 'bar'], $dto->toArray());
     }
@@ -41,22 +42,11 @@ final class BaseDtoTest extends TestCase
         // test static call on non-existent from* method
         try {
             /** @psalm-suppress UndefinedMagicMethod */
-            $dto = BaseDtoTestDtoWithProtectedStaticFunc::fromNonExistentMethod((object) ['foo' => 'bar']);
+            BaseDtoTestDtoWithProtectedStaticFunc::newFromNonExistentMethod((object) ['foo' => 'bar']);
             $this->fail('Expected exception not thrown');
         } catch (\Exception $e) {
             $this->assertInstanceOf(\Exception::class, $e);
-            $this->assertSame('Method '.BaseDtoTestDtoWithProtectedStaticFunc::class.'::_fromNonExistentMethod() does not exist.', $e->getMessage());
-        }
-
-        // test instance call on non-existent from* method
-        try {
-            $dto = new BaseDtoTestDtoWithProtectedStaticFunc();
-            /** @psalm-suppress UndefinedMagicMethod */
-            $dto->fromNonExistentMethod((object) ['foo' => 'bar']);
-            $this->fail('Expected exception not thrown');
-        } catch (\Exception $e) {
-            $this->assertInstanceOf(\Exception::class, $e);
-            $this->assertSame('Method '.BaseDtoTestDtoWithProtectedStaticFunc::class.'::_fromNonExistentMethod() does not exist.', $e->getMessage());
+            $this->assertSame('Method '.BaseDtoTestDtoWithProtectedStaticFunc::class.'::loadNonExistentMethod() does not exist.', $e->getMessage());
         }
     }
 
@@ -117,20 +107,20 @@ final class BaseDtoTest extends TestCase
         $class = InvalidBaseDtoWithPropMissingDefaultValue::class;
         $propName = 'propWithoutDefaultValue';
         $this->expectExceptionMessage("Default value missing on DTO property: {$class}::\${$propName}.");
-        InvalidBaseDtoWithPropMissingDefaultValue::newInstance()->getDefaultValues();
+        InvalidBaseDtoWithPropMissingDefaultValue::new()->getDefaultValues();
     }
 }
 
 /**
- * @method static static fromSpecialObject(object $specialObj)
+ * @method static static newFromSpecialObject(object $specialObj)
  */
 final class BaseDtoTestDtoWithProtectedStaticFunc extends BaseDto
 {
     // not accessible directly -- caught by __callStatic(), which throws
-    protected static function protectedMakeSpecialObject(object $specialObj): static
+    protected static function protectedMakeSpecialObject(?self $dto, object $specialObj): static
     {
         /** @psalm-suppress UnsafeInstantiation */
-        $dto = new static();
+        $dto ??= new static();
 
         $vars = get_object_vars($specialObj);
         $dto->fill($vars);
@@ -141,14 +131,14 @@ final class BaseDtoTestDtoWithProtectedStaticFunc extends BaseDto
     // accessible directly
     public static function makeSpecialObject(object $specialObj): static
     {
-        return static::protectedMakeSpecialObject($specialObj);
+        return static::protectedMakeSpecialObject(null, $specialObj);
     }
 
     // accessible via __callStatic()
     /** @psalm-suppress PossiblyUnusedMethod */
-    public function _fromSpecialObject(object $specialObj): static
+    public function loadSpecialObject(object $specialObj): static
     {
-        return static::protectedMakeSpecialObject($specialObj);
+        return static::protectedMakeSpecialObject($this, $specialObj);
     }
 }
 

@@ -21,7 +21,7 @@ final class WithDefaultGroupsTest extends TestCase
     public function testWithDefaultGroupsSetsUp(): void
     {
         /** @psalm-suppress ExtensionRequirementViolation */
-        $dto = WithGroupsDto::newInstance();
+        $dto = WithGroupsDto::new();
 
         $this->assertSame($dto->getActiveGroups(Phase::InboundLoad), ['bar']);
         $this->assertSame($dto->getActiveGroups(Phase::InboundCast), ['baz']);
@@ -34,22 +34,19 @@ final class WithDefaultGroupsTest extends TestCase
         $this->expectException(InvalidConfigException::class);
         $this->expectExceptionMessage('The WithDefaultGroups attribute can only be used on DTOs that implement the HasGroupsInterface');
 
-        ClassNotImplementingHasGroupsInterface::newInstance();
+        ClassNotImplementingHasGroupsInterface::new();
     }
 
     public function testPropertyWithGroupsAttributesAreAppliedCorrectly(): void
     {
-        /** @psalm-suppress ExtensionRequirementViolation */
-        $dto = WithGroupsDto::newInstance();
+        $dto = WithGroupsDto::newWithGroups('bar');
 
-        /** @psalm-suppress UndefinedMagicMethod */
-        $dto->_withGroups('bar')->fromArray(['someProp' => 'some value']);
+        $dto->loadArray(['someProp' => 'some value']);
 
         // Inbound phase: only 'bar' group is active, so SnakeCase caster is applied
         $this->assertSame('some_value', $dto->someProp);
 
         // Outbound phase: only 'foo' group is active, so prefix_ is added
-        /** @psalm-suppress UndefinedMagicMethod */
         $exported = $dto->toOutboundArray();
         $this->assertSame('prefix_some_value', $exported['someProp']);
     }

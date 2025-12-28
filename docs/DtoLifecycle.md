@@ -9,16 +9,16 @@ This section outlines the phases your DTO goes through, from input to output, se
 
 ### 1. 🏗️ DTO Creation (from Input)
 
-A new DTO instance is generally created by a static call to either a `from*` or a `with*` function. `from*` functions populate the new DTO instance's properties, while `with*` populates its context (often needed before a `from*` call).
-Behind the scenes, static calls to these `from*` and `with*` calls are handled by `__callStatic()`, which first generates a new instance with `::newInstance()`, then forwards the initial call to a `_from*` or `_with*` method on the new instance. Existing methods are:
-- **`_fromArray(array $input)`** takes an array of values to populate the DTO
-- **`_fromEntity(object $entity)`** takes an object to extract values from to populate the DTO
-- **`_fromModel(Model $model)`** to populate a DTO from an Eloquent Model *(planned for the Laravel adapter)*
-- **`_fromRequest(Request)`** to populate a DTO from an HTTP request *(planned for both Laravel and Symfony adapters)*
-- **`_withContext(array $values)`** takes an associative array of values and sets its elements to the DTO's context
-- **`_withGroups($all, $inbound, ...)`** allows setting an "operational scope" by specifying groups for all or individual DTO lifecycle phases. This affects which properties and processing steps (nodes) are applied depending on the use of #[PropGroups(...)] and #[Groups(...)] attributes.
+A new DTO instance is generally created by a static call to either a `newFrom*` or a `newWith*` function. `newFrom*` functions populate the new DTO instance's properties, while `newWith*` populates its context (often needed before a `newFrom*` call).
+Behind the scenes, static calls to these `newFrom*` and `newWith*` calls are handled by `__callStatic()`, which first generates a new instance with `::new()`, then forwards the initial call to a `load*` or `with*` method on the new instance. Existing methods are:
+- **`loadArray(array $input)`** takes an array of values to populate the DTO
+- **`loadEntity(object $entity)`** takes an object to extract values from to populate the DTO
+- **`loadModel(Model $model)`** to populate a DTO from an Eloquent Model *(planned for the Laravel adapter)*
+- **`loadRequest(Request)`** to populate a DTO from an HTTP request *(planned for both Laravel and Symfony adapters)*
+- **`withContext(array $values)`** takes an associative array of values and sets its elements to the DTO's context
+- **`withGroups($all, $inbound, ...)`** allows setting an "operational scope" by specifying groups for all or individual DTO lifecycle phases. This affects which properties and processing steps (nodes) are applied depending on the use of #[PropGroups(...)] and #[Groups(...)] attributes.
 
-1. Under the hood, the `::newInstance()` static method is used to instantiate the DTO, possibly injecting necessary dependencies ([See DI doc for more details](DI.md)).
+1. Under the hood, the `::new()` static method is used to instantiate the DTO, possibly injecting necessary dependencies ([See DI doc for more details](DI.md)).
   ⚠️ DTO props are not initialized in the constructor, therefore each must have a default value (generally null).
   ⚠️ Public properties whose names start with `_` are treated as internal: they are skipped for input/output and processing.
 2. Public properties are populated with raw input values (excluding `_`-prefixed props).
@@ -95,9 +95,9 @@ This phase ensures clean, typed, or enriched output — e.g., transforming strin
 ```text
 
 Inbound :
-   $dto = MyDto::fromArray() or ::fromRequest()
+   $dto = MyDto::newFromArray() or ::newFromRequest()
       ↓
-      Instantiation via newInstance()
+      Instantiation via new()
       ↓
       Raw values assigned
       ↓

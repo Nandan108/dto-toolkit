@@ -34,7 +34,7 @@ final class MappingTest extends TestCase
             public ?string $fiz = null;
         };
 
-        $dto = $dtoClass::fromArrayLoose([
+        $dto = $dtoClass::newFromArrayLoose([
             'foo' => 'FOO-val',
             'bar' => 'BAR-val',
             'baz' => 'BAZ-val',
@@ -50,7 +50,7 @@ final class MappingTest extends TestCase
         $this->assertSame('BAR-val', $dto->boo);
         $this->assertSame('FIZ-val', $dto->fiz);
 
-        $dto = $dtoClass::fromArrayLoose([
+        $dto = $dtoClass::newFromArrayLoose([
             'foo' => 'FOO-val',
             'bar' => 'BAR-val',
             // 'baz' is missing, so bar prop's mapper fails.
@@ -66,7 +66,7 @@ final class MappingTest extends TestCase
             public string | array | null $bar = '';
         };
 
-        $dto = $dtoClass::fromArrayLoose([
+        $dto = $dtoClass::newFromArrayLoose([
             'foo' => 'FOO-val',
             'bar' => 'BAR-val',
             // default throw mode = ThrowMode::NEVER -> null value doesn't throw
@@ -75,7 +75,7 @@ final class MappingTest extends TestCase
         $this->assertSame(['qux1' => 'FOO-val', 'qux2' => [null, 'BAR-val']], $dto->bar);
 
         /** @psalm-suppress UnusedVariable */
-        $dto->clear()->_fromArrayLoose([
+        $dto->clear()->loadArrayLoose([
             'foo' => 'FOO-val',
             'bar' => 'BAR-val',
             // default throw mode = ThrowMode::NEVER, but overriden by bang ('!baz')
@@ -95,7 +95,7 @@ final class MappingTest extends TestCase
             public ?array $bar = null;
         };
 
-        $dto = $dtoClassWithMapperThatThrows::fromArrayLoose([
+        $dto = $dtoClassWithMapperThatThrows::newFromArrayLoose([
             'foo' => 'FOO-val',
             'bar' => 'BAR-val',
             'baz' => null, // null value makes mapper fail in this case (!!baz), resulting in missing value
@@ -116,7 +116,7 @@ final class MappingTest extends TestCase
             #[MapFrom('foo')]
             public string | array | null $bar = '';
         };
-        $dtoClass::fromArrayLoose([
+        $dtoClass::newFromArrayLoose([
             'foo' => 'FOO-val',
         ]);
     }
@@ -130,7 +130,7 @@ final class MappingTest extends TestCase
             #[MapTo(null)]
             public ?string $notExported = null;
         };
-        $dto = $dtoClass::fromArray(['bar' => 'BAR-val', 'notExported' => 'NOT-exported-val']);
+        $dto = $dtoClass::newFromArray(['bar' => 'BAR-val', 'notExported' => 'NOT-exported-val']);
         $out = $dto->toOutboundArray();
 
         $this->assertSame(['foo' => 'BAR-val'], $out);

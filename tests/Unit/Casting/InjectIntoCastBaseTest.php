@@ -90,10 +90,9 @@ final class InjectIntoCastBaseTest extends TestCase
 
     public function testInjectionAndCasting(): void
     {
-        $dto = FooBarDto::fromArray(['value' => ' Hello World ']);
+        $dto = FooBarDto::newFromArray(['value' => ' Hello World ']);
 
-        /** @psalm-suppress UndefinedMagicMethod */
-        $dto->fromArray(['value' => ' Hello World ']);
+        $dto->loadArray(['value' => ' Hello World ']);
 
         $this->assertEquals('hello*world', $dto->value);
     }

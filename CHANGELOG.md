@@ -3,21 +3,22 @@
 All notable changes to this project will be documented in this file.
 
 ---
-## [Unreleased]
+## [0.9.0] - 2025-12-28
 
 ### Added
 - Introduced `PresencePolicy` enum and `#[Presence]` attribute for DTO- and property-level control over how missing vs. `null` inputs mark properties as filled.
-- `MapFrom` now accepts an optional `ThrowMode` (defaults to ::MISSING_KEY) to help distinguish missing input from `null` input.
+- `MapFrom` now accepts an optional `ThrowMode` (defaults to ::MISSING_KEY to allow distinguish missing input from explicit `null` input).
 
 ### Changed
-- Presence handling now defaults to `PresencePolicy::Default` (treats `null` as present) when hydrating from input.
 - Public DTO properties without default values now throw `InvalidConfigException` during metadata initialization.
 - Public properties prefixed with `_` are treated as internal and are skipped for input/output and processing.
+- Static constructors are now `newFrom*` / `newWith*` and delegate to `BaseDto::new()`; instance loaders are `load*` (e.g., `loadArray()`). This reduces magic and makes it easier to keep psalm happy without suppression.
 
 ### BREAKING
-- Default presence behavior changed: `null` inputs now mark properties as filled unless explicitly overridden with `#[Presence(PresencePolicy::NullMeansMissing)]`.
+- Default presence behavior changed: `null` inputs now mark properties as filled unless explicitly overridden with `#[Presence(PresencePolicy::NullMeansMissing)]`, at dto or prop level.
 - DTOs must declare defaults for all public I/O properties; missing defaults now fail fast.
 - Public properties starting with `_` are ignored for hydration/processing/output; move any externally visible data to non-underscored properties.
+- Legacy `from*` static factories have been renamed to `newFrom*`; instance `from*` loaders have been renamed to `load*`. Static `with*` factories are now `newWith*` (instance `with*` methods unchanged).
 
 ---
 
@@ -201,11 +202,11 @@ All notable changes to this project will be documented in this file.
 ### Changed
 - Renamed `#[Injected]` attribute to `#[Inject]`
 - `FullDto` now uses `IsInjectable`, thereby implementing `Injectable`
-- `BaseDto::newInstance()` now centralizes instantiation for all static constructors:
+- `BaseDto::new()` now centralizes instantiation for all static constructors:
   - Uses `ContainerBridge::get()` if the DTO is marked with `#[Inject]`
   - Falls back to `new static()` otherwise
   - Automatically calls `$dto->inject()` and `$dto->boot()` if applicable
-- Static constructors like `fromArray()` and `fromEntity()` now delegate to `newInstance()`
+- Static constructors like `newFromArray()` and `newFromEntity()` now delegate to `new()`
 - fromEntity() now looks for getters named 'get'.PascalCase($propName)
 - toEntity() now looks for setters named 'set'.PascalCase($propName)
 - CastTo/Join now throws if an array element is not stringable
@@ -241,7 +242,7 @@ All notable changes to this project will be documented in this file.
   - DTOs now support dynamic `from*` / `with*` method forwarding via `__call` and `__callStatic`
 - **Extended DTO construction methods**:
   - Added `_fromEntity()` for DTO instantiation from object instances
-    E.g. `MyDtoClass::fromEntity($inputEntity)->...`
+    E.g. `MyDtoClass::newFromEntity($inputEntity)->...`
 - **Improved test tools**:
   - Added `Tests\Traits\CanTestCasterClassesAndMethods` trait for easier caster testing
 

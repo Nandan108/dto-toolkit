@@ -47,9 +47,9 @@ This is especially useful for caster Attributes, which are instantiated via refl
 
 ---
 
-## 📦 Centralized DTO Instantiation with `newInstance()`
+## 📦 Centralized DTO Instantiation with `new()`
 
-DTOs extending `BaseDto` can use the static method `newInstance()` to create a fresh instance of themselves. This method automatically handles:
+DTOs extending `BaseDto` can use the static method `new()` to create a fresh instance of themselves. This method automatically handles:
 
 - Resolving the instance
     - via `ContainerBridge::get()` if the class is marked with `#[Inject]`
@@ -64,10 +64,10 @@ class MyDto extends BaseDto
     public function __construct(private LocaleContext $context) {}
 }
 
-$dto = MyDto::newInstance();
+$dto = MyDto::new();
 ```
 
-You usually won’t need to call `newInstance()` directly — it’s used internally by `fromArray()`, `fromEntity()`, and other `from*()` or `with*()` methods via `__callStatic()`.
+You usually won’t need to call `new()` directly — it’s used internally by `newFromArray()`, `newFromEntity()`, and other `newFrom*()` or `newWith*()` methods via `__callStatic()`.
 
 ---
 

@@ -27,7 +27,7 @@ final class LocalizedDateTimeFormattingTest extends TestCase
             public \DateTimeInterface | string | null $date = null;
         };
 
-        $dto = $dtoClass::fromArray([
+        $dto = $dtoClass::newFromArray([
             'date' => new \DateTimeImmutable('2025-01-01 12:34'),
         ]);
 
@@ -44,7 +44,7 @@ final class LocalizedDateTimeFormattingTest extends TestCase
         $this->expectException(TransformException::class);
         $this->expectExceptionMessage('processing.transform.expected');
 
-        $dtoClass::fromArray(['date' => '2025-01-01 12:34']);
+        $dtoClass::newFromArray(['date' => '2025-01-01 12:34']);
     }
 
     public function testLocalizedDateTimeWithCustomPattern(): void
@@ -54,7 +54,7 @@ final class LocalizedDateTimeFormattingTest extends TestCase
             public \DateTimeInterface | string | null $date = null;
         };
 
-        $dto = $dtoClass::fromArray([
+        $dto = $dtoClass::newFromArray([
             'date' => new \DateTimeImmutable('2025-04-30'),
         ]);
 
@@ -70,6 +70,6 @@ final class LocalizedDateTimeFormattingTest extends TestCase
             public \DateTimeInterface | string | null $date = null;
         };
 
-        $dtoClass::fromArray(['date' => new \DateTimeImmutable()]);
+        $dtoClass::newFromArray(['date' => new \DateTimeImmutable()]);
     }
 }

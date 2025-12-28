@@ -28,8 +28,8 @@ final class UsesTimezoneResolverTest extends TestCase
             #[DateTime(DateTimeFormat::SQL, timezone: 'Europe/Paris')]
             public \DateTimeInterface | string | null $date = null;
         };
-        /** @psalm-suppress UndefinedMagicMethod */
-        $date = $dto->fromArray(['date' => '2025-10-05 12:34:00'])->date;
+
+        $date = $dto->loadArray(['date' => '2025-10-05 12:34:00'])->date;
         $date instanceof \DateTimeInterface || $this->fail('Value was not cast to DateTimeInterface');
 
         $this->assertSame('2025-10-05 12:34:00', $date->format('Y-m-d H:i:s'));
@@ -40,8 +40,8 @@ final class UsesTimezoneResolverTest extends TestCase
             #[DateTime(DateTimeFormat::SQL, timezone: 'Europe/Paris')]
             public \DateTimeInterface | string | null $date = null;
         };
-        /** @psalm-suppress UndefinedMagicMethod */
-        $date = $dto->fromArray(['date' => '2025-10-05 12:34:00'])->date;
+
+        $date = $dto->loadArray(['date' => '2025-10-05 12:34:00'])->date;
         $this->assertInstanceOf(\DateTimeInterface::class, $date);
         $date instanceof \DateTimeInterface || $this->fail('Value was not cast to DateTimeInterface');
         $this->assertSame('2025-10-05 12:34:00', $date->format('Y-m-d H:i:s'));
@@ -53,8 +53,8 @@ final class UsesTimezoneResolverTest extends TestCase
             #[DateTime(DateTimeFormat::SQL)]
             public \DateTimeInterface | string | null $date = null;
         };
-        /** @psalm-suppress UndefinedMagicMethod */
-        $date = $dto->fromArray(['date' => '2025-10-05 12:34:00'])->date;
+
+        $date = $dto->loadArray(['date' => '2025-10-05 12:34:00'])->date;
         $date instanceof \DateTimeInterface || $this->fail('Value was not cast to DateTimeInterface');
         $this->assertSame('UTC', $date->getTimezone()->getName());
 
@@ -68,8 +68,8 @@ final class UsesTimezoneResolverTest extends TestCase
             )]
             public \DateTimeInterface | string | null $date = null;
         };
-        /** @psalm-suppress UndefinedMagicMethod */
-        $dto->fromArray(['date' => new \DateTimeImmutable('2025-10-05T12:34:00+02:00')]);
+
+        $dto->loadArray(['date' => new \DateTimeImmutable('2025-10-05T12:34:00+02:00')]);
         $this->assertSame('5 oct. 2025, 12:34', $dto->date);
 
         // checkValid(): invalid string value
@@ -78,8 +78,8 @@ final class UsesTimezoneResolverTest extends TestCase
                 #[DateTime(DateTimeFormat::SQL, timezone: 'not-a-timezone')]
                 public \DateTimeInterface | string | null $date = null;
             };
-            /** @psalm-suppress UndefinedMagicMethod */
-            $dto->fromArray(['date' => '2025-10-05 12:34:00']);
+
+            $dto->loadArray(['date' => '2025-10-05 12:34:00']);
         } catch (InvalidConfigException $e) {
             $this->assertStringContainsString('Cannot resolve timezone from "not-a-timezone"', $e->getMessage());
         }

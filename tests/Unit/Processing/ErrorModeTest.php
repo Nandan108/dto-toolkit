@@ -67,15 +67,15 @@ final class ErrorModeTest extends TestCase
     {
         $this->expectException(ProcessingException::class);
 
-        FailsInboundDto::fromArray(['foo' => 'xxx']);
+        FailsInboundDto::newFromArray(['foo' => 'xxx']);
     }
 
     public function testInboundCollectFailToInput(): void
     {
         $errors = new ProcessingErrorList();
 
-        $dto = FailsInboundDto::newInstance()->withErrorMode(ErrorMode::FailFast)
-            ->_fromArray(
+        $dto = FailsInboundDto::newWithErrorMode(ErrorMode::FailFast)
+            ->loadArray(
                 ['foo' => 'xxx'],
                 errorList: $errors,
                 errorMode: ErrorMode::CollectFailToInput,
@@ -89,7 +89,7 @@ final class ErrorModeTest extends TestCase
     {
         $errors = new ProcessingErrorList();
 
-        $dto = FailsInboundDto::fromArray(
+        $dto = FailsInboundDto::newFromArray(
             ['foo' => 'xxx'],
             errorList: $errors,
             errorMode: ErrorMode::CollectFailToNull,
@@ -103,7 +103,7 @@ final class ErrorModeTest extends TestCase
     {
         $errors = new ProcessingErrorList();
 
-        $dto = FailsInboundDto::fromArray(
+        $dto = FailsInboundDto::newFromArray(
             ['foo' => 'xxx'],
             errorList: $errors,
             errorMode: ErrorMode::CollectNone,
@@ -122,7 +122,7 @@ final class ErrorModeTest extends TestCase
     public function testOutboundFailFastThrows(): void
     {
 
-        $dto = FailsOutboundDto::fromArray(['foo' => 'xxx']);
+        $dto = FailsOutboundDto::newFromArray(['foo' => 'xxx']);
 
         $this->expectException(ProcessingException::class);
 
@@ -132,7 +132,7 @@ final class ErrorModeTest extends TestCase
     public function testOutboundCollectFailToInput(): void
     {
         $errors = new ProcessingErrorList();
-        $dto = FailsOutboundDto::fromArray(['foo' => 'xxx']);
+        $dto = FailsOutboundDto::newFromArray(['foo' => 'xxx']);
 
         $out = $dto->toOutboundArray(
             errorList: $errors,
@@ -146,7 +146,7 @@ final class ErrorModeTest extends TestCase
     public function testOutboundCollectFailToNull(): void
     {
         $errors = new ProcessingErrorList();
-        $dto = FailsOutboundDto::fromArray(['foo' => 'xxx']);
+        $dto = FailsOutboundDto::newFromArray(['foo' => 'xxx']);
 
         self::assertSame($dto->getErrorMode(), ErrorMode::FailFast);
 
@@ -161,7 +161,7 @@ final class ErrorModeTest extends TestCase
     public function testOutboundCollectNone(): void
     {
         $errors = new ProcessingErrorList();
-        $dto = FailsOutboundDto::fromArray(['foo' => 'xxx']);
+        $dto = FailsOutboundDto::newFromArray(['foo' => 'xxx']);
 
         $out = $dto->toOutboundArray(
             errorList: $errors,

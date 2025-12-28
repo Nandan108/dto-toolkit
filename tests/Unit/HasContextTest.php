@@ -54,7 +54,7 @@ final class HasContextTest extends TestCase
             'c' => 3,
         ];
 
-        $this->object->_withContext($data);
+        $this->object->withContext($data);
 
         $this->assertSame(1, $this->object->contextGet('a'));
         $this->assertSame(2, $this->object->contextGet('b'));

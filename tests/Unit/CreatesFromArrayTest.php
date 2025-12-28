@@ -33,7 +33,7 @@ final class CreatesFromArrayTest extends TestCase
     public function testInstantiatesDtoFromArray(): void
     {
         /** @psalm-suppress NoValue, UnusedVariable, UndefinedMagicMethod */
-        $dto = FromArrayTestDto::fromArray([ // GET
+        $dto = FromArrayTestDto::newFromArray([ // GET
             'itemId'   => $rawItemId = '5',
             'name'     => $name = 'John',
             'email'    => $rawEmail = 'john@example.com',
@@ -64,7 +64,7 @@ final class CreatesFromArrayTest extends TestCase
         };
 
         /** @psalm-suppress NoValue, UnusedVariable */
-        $dto = $dtoClass::fromArrayLoose(
+        $dto = $dtoClass::newFromArrayLoose(
             input: [ // GET
                 'anUnknownProp' => 'foo',
                 'andAnother'    => 'bar',
@@ -78,7 +78,7 @@ final class CreatesFromArrayTest extends TestCase
         $this->expectExceptionMessage('Unknown properties: anUnknownProp, andAnother');
 
         /** @psalm-suppress NoValue, UnusedVariable */
-        $dtoClass::fromArray(
+        $dtoClass::newFromArray(
             input: [ // GET
                 'anUnknownProp' => 'foo',
                 'andAnother'    => 'bar',
@@ -105,7 +105,7 @@ final class CreatesFromArrayTest extends TestCase
         };
 
         /** @psalm-suppress NoValue, UnusedVariable, UndefinedMagicMethod */
-        $dto = $dtoClass->fromArray([
+        $dto = $dtoClass->loadArray([
             'age'  => '30',
             'name' => '  sam   ',
         ]);
@@ -151,16 +151,15 @@ final class CreatesFromArrayTest extends TestCase
             public string | int | null $ignoredPropNotOnDTO = 'value';
         };
 
-        /** @psalm-suppress UndefinedMagicMethod */
-        $dto = $dtoClass->fromEntity($entity);
+        $dto = $dtoClass->loadEntity($entity);
         $this->assertSame('SAM', $dto->name);
         $this->assertSame(5, $dto->itemId);
         $this->assertSame('name@domain.test', $dto->email);
 
         // Again, this time for coverage of cache-hit path on property getter
         $entity->setName('joe');
-        /** @psalm-suppress UndefinedMagicMethod */
-        $anotherDto = $dtoClass->fromEntity($entity);
+
+        $anotherDto = $dtoClass->loadEntity($entity);
         $this->assertSame('JOE', $anotherDto->name);
     }
 
@@ -178,7 +177,7 @@ final class CreatesFromArrayTest extends TestCase
 
         // attempts to create a new FromArrayTestDto from data (itemId, name, email) taken from the entity
         // but itemId and name do not exist on the entity, so it should throw an exception
-        FromArrayTestDto::fromEntity($entity, false);
+        FromArrayTestDto::newFromEntity($entity, false);
     }
 
     public static function presencePolicyOverridingTestProvider(): array
@@ -220,7 +219,7 @@ final class CreatesFromArrayTest extends TestCase
         // --- Arrange ---
 
         // Create a DTO pre-filled with non-defaults values, so we can observe resets
-        $dto = PresencePolicyOverridingBaseDto::fromArray([
+        $dto = PresencePolicyOverridingBaseDto::newFromArray([
             'defaultPresencePolicyProp'       => 'foo',
             'nullMeansMissingProp'            => 'bar',
             'missingMeansDefaultProp'         => 'baz',
@@ -240,7 +239,7 @@ final class CreatesFromArrayTest extends TestCase
         }
 
         // --- Act ---
-        $dto->_fromArray($input, clear: $clear);
+        $dto->loadArray($input, clear: $clear);
 
         // --- Assert ---
         $actual = fn (string $prop): array => [
@@ -268,14 +267,14 @@ final class CreatesFromArrayTest extends TestCase
         /** @psalm-suppress NoValue, UnusedVariable */
         // Note, using fromArrayLoose() instead of fromArray() is necessary here to
         // avoid exception on unknown prop 'item_id'
-        $dto = $dtoClass::fromArrayLoose(['item_id' => 'bar']);
+        $dto = $dtoClass::newFromArrayLoose(['item_id' => 'bar']);
         $this->assertArrayHasKey('itemId', $dto->_filled);
         $this->assertSame('bar', $dto->itemId);
 
         // missing input - mapper fails, but property is left unfilled silently
         /** @psalm-suppress NoValue, UnusedVariable */
         // 'item_id' is missing, so mapper fails
-        $dto->_fromArray([]);
+        $dto->loadArray([]);
 
         $this->assertArrayNotHasKey('itemId', $dto->_filled);
         /** @psalm-suppress DocblockTypeContradiction */

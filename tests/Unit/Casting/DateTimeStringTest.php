@@ -18,7 +18,7 @@ final class DateTimeStringTest extends TestCase
             public \DateTimeInterface | string | null $dt = null;
         };
 
-        $dto = $dtoClass::fromArray(['dt' => new \DateTimeImmutable('2025-05-04T12:34:56+02:00')]);
+        $dto = $dtoClass::newFromArray(['dt' => new \DateTimeImmutable('2025-05-04T12:34:56+02:00')]);
 
         $this->assertSame('2025-05-04T12:34:56+02:00', $dto->dt);
     }
@@ -30,7 +30,7 @@ final class DateTimeStringTest extends TestCase
             public \DateTimeInterface | string | null $dt = null;
         };
 
-        $dto = $dtoClass::fromArray(['dt' => new \DateTimeImmutable('2025-05-04T12:34:56+02:00')]);
+        $dto = $dtoClass::newFromArray(['dt' => new \DateTimeImmutable('2025-05-04T12:34:56+02:00')]);
 
         $this->assertSame('2025-05-04 12:34:56', $dto->dt);
     }
@@ -42,7 +42,7 @@ final class DateTimeStringTest extends TestCase
             public \DateTimeInterface | string | null $dt = null;
         };
 
-        $dto = $dtoClass::fromArray(['dt' => new \DateTimeImmutable('2025-05-04 14:30')]);
+        $dto = $dtoClass::newFromArray(['dt' => new \DateTimeImmutable('2025-05-04 14:30')]);
 
         $this->assertSame('04.05.2025 14:30', $dto->dt);
     }
@@ -54,7 +54,7 @@ final class DateTimeStringTest extends TestCase
             public \DateTimeInterface | string | null $dt = null;
         };
 
-        $dto = $dtoClass::fromArray(['dt' => new \DateTimeImmutable('2025-05-04 14:30', new \DateTimeZone('Europe/Paris'))]);
+        $dto = $dtoClass::newFromArray(['dt' => new \DateTimeImmutable('2025-05-04 14:30', new \DateTimeZone('Europe/Paris'))]);
 
         $this->assertSame('2025-05-04 12:30:00', $dto->dt);
     }
@@ -67,7 +67,7 @@ final class DateTimeStringTest extends TestCase
         };
 
         $this->expectException(\TypeError::class);
-        $dtoClass::fromArray(['dt' => 12345]);
+        $dtoClass::newFromArray(['dt' => 12345]);
     }
 
     public function testThrowsTransformExceptionForNonDateTime(): void

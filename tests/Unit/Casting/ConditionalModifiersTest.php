@@ -43,8 +43,8 @@ final class ConditionalModifiersTest extends TestCase
 
         foreach ($tests as $case => $expected) {
             $dto->contextSet('desiredCase', $case);
-            /** @psalm-suppress UndefinedMagicMethod */
-            $dto->fromArray(['value' => "$case case"]);
+
+            $dto->loadArray(['value' => "$case case"]);
             $this->assertSame($expected, $dto->value);
         }
     }

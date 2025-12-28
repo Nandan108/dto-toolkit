@@ -28,7 +28,7 @@ final class DateTimeFromLocalizedTest extends TestCase
         };
 
         foreach (['04.05.2025', '04.05.25'] as $date) {
-            $dt = $dtoClass::fromArray(['dt' => "$date 14:30"])->dt;
+            $dt = $dtoClass::newFromArray(['dt' => "$date 14:30"])->dt;
             if (is_string($dt)) {
                 $this->fail('Expected a DateTimeInterface, got string');
             }
@@ -43,7 +43,7 @@ final class DateTimeFromLocalizedTest extends TestCase
             public \DateTimeInterface | string | null $dt = null;
         };
 
-        $dt = $dtoClass::fromArray(['dt' => '04.05.2025 14:30'])->dt;
+        $dt = $dtoClass::newFromArray(['dt' => '04.05.2025 14:30'])->dt;
         if (is_string($dt)) {
             $this->fail('Expected a DateTimeInterface, got string');
         }
@@ -57,7 +57,7 @@ final class DateTimeFromLocalizedTest extends TestCase
             public \DateTimeInterface | string | null $dt = null;
         };
 
-        $dt = $dtoClass::fromArray(['dt' => '04.05.25 14:30'])->dt;
+        $dt = $dtoClass::newFromArray(['dt' => '04.05.25 14:30'])->dt;
 
         if (is_string($dt)) {
             $this->fail('Expected a DateTimeInterface, got string');
@@ -73,7 +73,7 @@ final class DateTimeFromLocalizedTest extends TestCase
         };
 
         $this->expectException(TransformException::class);
-        $dtoClass::fromArray(['dt' => '']);
+        $dtoClass::newFromArray(['dt' => '']);
     }
 
     public function testThrowsOnInvalidDateStyle(): void
@@ -84,7 +84,7 @@ final class DateTimeFromLocalizedTest extends TestCase
         };
 
         $this->expectException(InvalidConfigException::class);
-        $dtoClass::fromArray(['dt' => '2023-10-05 14:30']);
+        $dtoClass::newFromArray(['dt' => '2023-10-05 14:30']);
     }
 
     public function testThrowsOnMalformedString(): void
@@ -95,6 +95,6 @@ final class DateTimeFromLocalizedTest extends TestCase
         };
 
         $this->expectException(TransformException::class);
-        $dtoClass::fromArray(['dt' => 'Not a date']);
+        $dtoClass::newFromArray(['dt' => 'Not a date']);
     }
 }

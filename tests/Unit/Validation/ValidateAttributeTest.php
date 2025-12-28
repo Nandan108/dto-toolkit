@@ -18,19 +18,19 @@ final class ValidateAttributeTest extends TestCase
     public function testDtoMethodValidatorRunsAndThrows(): void
     {
         // positive check
-        $check = MethodValidatedDto::fromArray(['name' => 'not-empty']);
+        $check = MethodValidatedDto::newFromArray(['name' => 'not-empty']);
         $this->assertSame('not-empty', $check->name);
 
         // negative check
         $this->expectException(GuardException::class);
         $this->expectExceptionMessage('empty');
 
-        MethodValidatedDto::fromArray(['name' => '']);
+        MethodValidatedDto::newFromArray(['name' => '']);
     }
 
     public function testClassBasedValidatorRunsAndPasses(): void
     {
-        $dto = ClassValidatedDto::fromArray(['name' => 'ok']);
+        $dto = ClassValidatedDto::newFromArray(['name' => 'ok']);
 
         $this->assertSame('ok', $dto->name);
     }

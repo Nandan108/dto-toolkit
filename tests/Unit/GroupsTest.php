@@ -70,8 +70,7 @@ final class GroupsTest extends TestCase
             'baz' => 'Test Value',
         ];
 
-        /** @psalm-suppress UndefinedMagicMethod */
-        $dto = GroupsTestFooBarDto::withGroups(inbound: 'foo')->fromArray($input);
+        $dto = GroupsTestFooBarDto::newWithGroups(inbound: 'foo')->loadArray($input);
 
         $output = $dto->toOutboundArray();
 
@@ -87,13 +86,12 @@ final class GroupsTest extends TestCase
             'bar' => 'Bar',
             'baz' => 'Baz',
         ];
-        /** @psalm-suppress UndefinedMagicMethod */
-        $arr = GroupsTestFooBarDto::withGroups('foo')->fromArray($input)->toOutboundArray();
+
+        $arr = GroupsTestFooBarDto::newWithGroups('foo')->loadArray($input)->toOutboundArray();
         // Baz is note included because it's in PropGroups('bar'), which isn't targetted
         $this->assertSame(['qux' => 'qux', 'foo' => 'foo'], $arr);
 
-        /** @psalm-suppress UndefinedMagicMethod */
-        $arr = GroupsTestFooBarDto::withGroups('bar')->fromArray($input)->toOutboundArray();
+        $arr = GroupsTestFooBarDto::newWithGroups('bar')->loadArray($input)->toOutboundArray();
         // This time, it's foo that's missing.
         $this->assertSame(['qux' => 'qux', 'bar' => 'bar', 'baz' => 'BAZ'], $arr);
     }
@@ -106,24 +104,24 @@ final class GroupsTest extends TestCase
         ];
 
         // With no groups activated
-        /** @psalm-suppress UndefinedMagicMethod */
-        $dto = CasterGroupsTestDto::fromArray($input);
+
+        $dto = CasterGroupsTestDto::newFromArray($input);
         $this->assertSame(['notCast' => '- hello ', 'baz' => 'world'], $dto->toarray());
 
         // With group 'foo' active inbound
-        /** @psalm-suppress UndefinedMagicMethod */
-        $dtoFoo = CasterGroupsTestDto::withGroups(inbound: 'foo')->fromArray($input);
+
+        $dtoFoo = CasterGroupsTestDto::newWithGroups(inbound: 'foo')->loadArray($input);
         $this->assertSame('- hello ', $dtoFoo->notCast, 'notCast is not affected by groups');
         $this->assertSame('Foo:WORLD', $dtoFoo->baz, 'baz is trimmed, uppercased and prefixed Foo:');
 
         // With group 'bar' active inbound
-        /** @psalm-suppress UndefinedMagicMethod */
-        $dtoBar = CasterGroupsTestDto::withGroups(inbound: 'bar')->fromArray($input);
+
+        $dtoBar = CasterGroupsTestDto::newWithGroups(inbound: 'bar')->loadArray($input);
         $this->assertSame('Bar:world', $dtoBar->baz, 'baz is trimmed and prefixed Bar:');
 
         // With both 'bar' amd 'foo' active inbound
-        /** @psalm-suppress UndefinedMagicMethod */
-        $dtoBar = CasterGroupsTestDto::withGroups(inbound: ['foo', 'bar'])->fromArray($input);
+
+        $dtoBar = CasterGroupsTestDto::newWithGroups(inbound: ['foo', 'bar'])->loadArray($input);
         $this->assertSame('Foo:BAR:WORLD', $dtoBar->baz, 'baz is trimmed and prefixed Bar:');
     }
 
@@ -133,7 +131,7 @@ final class GroupsTest extends TestCase
             'baz' => '- sample ',
         ];
 
-        $dto = CasterGroupsTestDto::fromArray($input);
+        $dto = CasterGroupsTestDto::newFromArray($input);
         $output = $dto->toOutboundArray();
 
         $this->assertSame('SAMPLE', $output['baz'], 'baz should be uppercased at export');

@@ -73,10 +73,9 @@ final class InjectIntoDtoTest extends TestCase
 
     public function testInjectionAndBoot(): void
     {
-        $dto = FooBarDto1::fromArray(['value' => ' Hello World ']);
+        $dto = FooBarDto1::newFromArray(['value' => ' Hello World ']);
 
-        /** @psalm-suppress UndefinedMagicMethod */
-        $dto->fromArray(['value' => ' Hello World ']);
+        $dto->loadArray(['value' => ' Hello World ']);
 
         $this->assertEquals('hello*world', $dto->value);
 
@@ -104,21 +103,10 @@ final class InjectIntoDtoTest extends TestCase
         );
 
         // create a DTO instance from an array and check that the
-        /** @psalm-suppress UndefinedMagicMethod */
-        $dto = DtoWithInjectedDummySlugger::fromArray(['value' => ' Hello World ']);
+
+        $dto = DtoWithInjectedDummySlugger::newFromArray(['value' => ' Hello World ']);
 
         $this->assertEquals('hello++world', $dto->value);
-    }
-
-    public function testCallToProtectedMethodThrowsException(): void
-    {
-        $this->expectException(InvalidConfigException::class);
-        $class = DtoWithInjectedDummySlugger::class;
-        $this->expectExceptionMessage("Protected method $class::getSlugger() is not reachable from calling context.");
-
-        $dto = new DtoWithInjectedDummySlugger();
-        /** @psalm-suppress UndefinedMagicMethod */
-        $dto->getSlugger();
     }
 }
 

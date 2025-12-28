@@ -26,11 +26,10 @@ final class ExtractTest extends TestCase
     {
         $arrayAccess = new \ArrayIterator(['A', 'B', 'C']);
 
-        /** @psalm-suppress UndefinedMagicMethod */
-        $dto = ExtractTestFixture::withContext([
+        $dto = ExtractTestFixture::newWithContext([
             'foo' => 'bar',
             'baz' => 'qux',
-        ])->fromArray([
+        ])->loadArray([
             'propVal' => ['A', 'B', $arrayAccess],
         ]);
         $dto->setGetterVal(['D', 'E', 'F']);

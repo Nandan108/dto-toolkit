@@ -222,7 +222,6 @@ final class ExportsToEntityTest extends TestCase
             }
         };
 
-        /** @var object $entity */
         $entity = $dto->fill(['fooProp' => 'someVal'])->toEntity();
 
         $this->assertInstanceOf(EntityClassToInstanciateFromName::class, $entity);

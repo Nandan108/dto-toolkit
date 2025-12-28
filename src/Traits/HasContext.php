@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Nandan108\DtoToolkit\Traits;
 
 /**
- * @method static static withContext(array $values)
+ * @method static static newWithContext(array $values)
  */
 trait HasContext
 {
@@ -29,7 +29,7 @@ trait HasContext
         return $this;
     }
 
-    public function _withContext(array $values): static
+    public function withContext(array $values): static
     {
         foreach ($values as $key => $val) {
             $this->contextSet($key, $val);

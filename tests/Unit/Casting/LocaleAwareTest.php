@@ -33,7 +33,7 @@ final class LocaleAwareTest extends TestCase
             public int | string | null $number_fr = null;
         };
 
-        $dto = $dtoClass::fromArray([
+        $dto = $dtoClass::newFromArray([
             'number_fr' => '1234.56',
         ]);
 
@@ -82,7 +82,7 @@ final class LocaleAwareTest extends TestCase
             // public int|string|null $num_fr_FR = null;
         };
 
-        $dto = $dtoClass::fromArray([
+        $dto = $dtoClass::newFromArray([
             'number_fr'   => '1234.56',
             'number_de'   => 1234.56,
             'low_number'  => '4.56',
@@ -103,8 +103,8 @@ final class LocaleAwareTest extends TestCase
         $this->assertSame("1\u{202F}234.56\u{A0}CHF", $dto->amount_chf);
 
         try {
-            /** @psalm-suppress UndefinedMagicMethod */
-            $dto->unfill()->fromArray(['number_fr' => 'not-a-number']);
+
+            $dto->unfill()->loadArray(['number_fr' => 'not-a-number']);
 
             $this->fail('Expected CastingException');
         } catch (TransformException $e) {
@@ -113,8 +113,8 @@ final class LocaleAwareTest extends TestCase
         }
 
         try {
-            /** @psalm-suppress UndefinedMagicMethod */
-            $dto->unfill()->fromArray(['amount_chf' => 'not numeric']);
+
+            $dto->unfill()->loadArray(['amount_chf' => 'not numeric']);
 
             $this->fail('Expected CastingException');
         } catch (TransformException $e) {
@@ -137,14 +137,14 @@ final class LocaleAwareTest extends TestCase
             }
         };
 
-        $dto = $dtoClass::fromArray(['number' => 1234.56]);
+        $dto = $dtoClass::newFromArray(['number' => 1234.56]);
 
         $this->assertSame("1\u{202F}234,56", $dto->number);
 
         try {
             $dto->locale = 'bad locale string';
-            /** @psalm-suppress UndefinedMagicMethod */
-            $dto->unfill()->fromArray(['number' => 'not-a-number']);
+
+            $dto->unfill()->loadArray(['number' => 'not-a-number']);
             $this->fail('Expected CastingException');
         } catch (TransformException $e) {
             $this->assertSame('processing.transform.expected', $e->getMessageTemplate());
@@ -160,7 +160,7 @@ final class LocaleAwareTest extends TestCase
             public int | string | null $number_de = null;
         };
 
-        $dto = $dtoClass::fromArray([
+        $dto = $dtoClass::newFromArray([
             'number_de' => '1234.56',
         ]);
 
@@ -177,7 +177,7 @@ final class LocaleAwareTest extends TestCase
         $this->expectException(InvalidConfigException::class);
         $this->expectExceptionMessage('Cannot resolve locale from "bad-locale"');
 
-        $dtoClass::fromArray(['number' => 1234.56]);
+        $dtoClass::newFromArray(['number' => 1234.56]);
     }
 
     public function testUsesLocaleProviderTakesLocaleFromContext(): void
@@ -192,24 +192,23 @@ final class LocaleAwareTest extends TestCase
         };
 
         // Pass a locale via context and check if it is used
-        /** @psalm-suppress UndefinedMagicMethod */
-        $dto = $dtoClass::withContext(['locale' => 'fr_CH']);
 
-        /** @psalm-suppress UndefinedMagicMethod */
-        $dto->fromArray(['amount' => 1234.56]);
+        $dto = $dtoClass::newWithContext(['locale' => 'fr_CH']);
+
+        $dto->loadArray(['amount' => 1234.56]);
 
         $this->assertSame("1\u{202F}234,56", $dto->amount);
 
         // remove locale from context and check if default locale is used
-        /** @psalm-suppress UndefinedMagicMethod */
-        $dto->unfill()->contextUnset('locale')->fromArray(['amount' => 1234.56]);
+
+        $dto->unfill()->contextUnset('locale')->loadArray(['amount' => 1234.56]);
         /** @psalm-suppress DocblockTypeContradiction */
         $this->assertSame('1,234.56', $dto->amount);
 
         // Pass an invalid lcoale via context and check if exception is thrown
         try {
-            /** @psalm-suppress UndefinedMagicMethod */
-            $dto->unfill()->contextSet('locale', 'bad-locale')->fromArray(['amount' => 1234.56]);
+
+            $dto->unfill()->contextSet('locale', 'bad-locale')->loadArray(['amount' => 1234.56]);
             $this->fail('Expected CastingException');
         } catch (InvalidConfigException $e) {
             $this->assertStringContainsString('returned an invalid value "bad-locale"', $e->getMessage());
@@ -225,7 +224,7 @@ final class LocaleAwareTest extends TestCase
 
         $this->expectException(TransformException::class);
         $this->expectExceptionMessage('processing.transform.expected');
-        $dtoClass::fromArray(['number' => 'not-a-number']);
+        $dtoClass::newFromArray(['number' => 'not-a-number']);
     }
 
     public function testInvalidLocaleProviderThrows(): void
@@ -238,7 +237,7 @@ final class LocaleAwareTest extends TestCase
         $this->expectException(ConfigInvalidArgumentException::class);
         $this->expectExceptionMessage('Class stdClass does not have a getLocale() method.');
 
-        $dtoClass::fromArray(['number' => 1234.56]);
+        $dtoClass::newFromArray(['number' => 1234.56]);
     }
 
     private function getMontaryDecimalSeparator(string $locale): string
@@ -260,7 +259,7 @@ final class LocaleAwareTest extends TestCase
 
         /** @psalm-suppress UnusedFunctionCall */
         locale_set_default($locale);
-        $dto = $dtoClass::fromArray(['number' => 1234.56]);
+        $dto = $dtoClass::newFromArray(['number' => 1234.56]);
 
         $this->assertSame("1\u{202F}234{$decSep}56\u{A0}CHF", $dto->number);
     }
@@ -277,7 +276,7 @@ final class LocaleAwareTest extends TestCase
 
         /** @psalm-suppress UnusedFunctionCall */
         locale_set_default($locale);
-        $dto = $dtoClass::fromArray(['number' => 1234.56]);
+        $dto = $dtoClass::newFromArray(['number' => 1234.56]);
 
         $this->assertSame("1\u{202F}234{$decSep}56\u{A0}CHF", $dto->number);
     }
@@ -292,7 +291,7 @@ final class LocaleAwareTest extends TestCase
             public string | float | null $num = null;
         };
 
-        $dtoClass::fromArray(['num' => 10]);
+        $dtoClass::newFromArray(['num' => 10]);
     }
 }
 

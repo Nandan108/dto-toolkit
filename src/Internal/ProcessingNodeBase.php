@@ -273,7 +273,6 @@ abstract class ProcessingNodeBase implements PhaseAwareInterface, ProcessingNode
 
         $phaseKey = (int) $outbound;
         if ($dto instanceof HasGroupsInterface) {
-            /** @var array<string> */
             $activeGroups = $dto->getActiveGroups($phase);
             sort($activeGroups);
             /** @psalm-suppress RiskyTruthyFalsyComparison */

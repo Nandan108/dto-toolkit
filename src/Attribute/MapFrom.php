@@ -62,7 +62,6 @@ class MapFrom implements PhaseAwareInterface
             'dto'   => $dto,
         ];
         if ($dto instanceof HasContextInterface) {
-            /** @var array */
             $roots['context'] = $dto->getContext();
         }
 

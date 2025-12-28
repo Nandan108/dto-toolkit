@@ -1,21 +1,23 @@
 # DTO Toolkit Backlog
 
 ## Product Backlog Items
-- **[073]** Refactor DTO pipeline methods (from*, with*) to get psalm happy w/o suppress.
-  - Rename `BaseDto::newInstance()` to `::new()`,
-  - Rename `from*` instance methods to `load*`,
-  - Rename `with*` static magic methods to `newWith*` (keep instance as `with*`)
 - **[074]** Consider renaming or aliasing Validate namespace to Assert, and revise namespace aliasing suggestions.
 - **[075]** Port a majority of Symfony validation constraints (`#[Assert\...]`) to DTOT Core
-- **[071]** Add `#[CastTo\Coalesce(array, $ignore = [null])]` - takes an array and return first element not in $ignore list.
 - **[077]** Add `#[Validate\CompareTo($operator, $value)]`, `#[Validate\CompareToExtract($operator, $path)]`
-- **[088]** Introduce new processor node type more similar to modifiers: rather than having a single cast() or validate() method, they'd have a makeValidator()/makeCaster() method, that can return an optimized Closure, which might be different depending on $constructorArgs.
+- **[028]** Add nested DTO support with `CastTo\Dto(class, groups: 'api')` (from array or object)
+  - support recursive normalization and validation
+- **[064]** Add framework-specific ValidationException mappers in adapters
+  - Add a "ProcessingErrorMapperInterface" for adapter overrides
+  - Core DTOT will throw a generic ValidationException on validation failure
+  - Allow adapters (e.g., dtot-adapter-laravel, dtot-adapter-symfony) to map or wrap ValidationExceptions into framework-native exceptions
+  - This enables seamless integration with Laravel and Symfony's validation error handling mechanisms
+  - Keep validation logic and error reporting fully pluggable and framework-agnostic
 - **[046]** Add modifier `#[SkipIfMatch(array $values, $return=null)]`, allows short-circuitting following caster(s) by returning \$return if input is found in \$values or input in $values.
+- **[071]** Add `#[CastTo\Coalesce(array, $ignore = [null])]` - takes an array and return first element not in $ignore list.
 - **[056]** Support multi-step casting by making withGroups(inboundCast: ...) take a sequence of group(s)
   Then apply each step in sequence. Same with outboundCast.
 - **[044]** Add support for DTO transforms (`\$dto->toDto($otherDtoClass)`) [See details](#PBI-044)
-- **[028]** Add nested DTO support with `CastTo\Dto(class, groups: 'api')` (from array or object)
-  - support recursive normalization and validation
+- **[088]** Introduce new processor node type more similar to modifiers: rather than having a single cast() or validate() method, they'd have a makeValidator()/makeCaster() method, that can return an optimized Closure, which might be different depending on $constructorArgs.
 - **[034]** Add support for logging failed casts in FailTo/FailNextTo. `CastTo::$castSoftFailureLogger = function (CastingException $e, $returnedVal)`
 - **[062]** Add support for getCaster() debug mode
   - When enabled, caster closures push/pop debug context during execution
@@ -23,18 +25,8 @@
   - Example message: "PropName: Caster1->Caster2->FailNextTo(PerItem(Caster3 -> Caster4))"
 - **[048]** *Add debug mode setting. When enabled, add casting stack tracking (push/pop) to enable logging full context when failing within a chain.*
 - **[050]** Add `#[LogCast($debugOnly = true)]` to also allow logging non-failing chains.
-- **[036]** Add support for `#[AlwaysFilled]`: marks prop as filled immediately on DTO instantiation.
-  The mapping source will be different for inbound and outbound casting, this needs reflexion.
 - **[058]** Add a doc about FullDto and making one's own slimmed-down version if not all features are needed
-- **[064]** Add framework-specific ValidationException mappers in adapters
-  - Add a "ProcessingErrorMapperInterface" for adapter overrides
-  - Core DTOT will throw a generic ValidationException on validation failure
-  - Allow adapters (e.g., dtot-adapter-laravel, dtot-adapter-symfony) to map or wrap ValidationExceptions into framework-native exceptions
-  - This enables seamless integration with Laravel and Symfony's validation error handling mechanisms
-  - Keep validation logic and error reporting fully pluggable and framework-agnostic
-- **[070]** Create new exception (CastingSetupException ?)
-  - To be thrown when encountering errors during chain building/boot/instanciation, etc...
-  - These exceptions won't have translations, while cast-time exceptions (CastingExceptions) will allow message l10n in the future
+
 ---
 
 ## Completed PBIs
@@ -75,7 +67,7 @@
 - [039] Publish to GitHub and add CI
 - [057] Replace per-Caster $outbound ctor param with #[Outbound]: marks subsequent attributes as belonging to outbound phase
 - [054] Add `CastTo\RegexReplace($needle, $haystack)`
-- [066] Add BaseDto::fromEntity($object)
+- [066] Add BaseDto::newFromEntity($object)
 - [052] Add Casters fromJson, JsonExtract, NumericString, Base64Encode/Decode, RegexSplit
 - [060] Extract inject() functionality from caster to IsInjectable trait, rename #[Injected] to #[Inject]
 - [061] let DtoBase use IsInjectable, make sure $dto->inject() is called after new instanciation
@@ -94,7 +86,7 @@
 - [063] Rename Caster Chains to Processing Chains and add Validation attributes as part of chains
 - [072] Add support for flexible error handling and error collection, so adapters can support native framework error handling.
 - [078] Introduce PresencePolicy to clear up semantics around `null` vs `missing` input values.
-
+- [073] Refactor DTO pipeline methods (from*, with*) to get psalm happy w/o suppress.
 
 ---
 
@@ -121,9 +113,9 @@
 - **Example use case**: `$apiDto = $internalDto->toDto(ApiUserDto::class, groups: ['api']);`
 - **Public API**
   - Add `BaseDto::toDto(string $targetDtoClass, ?array $groups = null): static`
-    - Default implementation:  `return (new $targetDtoClass)->fromDto($this, $groups);`
-  - Add `BaseDto::fromDto(BaseDto $sourceDto, ?array $groups = null): static`
-    - Default implementation:`return $this->fromArray($sourceDto->toOutboundArray(groups: $groups));`
+    - Default implementation:  `return (new $targetDtoClass)->loadDto($this, $groups);`
+  - Add `BaseDto::newFromDto(BaseDto $sourceDto, ?array $groups = null): static`
+    - Default implementation:`return $this->loadArray($sourceDto->toOutboundArray(groups: $groups));`
 - **Responsibility**
   - The **target DTO** is responsible for requesting+interpreting the source DTO’s output
   - This supports overriding `fromDto()` to customize data interpretation, grouping, or mapping logic

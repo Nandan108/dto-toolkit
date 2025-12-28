@@ -43,9 +43,9 @@ final class UsesParamResolverTest extends TestCase
             'fr_FR' => '05/10/2025 12:34',
         ];
         foreach ($locales as $locale => $expected) {
-            $dto = UsesParamResolverDateTestDto::withContext(['locale' => $locale]);
-            /** @psalm-suppress UndefinedMagicMethod */
-            $dto->fromArrayLoose(['dateContextLocale' => $date]);
+            $dto = UsesParamResolverDateTestDto::newWithContext(['locale' => $locale]);
+
+            $dto->loadArrayLoose(['dateContextLocale' => $date]);
 
             $actual = $dto->dateContextLocale;
 
@@ -54,25 +54,25 @@ final class UsesParamResolverTest extends TestCase
 
         // test with invlid locale in context
         try {
-            /** @psalm-suppress UndefinedMagicMethod */
-            UsesParamResolverDateTestDto::withContext(['locale' => 'not-valid'])
-                ->fromArray(['dateContextLocale' => $date]);
+
+            UsesParamResolverDateTestDto::newWithContext(['locale' => 'not-valid'])
+                ->loadArray(['dateContextLocale' => $date]);
         } catch (InvalidConfigException $e) {
             $this->assertStringContainsString('Prop dateContextLocale: Invalid locale "not-valid" in context key \'locale\' for', $e->getMessage());
         }
 
         // test with null locale in context
         try {
-            /** @psalm-suppress UndefinedMagicMethod */
-            UsesParamResolverDateTestDto::withContext(['locale' => null])
-                ->fromArray(['dateContextLocale' => $date]);
+
+            UsesParamResolverDateTestDto::newWithContext(['locale' => null])
+                ->loadArray(['dateContextLocale' => $date]);
         } catch (InvalidConfigException $e) {
             $this->assertStringContainsString('Cannot resolve context key \'locale\' (no context set)', $e->getMessage());
         }
 
         // test with DTO using '<context' resolution but not implementing HasContextInterface
         try {
-            UsesParamResolverDateTestDtoNeedsContextButGotNone::fromArray(['dateContextLocale' => $date]);
+            UsesParamResolverDateTestDtoNeedsContextButGotNone::newFromArray(['dateContextLocale' => $date]);
         } catch (InvalidConfigException $e) {
             $this->assertSame('To use \'<context\' as a parameter value, the DTO must implement HasContextInterface.', $e->getMessage());
         }
@@ -86,10 +86,10 @@ final class UsesParamResolverTest extends TestCase
             // 'en_US' => "10/5/25, 12:34\u{202F}PM",
             'fr_FR' => '05/10/2025 12:34',
         ];
-        $dto = UsesParamResolverDateTestDto::withContext(['locale' => 'fr_FR']);
+        $dto = UsesParamResolverDateTestDto::newWithContext(['locale' => 'fr_FR']);
         foreach ($locales as $locale => $expected) {
-            /** @psalm-suppress UndefinedMagicMethod */
-            $dto->withLocale($locale)->fromArray(['dateDtoLocale' => $date]);
+
+            $dto->withLocale($locale)->loadArray(['dateDtoLocale' => $date]);
             $actual = $dto->dateDtoLocale;
 
             $this->assertSame($expected, $actual);
@@ -119,8 +119,8 @@ final class UsesParamResolverTest extends TestCase
             public \DateTimeInterface | string | null $date = null;
         };
         try {
-            /** @psalm-suppress UndefinedMagicMethod */
-            $sadPathDto->fromArray(['date' => new \DateTimeImmutable('2025-10-05 12:34')]);
+
+            $sadPathDto->loadArray(['date' => new \DateTimeImmutable('2025-10-05 12:34')]);
         } catch (InvalidConfigException $e) {
             $this->assertSame('DTO does not have a getLocale() method.', $e->getMessage());
         }
@@ -132,8 +132,8 @@ final class UsesParamResolverTest extends TestCase
                 #[LocalizedDateTime(locale: TestCase::class)]
                 public \DateTimeInterface | string | null $date = null;
             };
-            /** @psalm-suppress UndefinedMagicMethod */
-            $dto->fromArray(['date' => new \DateTimeImmutable('2025-10-05 12:34')]);
+
+            $dto->loadArray(['date' => new \DateTimeImmutable('2025-10-05 12:34')]);
         } catch (InvalidArgumentException $e) {
             $paramValueOrProviderClass = TestCase::class;
             $paramGetter = 'getLocale';
@@ -146,8 +146,8 @@ final class UsesParamResolverTest extends TestCase
                 #[LocalizedDateTime(locale: 'not-a-valid-class-or-locale')]
                 public \DateTimeInterface | string | null $date = null;
             };
-            /** @psalm-suppress UndefinedMagicMethod */
-            $dto->fromArray(['date' => new \DateTimeImmutable('2025-10-05 12:34')]);
+
+            $dto->loadArray(['date' => new \DateTimeImmutable('2025-10-05 12:34')]);
         } catch (InvalidConfigException $e) {
             $this->assertStringContainsString('Cannot resolve locale from "not-a-valid-class-or-locale"', $e->getMessage());
         }
@@ -182,8 +182,8 @@ final class UsesParamResolverTest extends TestCase
             'de_DE' => ['FOO', 'foo', 'foo', 'foo', 'FOO'],
         ];
         foreach ($locales as $locale => $expected) {
-            /** @psalm-suppress UndefinedMagicMethod */
-            $dto->withContext(['locale' => $locale])->fromArray($input);
+
+            $dto->withContext(['locale' => $locale])->loadArray($input);
             $this->assertSame($expected, array_values($dto->toArray()));
         }
     }
@@ -193,17 +193,17 @@ final class UsesParamResolverTest extends TestCase
         // dynamic resolution ...
 
         // context
-        /** @psalm-suppress UndefinedMagicMethod */
-        $dto = UsesParamResolverDateTestDtoDynamicLocalResolution::withContext(['locale' => 'fr_FR'])
-            ->fromArray(['date' => new \DateTimeImmutable('2025-10-05 12:34')]);
+
+        $dto = UsesParamResolverDateTestDtoDynamicLocalResolution::newWithContext(['locale' => 'fr_FR'])
+            ->loadArray(['date' => new \DateTimeImmutable('2025-10-05 12:34')]);
         $this->assertSame('05/10/2025 12:34', $dto->date);
 
         // test invalid locale in context
         try {
             // context
-            /** @psalm-suppress UndefinedMagicMethod */
-            UsesParamResolverDateTestDtoDynamicLocalResolution::withContext(['locale' => 'not-a-locale'])
-                ->fromArray(['date' => new \DateTimeImmutable('2025-10-05 12:34')]);
+
+            UsesParamResolverDateTestDtoDynamicLocalResolution::newWithContext(['locale' => 'not-a-locale'])
+                ->loadArray(['date' => new \DateTimeImmutable('2025-10-05 12:34')]);
             $this->fail('Expected exception not thrown');
         } catch (InvalidConfigException $e) {
             $this->assertStringContainsString("\$dto->getContext('locale') returned an invalid value", $e->getMessage());
@@ -211,8 +211,8 @@ final class UsesParamResolverTest extends TestCase
 
         // dto:  which is returned by $dto->getLocale()
         /** @psalm-suppress UndefinedMagicMethod */
-        $dto = UsesParamResolverDateTestDtoDynamicLocalResolution::withLocale('de_DE')
-            ->fromArray(['date' => new \DateTimeImmutable('2025-10-05 12:34')]);
+        $dto = UsesParamResolverDateTestDtoDynamicLocalResolution::newWithLocale('de_DE')
+            ->loadArray(['date' => new \DateTimeImmutable('2025-10-05 12:34')]);
         /** @psalm-suppress DocblockTypeContradiction */
         $this->assertSame('05.10.25, 12:34', $dto->date);
 
@@ -223,8 +223,8 @@ final class UsesParamResolverTest extends TestCase
             #[LocalizedDateTime]
             public \DateTimeInterface | string | null $date = null;
         };
-        /** @psalm-suppress UndefinedMagicMethod */
-        $dto->fromArray(['date' => new \DateTimeImmutable('2025-10-05 12:34')]);
+
+        $dto->loadArray(['date' => new \DateTimeImmutable('2025-10-05 12:34')]);
         $this->assertSame('05/10/2025 12:34', $dto->date);
 
         /** @psalm-suppress UnusedFunctionCall */
@@ -235,8 +235,8 @@ final class UsesParamResolverTest extends TestCase
             #[LocalizedDateTime]
             public \DateTimeInterface | string | null $date = null;
         };
-        /** @psalm-suppress UndefinedMagicMethod */
-        $dto->fromArray(['date' => new \DateTimeImmutable('2025-10-05 12:34')]);
+
+        $dto->loadArray(['date' => new \DateTimeImmutable('2025-10-05 12:34')]);
         $this->assertSame('05/10/2025 12:34', $dto->date);
 
         // sad path: no fallback - unable to resolve
@@ -276,7 +276,7 @@ final class UsesParamResolverDateTestDto extends FullDto
     }
 
     /** @psalm-suppress PossiblyUnusedMethod */
-    public function _withLocale(string $locale): static
+    public function withLocale(string $locale): static
     {
         $this->defaultLocale = $locale;
 
@@ -321,7 +321,7 @@ final class UsesParamResolverDateTestDtoDynamicLocalResolution extends FullDto
     }
 
     /** @psalm-suppress PossiblyUnusedMethod */
-    public function _withLocale(string $locale): static
+    public function withLocale(string $locale): static
     {
         $this->defaultLocale = $locale;
 

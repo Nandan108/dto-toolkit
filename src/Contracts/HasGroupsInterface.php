@@ -9,7 +9,7 @@ use Nandan108\DtoToolkit\Enum\Phase;
 interface HasGroupsInterface
 {
     /** @psalm-suppress PossiblyUnusedMethod, PossiblyUnusedReturnValue*/
-    public function _withGroups(
+    public function withGroups(
         array | string $all = [], // all-phases default
         array | string $inbound = [],
         array | string $inboundCast = [],

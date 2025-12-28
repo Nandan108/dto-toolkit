@@ -21,7 +21,7 @@ final class ValidateErrorTest extends TestCase
         $this->expectException(NodeProducerResolutionException::class);
         $this->expectExceptionMessage("Unable to resolve processing node producer 'missing'.");
 
-        UnresolvedValidatorDto::fromArray(['name' => 'whatever']);
+        UnresolvedValidatorDto::newFromArray(['name' => 'whatever']);
     }
 
     public function testNonImplementingClassThrows(): void
@@ -29,7 +29,7 @@ final class ValidateErrorTest extends TestCase
         $this->expectException(InvalidConfigException::class);
         $this->expectExceptionMessage("Class 'stdClass' does not implement the ValidatorInterface.");
 
-        NonImplementingValidatorDto::fromArray(['name' => 'anything']);
+        NonImplementingValidatorDto::newFromArray(['name' => 'anything']);
     }
 
     public function testValidatorNeedingContainerThrows(): void
@@ -39,7 +39,7 @@ final class ValidateErrorTest extends TestCase
             'Validator '.NeedsArgsValidator::class.' requires constructor args, but none were provided and no container is available.',
         );
 
-        NeedsContainerValidatorDto::fromArray(['name' => 'z']);
+        NeedsContainerValidatorDto::newFromArray(['name' => 'z']);
     }
 }
 

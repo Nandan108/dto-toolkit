@@ -211,7 +211,7 @@ Groups allow conditional inclusion of **properties** and **processing nodes** wh
 Groups are activated using the fluent `withGroups()` method:
 
 ```php
-$dto = MyDto::withGroups('api')->fromArray($input);
+$dto = MyDto::newWithGroups('api')->loadArray($input);
 ```
 
 or on an existing instance:
@@ -225,7 +225,7 @@ Both inbound and outbound chain compilation respect the active group set.
 
 ## 7.1 Class-Level Default Groups: `#[WithDefaultGroups(...)]`
 
-`#[WithDefaultGroups]` preloads group scopes automatically when a DTO is instantiated through DTOT factories (`newInstance()`, `fromArray()`, `fromDto()`, adapters, etc.). It accepts the same parameters as `withGroups()`:
+`#[WithDefaultGroups]` preloads group scopes automatically when a DTO is instantiated through DTOT factories (`new()`, `newFromArray()`, adapters, etc.). It accepts the same parameters as `withGroups()`:
 
 - `all` — baseline groups applied to every phase unless overridden
 - `inbound` / `inboundCast` — inbound IO vs. inbound processing
@@ -247,8 +247,8 @@ final class UserDto extends FullDto {
     public ?string $tag = null;
 }
 
-$dto = UserDto::fromArray(['tag' => 'Some Value']);         // defaults applied automatically
-$dto = UserDto::withGroups('partner')->fromArray($payload); // override defaults when needed
+$dto = UserDto::newFromArray(['tag' => 'Some Value']);         // defaults applied automatically
+$dto = UserDto::newWithGroups('partner')->loadArray($payload); // override defaults when needed
 ```
 
 ---
@@ -277,8 +277,8 @@ class UserDto extends FullDto {
     public ?int $roleId;
 }
 
-MyDto::withGroups('public')->fromArray($input);  // roleId excluded
-MyDto::withGroups('admin')->fromArray($input);   // roleId included
+MyDto::newWithGroups('public')->loadArray($input);  // roleId excluded
+MyDto::newWithGroups('admin')->loadArray($input);   // roleId included
 ```
 
 `#[PropGroups]` is **coarse-grained**: it controls **whether the property exists** in the current projection.
@@ -304,8 +304,8 @@ class ProductDto extends FullDto {
     public string $contactEmail;
 }
 
-ProductDto::withGroups('api')->fromArray($input);   // Trimmed + Email + Slug
-ProductDto::withGroups('web')->fromArray($input);   // only Slug
+ProductDto::newWithGroups('api')->loadArray($input);   // Trimmed + Email + Slug
+ProductDto::newWithGroups('web')->loadArray($input);   // only Slug
 ```
 
 `#[Mod\Groups]` is **fine-grained**: it controls **which processing steps run**, not whether the property exists.
@@ -325,9 +325,9 @@ class AdminUserDto extends FullDto {
     public string|int $roleId;
 }
 
-AdminUserDto::withGroups('public')->fromArray($input);        // property excluded
-AdminUserDto::withGroups('admin')->fromArray($input);         // included, Required skipped
-AdminUserDto::withGroups(['admin', 'strict'])->fromArray($i); // included, Required applied
+AdminUserDto::newWithGroups('public')->loadArray($input);        // property excluded
+AdminUserDto::newWithGroups('admin')->loadArray($input);         // included, Required skipped
+AdminUserDto::newWithGroups(['admin', 'strict'])->loadArray($i); // included, Required applied
 ```
 
 ---
@@ -412,7 +412,7 @@ Errors may be captured by passing a ProcessingErrorList:
 ```php
 $errors = new ProcessingErrorList();
 
-$dto = MyDto::fromArray(
+$dto = MyDto::newFromArray(
     $input,
     errorList: $errors,
     errorMode: ErrorMode::CollectFailToNull

@@ -31,7 +31,7 @@ class WithDefaultGroups
         if (!($dto instanceof HasGroupsInterface)) {
             throw new InvalidConfigException('The WithDefaultGroups attribute can only be used on DTOs that implement the HasGroupsInterface.');
         }
-        $dto->_withGroups(
+        $dto->withGroups(
             all: $this->all,
             inbound: $this->inbound,
             inboundCast: $this->inboundCast,

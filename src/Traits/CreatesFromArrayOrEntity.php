@@ -16,11 +16,11 @@ use Nandan108\DtoToolkit\Exception\Process\ExtractionException;
 use Nandan108\PropAccess\PropAccess;
 
 /**
- * @method static static fromArray(array $input, bool $ignoreUnknownProps = false, ?ProcessingErrorList $errorList = null, ?ErrorMode $errorMode = null)
- * @method static static fromArrayLoose(array $input, bool $ignoreUnknownProps = false, ?ProcessingErrorList $errorList = null, ?ErrorMode $errorMode = null)
- * @method static static fromEntity(object $entity, bool $ignoreInaccessibleProps = true, ?ProcessingErrorList $errorList = null, ?ErrorMode $errorMode = null)
+ * @method static static newFromArray(array $input, bool $ignoreUnknownProps = false, ?ProcessingErrorList $errorList = null, ?ErrorMode $errorMode = null)
+ * @method static static newFromArrayLoose(array $input, bool $ignoreUnknownProps = false, ?ProcessingErrorList $errorList = null, ?ErrorMode $errorMode = null)
+ * @method static static newFromEntity(object $entity, bool $ignoreInaccessibleProps = true, ?ProcessingErrorList $errorList = null, ?ErrorMode $errorMode = null)
  *
- * These methods are dynamically routed via __call() and __callStatic() to their corresponding instance methods.
+ * These methods are dynamically routed via __callStatic() to their corresponding instance methods.
  * Static analyzers require the above annotations to avoid false positives.
  **/
 trait CreatesFromArrayOrEntity
@@ -34,7 +34,7 @@ trait CreatesFromArrayOrEntity
      *
      * @psalm-suppress MethodSignatureMismatch, MoreSpecificReturnType
      */
-    public function _fromArray(
+    public function loadArray(
         array $input,
         bool $ignoreUnknownProps = false,
         ?ProcessingErrorList $errorList = null,
@@ -131,20 +131,20 @@ trait CreatesFromArrayOrEntity
      *
      * @psalm-suppress PossiblyUnusedMethod, PossiblyUnusedReturnValue, MethodSignatureMismatch
      */
-    public function _fromArrayLoose(
+    public function loadArrayLoose(
         array $input,
         ?ProcessingErrorList $errorList = null,
         ?ErrorMode $errorMode = null,
         bool $clear = true,
     ): static {
         /** @psalm-suppress NoValue */
-        return $this->_fromArray($input, true, $errorList, $errorMode, $clear);
+        return $this->loadArray($input, true, $errorList, $errorMode, $clear);
     }
 
     /**
      * @psalm-suppress PossiblyUnusedMethod, MethodSignatureMismatch
      */
-    public function _fromEntity(
+    public function loadEntity(
         object $entity,
         bool $ignoreInaccessibleProps = true,
         ?ProcessingErrorList $errorList = null,
@@ -158,6 +158,6 @@ trait CreatesFromArrayOrEntity
             ignoreInaccessibleProps: $ignoreInaccessibleProps,
         );
 
-        return $this->_fromArray($inputData, true, $errorList, $errorMode, $clear);
+        return $this->loadArray($inputData, true, $errorList, $errorMode, $clear);
     }
 }

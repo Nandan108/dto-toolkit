@@ -8,7 +8,7 @@ use Nandan108\DtoToolkit\Attribute\PropGroups;
 use Nandan108\DtoToolkit\Enum\Phase;
 
 /**
- * @method static static withGroups(array|string $all = [], array|string $inbound = [], array|string $inboundCast = [], array|string $outbound = [], array|string $outboundCast = [], array|string $validation = [])
+ * @method static static newWithGroups(array|string $all = [], array|string $inbound = [], array|string $inboundCast = [], array|string $outbound = [], array|string $outboundCast = [], array|string $validation = [])
  *
  * This trait implements the HasGroupsInterface and ScopedPropertyAccessInterface
  */
@@ -26,7 +26,7 @@ trait UsesGroups // user must implement HasGroupsInterface, ScopedPropertyAccess
      * @param array|string $outbound     group names to filter properties for loading data (outbound.io phase)
      */
     #[\Override]
-    public function _withGroups(array | string $all = [], array | string $inbound = [], array | string $inboundCast = [], array | string $outbound = [], array | string $outboundCast = [], array | string $validation = []): static
+    public function withGroups(array | string $all = [], array | string $inbound = [], array | string $inboundCast = [], array | string $outbound = [], array | string $outboundCast = [], array | string $validation = []): static
     {
         foreach ([&$all, &$inbound, &$inboundCast, &$outbound, &$outboundCast, &$validation] as &$groups) {
             if (is_string($groups)) {
@@ -34,7 +34,7 @@ trait UsesGroups // user must implement HasGroupsInterface, ScopedPropertyAccess
             }
         }
 
-        return $this->_withContext([
+        return $this->withContext([
             'groups.inbound.io'       => $inbound ?: $all,
             'groups.inbound.cast'     => $inboundCast ?: $inbound ?: $all,
             'groups.outbound.io'      => $outbound ?: $all,

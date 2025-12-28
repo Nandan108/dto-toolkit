@@ -142,7 +142,7 @@ public null|string|DateTimeInterface $date;
 
 Activates or skips the wrapped node(s) based on active context groups.
 
-In the following example, the `Trimmed` caster will only be applied if the group 'api' is "in scope". E.g. `MyDTO::withGroups('api')->fromArray(...)`
+In the following example, the `Trimmed` caster will only be applied if the group 'api' is "in scope". E.g. `MyDTO::newWithGroups('api')->loadArray(...)`
 
 **Example:**
 

@@ -41,7 +41,7 @@ class MyDto extends FullDto {
 }
 
 // Build DTO from array
-$dto = MyDto::fromArray(['name' => '  Alice  ']);
+$dto = MyDto::newFromArray(['name' => '  Alice  ']);
 
 // Transform into an entity
 $entity = $dto->toEntity();

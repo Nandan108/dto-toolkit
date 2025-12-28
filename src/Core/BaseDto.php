@@ -21,8 +21,7 @@ use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
 use Nandan108\DtoToolkit\Support\ContainerBridge;
 
 /**
- * @method static static withErrorMode(ErrorMode $mode)
- * @method        $this  withErrorMode(ErrorMode $mode)
+ * @method static static newWithErrorMode(ErrorMode $mode)
  *
  * @psalm-type DtoPropMetaCache = array{
  *     classRef?: \ReflectionClass<static>,
@@ -75,7 +74,7 @@ abstract class BaseDto
     }
 
     /** @psalm-suppress PossiblyUnusedMethod */
-    public function _withErrorMode(ErrorMode $mode): static
+    public function withErrorMode(ErrorMode $mode): static
     {
         $this->errorMode = $mode;
 
@@ -279,7 +278,6 @@ abstract class BaseDto
         if ($this instanceof ScopedPropertyAccessInterface) {
             // If the DTO implements ScopedPropertyAccessInterface, we only export properties in scope.
             // This is useful for DTOs that have different scopes for different phases.
-            /** @var string[] */
             $propsInScope = $this->getPropertiesInScope(Phase::OutboundExport);
             $propsInScope = array_intersect($propsInScope, array_keys($this->_filled));
         } else {
@@ -295,7 +293,6 @@ abstract class BaseDto
         }
 
         if ($this instanceof ProcessesInterface) {
-            /** @var array<array-key, mixed> */
             $data = $this->processOutbound($data, $errorList, $errorMode);
         }
 
@@ -455,24 +452,31 @@ abstract class BaseDto
     public static function __callStatic(string $method, array $arguments): static
     {
         $ref = static::getClassRef();
+        static $resolvedMethods = [];
+        /** @psalm-suppress  UnsupportedReferenceUsage */
+        $resolvedInstanceMethod = &$resolvedMethods[$ref->name.'::'.$method] ?? null;
 
-        if (str_starts_with($method, 'from') || str_starts_with($method, 'with')) {
-            $methodRef = self::getValidMethodRef("_$method", $ref);
+        if (!$resolvedInstanceMethod) {
+            if (str_starts_with($method, $prefix = 'newFrom')
+                || str_starts_with($method, $prefix = 'newWith')) {
+                $instanceMethodName = match ($prefix) {
+                    'newFrom' => 'load',
+                    'newWith' => 'with',
+                }.substr($method, strlen($prefix));
+                $resolvedInstanceMethod = self::getValidMethodRef($instanceMethodName, $ref);
 
-            $instance = static::newInstance();
-
-            // call the method on the instance
-            $instance = $methodRef->invoke($instance, ...$arguments);
-        } else {
-            // if __callStatic was called, it means the method doesn't exist, therefore getValidMethodRef() will throw.
-            self::getValidMethodRef($method, $ref, false);
+            } else {
+                // if __callStatic was called, it means the method doesn't exist, therefore getValidMethodRef() will throw.
+                self::getValidMethodRef($method, $ref, false);
+            }
         }
 
-        // $instance is always set in the magic method case, but adding `?? new static()`
-        // keeps Psalm and IDEs happy (ensures return type is always `static`) and avoids
-        // unreachable throw lines that would break test coverage goals.
-        /** @psalm-suppress UnsafeInstantiation */
-        return $instance ?? new static();
+        // make a new instance of the class
+        $instance = static::new();
+        // call the method on the instance
+        $resolvedInstanceMethod->invoke($instance, ...$arguments);
+
+        return $instance;
     }
 
     /**
@@ -483,7 +487,7 @@ abstract class BaseDto
      * This method will also call the `inject()` method if the class implements Injectable,
      * and the `boot()` method if the class implements Bootable.
      */
-    public static function newInstance(): static
+    public static function new(): static
     {
         /** @var bool[] $isInjectable */
         static $isInjectable = [];
@@ -518,23 +522,6 @@ abstract class BaseDto
 
         /** @var static $instance */
         return $instance;
-    }
-
-    /**
-     * @psalm-suppress PossiblyUnusedMethod, PossiblyUnusedParam
-     **/
-    public function __call(string $method, array $parameters): static
-    {
-        $ref = static::getClassRef();
-
-        if (str_starts_with($method, 'from') || str_starts_with($method, 'with')) {
-            $methodRef = self::getValidMethodRef("_$method", $ref);
-            $methodRef->invoke($this, ...$parameters);
-        } else {
-            self::getValidMethodRef($method, $ref, false);
-        }
-
-        return $this;
     }
 
     protected static function getClassRef(): \ReflectionClass
