@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
+use Nandan108\DtoToolkit\Assert;
 use Nandan108\DtoToolkit\Attribute\ChainModifier as Mod;
 use Nandan108\DtoToolkit\Attribute\ChainModifier\FailIf;
 use Nandan108\DtoToolkit\CastTo;
@@ -11,7 +12,6 @@ use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Core\FullDto;
 use Nandan108\DtoToolkit\Exception\Process\ProcessingException;
 use Nandan108\DtoToolkit\Tests\Traits\CanTestCasterClassesAndMethods;
-use Nandan108\DtoToolkit\Validate as Valid;
 use PHPUnit\Framework\TestCase;
 
 final class FirstSuccessTest extends TestCase
@@ -64,8 +64,8 @@ final class FirstSuccessTest extends TestCase
     {
         $dto = new class extends FullDto {
             #[Mod\FirstSuccess(2)]
-            #[Valid\Range(min: 1, max: 3)]
-            #[Valid\Range(min: 10, max: 12)]
+            #[Assert\Range(min: 1, max: 3)]
+            #[Assert\Range(min: 10, max: 12)]
             public mixed $num = null;
         };
 

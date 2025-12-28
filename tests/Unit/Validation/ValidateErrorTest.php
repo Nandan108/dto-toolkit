@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nandan108\DtoToolkit\Tests\Unit\Validation;
 
+use Nandan108\DtoToolkit\Assert;
 use Nandan108\DtoToolkit\Contracts\ProcessesInterface;
 use Nandan108\DtoToolkit\Contracts\ValidatorInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
@@ -11,7 +12,6 @@ use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
 use Nandan108\DtoToolkit\Exception\Config\NodeProducerResolutionException;
 use Nandan108\DtoToolkit\Traits\CreatesFromArrayOrEntity;
 use Nandan108\DtoToolkit\Traits\ProcessesFromAttributes;
-use Nandan108\DtoToolkit\Validate;
 use PHPUnit\Framework\TestCase;
 
 final class ValidateErrorTest extends TestCase
@@ -49,7 +49,7 @@ final class UnresolvedValidatorDto extends BaseDto implements ProcessesInterface
     use ProcessesFromAttributes;
 
     /** @psalm-suppress PossiblyUnusedProperty */
-    #[Validate('missing')]
+    #[Assert('missing')]
     public string $name = '';
 }
 
@@ -59,7 +59,7 @@ final class NonImplementingValidatorDto extends BaseDto implements ProcessesInte
     use ProcessesFromAttributes;
 
     /** @psalm-suppress PossiblyUnusedProperty */
-    #[Validate(\stdClass::class)]
+    #[Assert(\stdClass::class)]
     public string $name = '';
 }
 
@@ -84,6 +84,6 @@ final class NeedsContainerValidatorDto extends BaseDto implements ProcessesInter
     use ProcessesFromAttributes;
 
     /** @psalm-suppress PossiblyUnusedProperty */
-    #[Validate(NeedsArgsValidator::class)]
+    #[Assert(NeedsArgsValidator::class)]
     public string $name = '';
 }

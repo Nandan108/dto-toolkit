@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Nandan108\DtoToolkit\Tests\Unit\Validation;
 
-use Nandan108\DtoToolkit\Core\ValidateBase;
+use Nandan108\DtoToolkit\Core\ValidatorBase;
 use PHPUnit\Framework\TestCase;
 
 final class ValidateBaseTest extends TestCase
 {
     public function testFailHelperThrowsGuardException(): void
     {
-        $validator = new class extends ValidateBase {
+        $validator = new class extends ValidatorBase {
             #[\Override]
             public function validate(mixed $value, array $args = []): void
             {

@@ -5,7 +5,7 @@
 - Processing chain nodes
   - #[Mod\\*] - [see Chain modifiers](BuiltInModifiers.md)
   - #[CastTo\\*] - [see Casters](BuiltInCasters.md)
-  - #[Validate\\*] - [see Validators](BuiltInValidators.md)
+  - #[Assert\\*] - [see Validators](BuiltInValidators.md)
 
 - Mapping in and out
   - [#[MapFrom($paths)]](#map-from)

@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Nandan108\DtoToolkit\Validate;
+namespace Nandan108\DtoToolkit\Assert;
 
-use Nandan108\DtoToolkit\Core\ValidateBase;
+use Nandan108\DtoToolkit\Core\ValidatorBase;
 use Nandan108\DtoToolkit\Exception\Process\GuardException;
 
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
-final class Url extends ValidateBase
+final class Url extends ValidatorBase
 {
     /**
      * @psalm-suppress PossiblyUnusedMethod

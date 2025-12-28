@@ -4,17 +4,17 @@ declare(strict_types=1);
 
 namespace Nandan108\DtoToolkit\Core;
 
+use Nandan108\DtoToolkit\Assert;
 use Nandan108\DtoToolkit\Contracts\Injectable;
 use Nandan108\DtoToolkit\Contracts\ValidatorInterface;
 use Nandan108\DtoToolkit\Exception\Process\GuardException;
 use Nandan108\DtoToolkit\Exception\Process\ProcessingException;
 use Nandan108\DtoToolkit\Traits\IsInjectable;
-use Nandan108\DtoToolkit\Validate;
 
 /**
  * Base class for validator attributes.
  */
-abstract class ValidateBase extends Validate implements ValidatorInterface, Injectable
+abstract class ValidatorBase extends Assert implements ValidatorInterface, Injectable
 {
     use IsInjectable;
 

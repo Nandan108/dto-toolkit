@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Nandan108\DtoToolkit\Validate;
+namespace Nandan108\DtoToolkit\Assert;
 
-use Nandan108\DtoToolkit\Core\ValidateBaseNoArgs;
+use Nandan108\DtoToolkit\Core\ValidatorBaseNoArgs;
 use Nandan108\DtoToolkit\Exception\Process\GuardException;
 
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
-final class IsInteger extends ValidateBaseNoArgs
+final class IsInteger extends ValidatorBaseNoArgs
 {
     #[\Override]
     public function validate(mixed $value, array $args = []): void

@@ -10,11 +10,13 @@ All notable changes to this project will be documented in this file.
 - `MapFrom` now accepts an optional `ThrowMode` (defaults to ::MISSING_KEY to allow distinguish missing input from explicit `null` input).
 
 ### Changed
+- Validation namespace renamed from `Validate\*` to `Assert\*`; base classes renamed `ValidateBase` ➔ `ValidatorBase` (and `ValidateBaseNoArgs` ➔ `ValidatorBaseNoArgs`).
 - Public DTO properties without default values now throw `InvalidConfigException` during metadata initialization.
 - Public properties prefixed with `_` are treated as internal and are skipped for input/output and processing.
 - Static constructors are now `newFrom*` / `newWith*` and delegate to `BaseDto::new()`; instance loaders are `load*` (e.g., `loadArray()`). This reduces magic and makes it easier to keep psalm happy without suppression.
 
 ### BREAKING
+- Validation namespace rename: use `Assert\*` instead of `Validate\*`, and update imports accordingly. Base validator class names updated as noted above.
 - Default presence behavior changed: `null` inputs now mark properties as filled unless explicitly overridden with `#[Presence(PresencePolicy::NullMeansMissing)]`, at dto or prop level.
 - DTOs must declare defaults for all public I/O properties; missing defaults now fail fast.
 - Public properties starting with `_` are ignored for hydration/processing/output; move any externally visible data to non-underscored properties.

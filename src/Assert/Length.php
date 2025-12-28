@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Nandan108\DtoToolkit\Validate;
+namespace Nandan108\DtoToolkit\Assert;
 
-use Nandan108\DtoToolkit\Core\ValidateBase;
+use Nandan108\DtoToolkit\Core\ValidatorBase;
 use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
 use Nandan108\DtoToolkit\Exception\Process\GuardException;
 
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
-final class Length extends ValidateBase
+final class Length extends ValidatorBase
 {
     /** @psalm-suppress PossiblyUnusedMethod */
     public function __construct(?int $min = null, ?int $max = null)

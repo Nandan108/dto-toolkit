@@ -15,9 +15,9 @@ use Nandan108\DtoToolkit\Internal\ProcessingNodeBase;
  * @psalm-api
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
-class Validate extends ProcessingNodeBase
+class Assert extends ProcessingNodeBase
 {
-    protected static string $methodPrefix = 'validate';
+    protected static string $methodPrefix = 'assert';
 
     public ?string $methodOrClass = null;
 

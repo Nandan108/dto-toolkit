@@ -2,7 +2,7 @@
 
 DTO Toolkit uses **processing nodes** to transform and validate property values during the **inbound** (normalization) and **outbound** (export) phases.
 
-Processing nodes are produced by attributes (`CastTo`, `Validate`, modifiers) and compiled into **processing chains** that are executed automatically when data flows into or out of a DTO.
+Processing nodes are produced by attributes (`CastTo`, `Assert`, modifiers) and compiled into **processing chains** that are executed automatically when data flows into or out of a DTO.
 
 This document describes how processing works in DTOT Core, including casters, validators, chain modifiers, node production, phases, groups, caching, dependency injection, lifecycle hooks, and **error handling modes**.
 
@@ -48,7 +48,7 @@ Casters transform values.
 
 ### **Validators**
 
-Declared via `#[Validate\Xyz]`.
+Declared via `#[Assert\Xyz]`.
 Validators validate values and **throw** on invalid input, but return the value unchanged otherwise.
 
 Validators participate fully in processing chains and in the new **error-collection system**.
@@ -74,8 +74,8 @@ class ProductDto extends FullDto {
     #[CastTo\Slug(separator: '-')]
     public ?string $title;
 
-    #[Validate\NotNull]
-    #[Validate\Length(min: 3)]
+    #[Assert\NotNull]
+    #[Assert\Length(min: 3)]
     public ?string $code;
 }
 ```
@@ -161,7 +161,7 @@ Applies nodes element-wise to array items.
 #[Mod\PerItem(3)]           // apply next three nodes per-array-item
     #[CastTo\Floating]      // string → float
     #[CastTo\Rounded(2)]    // round to 2 decimals
-    #[Mod\FailNextTo(10), Validate\Range(max: 10)] // cap values at 10
+    #[Mod\FailNextTo(10), Assert\Range(max: 10)] // cap values at 10
 #[CastTo\Join(';')]
 public string $prices = '5.555,12.345,0'; // → '5.56;10;0'
 ```
@@ -299,7 +299,7 @@ use Nandan108\DtoToolkit\Attribute\ChainModifier as Mod;
 class ProductDto extends FullDto {
     #[Mod\Groups(['api'], 2)]
       #[CastTo\Trimmed]        // applies only for 'api'
-      #[Validate\Email]        // applies only for 'api'
+      #[Assert\Email]        // applies only for 'api'
     #[CastTo\Slug]             // always applies
     public string $contactEmail;
 }
@@ -320,7 +320,7 @@ You can combine both mechanisms for fully expressive behavior:
 class AdminUserDto extends FullDto {
     #[PropGroups(['admin'])]
     #[Mod\Groups(['strict'])]
-        #[Validate\Required] // only when 'strict' group is active
+        #[Assert\Required] // only when 'strict' group is active
     #[CastTo\Integer]
     public string|int $roleId;
 }
@@ -369,7 +369,7 @@ Node classes may declare injectable properties using:
 #[Injected]
 ```
 
-`CastBase` and `ValidateBase` support framework-specific injection via adapters.
+`CastBase` and `ValidatorBase` support framework-specific injection via adapters.
 Nodes may also implement `BootsOnDtoInterface` to perform one-time initialization.
 See [DI.md](DI.md) for more details.
 
@@ -447,8 +447,8 @@ Adapters may convert collected errors into their native structures, e.g.:
 
 ### Validators
 
-- Core: `Validate\Xyz`
-- Adapters: `Validates\Xyz`
+- Core: `Assert\Xyz`
+- Adapters: `Asserts\Xyz`
 
 ### Modifiers
 

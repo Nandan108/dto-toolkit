@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
+use Nandan108\DtoToolkit\Assert as V;
 use Nandan108\DtoToolkit\Attribute\ChainModifier\FailNextTo;
 use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Core\FullDto;
 use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException as ConfigInvalidArgumentException;
-use Nandan108\DtoToolkit\Validate as V;
 use PHPUnit\Framework\TestCase;
 
 final class FailNextToTest extends TestCase

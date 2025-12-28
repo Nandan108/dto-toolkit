@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace Nandan108\DtoToolkit\Tests\Unit\Validation;
 
+use Nandan108\DtoToolkit\Assert as V;
 use Nandan108\DtoToolkit\Contracts\BootsOnDtoInterface;
 use Nandan108\DtoToolkit\Contracts\ProcessesInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
-use Nandan108\DtoToolkit\Core\ValidateBase;
+use Nandan108\DtoToolkit\Core\ValidatorBase;
 use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
 use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
 use Nandan108\DtoToolkit\Exception\Process\GuardException;
 use Nandan108\DtoToolkit\Internal\ProcessingNodeBase;
 use Nandan108\DtoToolkit\Traits\ProcessesFromAttributes;
-use Nandan108\DtoToolkit\Validate as V;
 use PHPUnit\Framework\TestCase;
 
 enum DummyStatus: string
@@ -27,11 +27,11 @@ final class BuiltInValidatorClassesTest extends TestCase
     /**
      * @dataProvider validatorProvider
      *
-     * @param class-string<ValidateBase>|ValidateBase $validatorClass
-     * @param class-string<\Throwable>                $exceptionClass
+     * @param class-string<ValidatorBase>|ValidatorBase $validatorClass
+     * @param class-string<\Throwable>                  $exceptionClass
      */
     public function testValidatorBehavior(
-        string | ValidateBase $validatorClass,
+        string | ValidatorBase $validatorClass,
         array $params,
         mixed $value,
         ?string $exceptionMessage = null,
@@ -43,10 +43,10 @@ final class BuiltInValidatorClassesTest extends TestCase
         };
 
         // create validator Attribute using static helper method, and from it get the caster Closure
-        if ($validatorClass instanceof ValidateBase) {
+        if ($validatorClass instanceof ValidatorBase) {
             $validatorClass->args = $params;
             $validator = $validatorClass->getProcessingNode($dto);
-        } elseif (is_subclass_of($validatorClass, ValidateBase::class, true)) {
+        } elseif (is_subclass_of($validatorClass, ValidatorBase::class, true)) {
             /** @psalm-suppress UnsafeInstantiation */
             try {
                 $validatorAttribute = new $validatorClass(...$params);

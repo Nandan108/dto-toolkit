@@ -1,9 +1,10 @@
 # DTO Toolkit Backlog
 
 ## Product Backlog Items
-- **[074]** Consider renaming or aliasing Validate namespace to Assert, and revise namespace aliasing suggestions.
+
+### TODO before v.1.0
 - **[075]** Port a majority of Symfony validation constraints (`#[Assert\...]`) to DTOT Core
-- **[077]** Add `#[Validate\CompareTo($operator, $value)]`, `#[Validate\CompareToExtract($operator, $path)]`
+- **[077]** Add `#[Assert\CompareTo($operator, $value)]`, `#[Assert\CompareToExtract($operator, $path)]`
 - **[028]** Add nested DTO support with `CastTo\Dto(class, groups: 'api')` (from array or object)
   - support recursive normalization and validation
 - **[064]** Add framework-specific ValidationException mappers in adapters
@@ -12,19 +13,23 @@
   - Allow adapters (e.g., dtot-adapter-laravel, dtot-adapter-symfony) to map or wrap ValidationExceptions into framework-native exceptions
   - This enables seamless integration with Laravel and Symfony's validation error handling mechanisms
   - Keep validation logic and error reporting fully pluggable and framework-agnostic
-- **[046]** Add modifier `#[SkipIfMatch(array $values, $return=null)]`, allows short-circuitting following caster(s) by returning \$return if input is found in \$values or input in $values.
-- **[071]** Add `#[CastTo\Coalesce(array, $ignore = [null])]` - takes an array and return first element not in $ignore list.
+
+### Preferable before v1.0 (negotiable)
 - **[056]** Support multi-step casting by making withGroups(inboundCast: ...) take a sequence of group(s)
   Then apply each step in sequence. Same with outboundCast.
-- **[044]** Add support for DTO transforms (`\$dto->toDto($otherDtoClass)`) [See details](#PBI-044)
-- **[088]** Introduce new processor node type more similar to modifiers: rather than having a single cast() or validate() method, they'd have a makeValidator()/makeCaster() method, that can return an optimized Closure, which might be different depending on $constructorArgs.
-- **[034]** Add support for logging failed casts in FailTo/FailNextTo. `CastTo::$castSoftFailureLogger = function (CastingException $e, $returnedVal)`
+- **[046]** Add modifier `#[SkipIfMatch(array $values, $return=null)]`, allows short-circuitting following caster(s) by returning \$return if input is found in \$values or input in $values.
+- **[071]** Add `#[CastTo\Coalesce(array, $ignore = [null])]` - takes an array and return first element not in $ignore list.
 - **[062]** Add support for getCaster() debug mode
   - When enabled, caster closures push/pop debug context during execution
   - On casting failure, TransformExceptions can include full chain trace
   - Example message: "PropName: Caster1->Caster2->FailNextTo(PerItem(Caster3 -> Caster4))"
 - **[048]** *Add debug mode setting. When enabled, add casting stack tracking (push/pop) to enable logging full context when failing within a chain.*
 - **[050]** Add `#[LogCast($debugOnly = true)]` to also allow logging non-failing chains.
+
+### Post v1.0
+- **[044]** Add support for DTO transforms (`\$dto->toDto($otherDtoClass)`) [See details](#PBI-044)
+- **[088]** Introduce new processor node type more similar to modifiers: rather than having a single cast() or validate() method, they'd have a makeValidator()/makeCaster() method, that can return an optimized Closure, which might be different depending on $constructorArgs.
+- **[034]** Add support for logging failed casts in FailTo/FailNextTo. `CastTo::$castSoftFailureLogger = function (CastingException $e, $returnedVal)`
 - **[058]** Add a doc about FullDto and making one's own slimmed-down version if not all features are needed
 
 ---
@@ -87,6 +92,7 @@
 - [072] Add support for flexible error handling and error collection, so adapters can support native framework error handling.
 - [078] Introduce PresencePolicy to clear up semantics around `null` vs `missing` input values.
 - [073] Refactor DTO pipeline methods (from*, with*) to get psalm happy w/o suppress.
+- [074] Consider renaming or aliasing Validate namespace to Assert, and revise namespace aliasing suggestions.
 
 ---
 
@@ -121,4 +127,3 @@
   - This supports overriding `fromDto()` to customize data interpretation, grouping, or mapping logic
 
 - **Optional override hooks**: Subclasses may override `fromDto()` to bypass outbound casting, apply custom property mapping or normalize derived data.
-

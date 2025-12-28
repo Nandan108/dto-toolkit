@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Nandan108\DtoToolkit\Tests\Unit\Validation;
 
+use Nandan108\DtoToolkit\Assert;
 use Nandan108\DtoToolkit\Contracts\ProcessesInterface;
 use Nandan108\DtoToolkit\Contracts\ValidatorInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Exception\Process\GuardException;
 use Nandan108\DtoToolkit\Traits\CreatesFromArrayOrEntity;
 use Nandan108\DtoToolkit\Traits\ProcessesFromAttributes;
-use Nandan108\DtoToolkit\Validate;
 use PHPUnit\Framework\TestCase;
 
 final class ValidateAttributeTest extends TestCase
@@ -42,11 +42,11 @@ final class MethodValidatedDto extends BaseDto implements ProcessesInterface
     use ProcessesFromAttributes;
 
     /** @psalm-suppress PossiblyUnusedProperty */
-    #[Validate('notEmpty')]
+    #[Assert('notEmpty')]
     public ?string $name = null;
 
     /** @psalm-suppress PossiblyUnusedMethod */
-    public function validateNotEmpty(?string $value): void
+    public function assertNotEmpty(?string $value): void
     {
         if ('' === $value) {
             throw GuardException::failed('empty');
@@ -70,6 +70,6 @@ final class ClassValidatedDto extends BaseDto implements ProcessesInterface
     use CreatesFromArrayOrEntity;
     use ProcessesFromAttributes;
 
-    #[Validate(NonEmptyValidator::class)]
+    #[Assert(NonEmptyValidator::class)]
     public ?string $name = null;
 }

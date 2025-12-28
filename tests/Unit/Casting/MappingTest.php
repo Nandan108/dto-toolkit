@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
+use Nandan108\DtoToolkit\Assert;
 use Nandan108\DtoToolkit\Attribute\MapFrom;
 use Nandan108\DtoToolkit\Attribute\MapTo;
 use Nandan108\DtoToolkit\Attribute\Outbound;
@@ -11,7 +12,6 @@ use Nandan108\DtoToolkit\Core\FullDto;
 use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
 use Nandan108\DtoToolkit\Exception\Process\GuardException;
 use Nandan108\DtoToolkit\Tests\Traits\CanTestCasterClassesAndMethods;
-use Nandan108\DtoToolkit\Validate;
 use Nandan108\PropPath\Support\ThrowMode;
 use PHPUnit\Framework\TestCase;
 
@@ -91,7 +91,7 @@ final class MappingTest extends TestCase
     {
         $dtoClassWithMapperThatThrows = new class extends FullDto {
             #[MapFrom(['qux1' => 'foo', 'qux2' => ['!!baz', 'bar']])]
-            #[Validate\NotNull] // guard not executed
+            #[Assert\NotNull] // guard not executed
             public ?array $bar = null;
         };
 
