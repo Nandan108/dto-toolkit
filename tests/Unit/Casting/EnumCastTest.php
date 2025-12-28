@@ -29,19 +29,19 @@ final class EnumCastTest extends TestCase
         return [
             // Valid string-backed enum
             // Valid string-backed enum
-            'Enum(Status):[] (array)'         => [new CastTo\Enum(Status::class), [], TransformException::class, 'processing.transform.enum.unable_to_cast'],
+            'Enum(Status):[] (array)'         => [new CastTo\Enum(Status::class), [], TransformException::class, 'processing.transform.enum.invalid_type'],
             'Enum(Status):draft'              => [new CastTo\Enum(Status::class), 'draft', Status::Draft],
             'Enum(Status):Published'          => [new CastTo\Enum(Status::class), 'published', Status::Published],
             // Invalid value (non-existent key)
-            'Enum(Status):invalid'            => [new CastTo\Enum(Status::class), 'archived', TransformException::class, 'processing.transform.enum.unable_to_cast'],
+            'Enum(Status):invalid'            => [new CastTo\Enum(Status::class), 'archived', TransformException::class, 'processing.transform.enum.invalid_value'],
             // Nullable enum
-            'Enum(Status):null'               => [new CastTo\Enum(Status::class), null, TransformException::class, 'processing.transform.enum.unable_to_cast'],
+            'Enum(Status):null'               => [new CastTo\Enum(Status::class), null, TransformException::class, 'processing.transform.enum.invalid_type'],
             // Integer-backed enum
             'Enum(Code):200'                  => [new CastTo\Enum(Code::class), 200, Code::OK],
             'Enum(Code):404'                  => [new CastTo\Enum(Code::class), 404, Code::NotFound],
             // Invalid integer
-            'Enum(Code):500'                  => [new CastTo\Enum(Code::class), 500, TransformException::class, 'processing.transform.enum.unable_to_cast'],
-            'Enum(Status):circular-ref'       => [new CastTo\Enum(Status::class), $circular, TransformException::class, 'processing.transform.enum.unable_to_cast'],
+            'Enum(Code):500'                  => [new CastTo\Enum(Code::class), 500, TransformException::class, 'processing.transform.enum.invalid_value'],
+            'Enum(Status):circular-ref'       => [new CastTo\Enum(Status::class), $circular, TransformException::class, 'processing.transform.enum.invalid_type'],
         ];
     }
 
@@ -53,6 +53,7 @@ final class EnumCastTest extends TestCase
 
         $this->expectException(ConfigInvalidArgumentException::class);
         $this->expectExceptionMessage('Enum caster: \'Invalid\' is not a valid enum.');
+        /** @psalm-suppress ArgumentTypeCoercion, UndefinedClass */
         new CastTo\Enum('Invalid');
     }
 
@@ -60,6 +61,7 @@ final class EnumCastTest extends TestCase
     {
         $this->expectException(ConfigInvalidArgumentException::class);
         $this->expectExceptionMessage('Enum caster: \''.NotBacked::class.'\' is not a backed enum.');
+        /** @psalm-suppress InvalidArgument */
         new CastTo\Enum(NotBacked::class);
     }
 }

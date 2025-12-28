@@ -3,6 +3,23 @@
 All notable changes to this project will be documented in this file.
 
 ---
+## [Unreleased]
+
+### Added
+- Introduced `PresencePolicy` enum and `#[Presence]` attribute for DTO- and property-level control over how missing vs. `null` inputs mark properties as filled.
+- `MapFrom` now accepts an optional `ThrowMode` (defaults to ::MISSING_KEY) to help distinguish missing input from `null` input.
+
+### Changed
+- Presence handling now defaults to `PresencePolicy::Default` (treats `null` as present) when hydrating from input.
+- Public DTO properties without default values now throw `InvalidConfigException` during metadata initialization.
+- Public properties prefixed with `_` are treated as internal and are skipped for input/output and processing.
+
+### BREAKING
+- Default presence behavior changed: `null` inputs now mark properties as filled unless explicitly overridden with `#[Presence(PresencePolicy::NullMeansMissing)]`.
+- DTOs must declare defaults for all public I/O properties; missing defaults now fail fast.
+- Public properties starting with `_` are ignored for hydration/processing/output; move any externally visible data to non-underscored properties.
+
+---
 
 ## [0.8.0] - 2025-12-05
 

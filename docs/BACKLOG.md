@@ -1,7 +1,6 @@
 # DTO Toolkit Backlog
 
 ## Product Backlog Items
-- **[078]** Introduce PresencePolicy to clear up semantics around `null` vs `missing` input values.
 - **[073]** Refactor DTO pipeline methods (from*, with*) to get psalm happy w/o suppress.
   - Rename `BaseDto::newInstance()` to `::new()`,
   - Rename `from*` instance methods to `load*`,
@@ -89,11 +88,12 @@
 - [065] Add FirstSuccess chain modifier: #[FirstSuccess($count)]
 - [040] Add `#[MapFrom(string|array $fields)]`
 - [069] Add  #[WithDefaultGroups(...)] class attribute, takes same params as UsesGroups::_withGroups() and auto-applies them after instanciation
-- [020] Add `#[MapTo(...)]` Attribute [See details](Mapping.md)
+- [020] Add `#[MapTo(...)]` Attribute [See details](Attributes.md)
 - [055] Add `#[Extract(string|array $roots)]` to allow mapping from one or more internal properties or values already cast in a previous step, rather than external input.
 - [045] Add support for validation [See details](#PBI-045)
 - [063] Rename Caster Chains to Processing Chains and add Validation attributes as part of chains
 - [072] Add support for flexible error handling and error collection, so adapters can support native framework error handling.
+- [078] Introduce PresencePolicy to clear up semantics around `null` vs `missing` input values.
 
 
 ---

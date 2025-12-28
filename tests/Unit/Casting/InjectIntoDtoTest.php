@@ -35,7 +35,7 @@ final class FooBarDto1 extends FullDto implements Injectable, Bootable
 
     #[CastTo('slug')]
     public mixed $value = null;
-    public ?string $valueFilledAtBootTime = null;
+    public ?string $_valueFilledAtBootTime = null;
 
     #[Inject]
     private ?DummySluggerForDtoInjection $slugger = null;
@@ -43,7 +43,7 @@ final class FooBarDto1 extends FullDto implements Injectable, Bootable
     #[\Override]
     public function boot(): void
     {
-        $this->valueFilledAtBootTime = 'hello world';
+        $this->_valueFilledAtBootTime = 'hello world';
 
         // configure injected slugger service
         if ($this->slugger) {
@@ -81,7 +81,7 @@ final class InjectIntoDtoTest extends TestCase
         $this->assertEquals('hello*world', $dto->value);
 
         // testing boot
-        $this->assertSame($dto->valueFilledAtBootTime, 'hello world');
+        $this->assertSame($dto->_valueFilledAtBootTime, 'hello world');
 
         // instanciate a new Inject attribute instance, just for the heck of having 100% code coverage
         // without this, the #[\Attribute] line of Inject class is marked as not covered instead of n/a.
@@ -129,19 +129,20 @@ final class DtoWithInjectedDummySlugger extends FullDto
     public mixed $value = null;
 
     // This will be injected by the container
-    public function __construct(public ?DummySluggerForDtoInjection $slugger = null)
-    {
+    public function __construct(
+        public ?DummySluggerForDtoInjection $_slugger = null,
+    ) {
     }
 
     /** @psalm-suppress PossiblyUnusedMethod */
     public function castToSlug(mixed $value): ?string
     {
-        return $this->slugger?->slugify($value);
+        return $this->_slugger?->slugify($value);
     }
 
     /** @psalm-suppress PossiblyUnusedReturnValue */
     protected function getSlugger(): ?DummySluggerForDtoInjection
     {
-        return $this->slugger;
+        return $this->_slugger;
     }
 }

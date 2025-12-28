@@ -6,12 +6,14 @@ namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
 use Nandan108\DtoToolkit\Attribute\ChainModifier as Mod;
 use Nandan108\DtoToolkit\Attribute\MapFrom;
+use Nandan108\DtoToolkit\Attribute\Presence;
 use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\CastTo\DateTime;
 use Nandan108\DtoToolkit\CastTo\LocalizedDateTime;
 use Nandan108\DtoToolkit\Contracts\ProcessesInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Core\FullDto;
+use Nandan108\DtoToolkit\Enum\PresencePolicy;
 use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
 use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
 use Nandan108\DtoToolkit\Internal\ProcessingNodeBase;
@@ -253,6 +255,7 @@ final class UsesParamResolverDateTestDto extends FullDto
     public \DateTimeInterface | string | null $dateDtoLocale = null;
 
     #[MapFrom('dateDtoLocale')]
+    #[Presence(PresencePolicy::NullMeansMissing)]
     #[LocalizedDateTime(locale: '<dto:getFrCHLocale')]
     public \DateTimeInterface | string | null $dateDtoFrCHLocale = null;
 

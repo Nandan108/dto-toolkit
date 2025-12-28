@@ -15,6 +15,7 @@ use Nandan108\DtoToolkit\Traits\HasPhase;
 use Nandan108\PropPath\Exception\SyntaxError;
 use Nandan108\PropPath\PropPath;
 use Nandan108\PropPath\Support\ExtractContext;
+use Nandan108\PropPath\Support\ThrowMode;
 
 /**
  * @psalm-api
@@ -30,12 +31,12 @@ class MapFrom implements PhaseAwareInterface
     /** @var \Closure(string, ExtractContext):never */
     private \Closure $evalErrorHandler;
 
-    public function __construct(string | array $paths)
+    public function __construct(string | array $paths, ThrowMode $defaultThrowMode = ThrowMode::MISSING_KEY)
     {
         $this->isIoBound = true;
 
         try {
-            $this->extractor = PropPath::compile($paths);
+            $this->extractor = PropPath::compile($paths, $defaultThrowMode);
         } catch (SyntaxError $e) {
             /** @var string $jsonPath */
             $jsonPath = json_encode($paths, JSON_THROW_ON_ERROR);
@@ -51,6 +52,9 @@ class MapFrom implements PhaseAwareInterface
         };
     }
 
+    /**
+     * @throws \Nandan108\PropPath\Exception\EvaluationError
+     */
     public function __invoke(array $input, BaseDto $dto): mixed
     {
         $roots = [
@@ -84,7 +88,7 @@ class MapFrom implements PhaseAwareInterface
     public static function getMappers(BaseDto $dto, ?array $propNames = null): array
     {
         /** @var array<string, self> $mappers */
-        $mappers = ($dto::class)::loadPhaseAwarePropMeta(Phase::InboundLoad, 'attr', self::class, true);
+        $mappers = ($dto::class)::getPhaseAwarePropMeta(Phase::InboundLoad, 'attr', self::class, true);
 
         return null !== $propNames ? array_intersect_key($mappers, array_flip($propNames)) : $mappers;
     }

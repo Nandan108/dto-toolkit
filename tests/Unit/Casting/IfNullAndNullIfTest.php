@@ -20,7 +20,6 @@ final class IfNullAndNullIfTest extends TestCase
         /** @psalm-suppress ExtensionRequirementViolation */
         $dto = new class extends BaseDto implements ProcessesInterface {
             use ProcessesFromAttributes;
-
             #[CastTo\IfNull(-1)]
             #[CastTo\Integer]
             public string | int | null $foo = null;
@@ -44,7 +43,7 @@ final class IfNullAndNullIfTest extends TestCase
     public static function valueProvider(): array
     {
         return [
-            ['foo', null, null],
+            ['foo', null, -1],
             ['foo', 4, 4],
             ['bar', -2, '-2'],
             ['bar', -1, 'null'],

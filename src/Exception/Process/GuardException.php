@@ -29,12 +29,13 @@ final class GuardException extends ProcessingException
     ): self {
         return new self(
             template_suffix: $template_suffix,
-            parameters: $parameters,
+            parameters: [
+                'type'          => get_debug_type($value),
+            ],
             errorCode: $errorCode,
             httpCode: 422,
             debug: [
                 'methodOrClass' => $methodOrClass,
-                'type'          => get_debug_type($value),
                 'value'         => self::prepareOperandForDebug($value),
                 'orig_value'    => $value,
             ] + $debug,
@@ -45,14 +46,18 @@ final class GuardException extends ProcessingException
      * Guard failed due to missing value (null or empty).
      */
     public static function required(
-        string $what,
-        string $template = 'required',
+        mixed $what,
+        mixed $badValue,
+        string $methodOrClass,
         array $parameters = [],
         string | int | null $errorCode = 'guard.required',
-    ): self {
-        return new self(
-            template_suffix: $template,
-            parameters: ['what' => $what] + $parameters,
+    ): static {
+        /** @var static */
+        return static::reason(
+            methodOrClass: $methodOrClass,
+            value: $badValue,
+            template_suffix: "required.$what",
+            parameters: $parameters,
             errorCode: $errorCode,
         );
     }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
 use Nandan108\DtoToolkit\Core\BaseDto;
+use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
 use PHPUnit\Framework\TestCase;
 
 final class BaseDtoTest extends TestCase
@@ -61,25 +62,62 @@ final class BaseDtoTest extends TestCase
 
     public function testClearResetsPublicPropsToDefaults(): void
     {
+        // --- Arrange
         $dto = new BaseDtoClearDto();
-        $dto->fill([
+        $dtoDefaultValues = $dto->getDefaultValues();
+        $input = [
             'required' => 'value',
             'optional' => 42,
             'items'    => ['a'],
-        ]);
+        ];
+        $inputKeys = array_keys($input);
 
+        // --- Act - fill the DTO
+        $result = $dto->fill($input);
+
+        // --- Assert
+        // fill() returns $this
+        $this->assertSame($dto, $result);
+        // verify prop's filled state
+        $this->assertSame($input, $dto->toArray($inputKeys));
+        // verify _filled tracking
+        $this->assertSame(array_fill_keys($inputKeys, true), $dto->_filled);
+
+        // --- Act - clear one prop
+        $dto->clear(['required']);
+
+        // --- Assert
+        // This prop was cleared
+        $this->assertSame($dtoDefaultValues['required'], $dto->required);
+        // But other props remain unchanged
+        $this->assertSame($input['items'], $dto->items);
+        $this->assertSame($input['optional'], $dto->optional);
+
+        // --- Act - clear all props
         $result = $dto->clear();
 
+        // --- Assert
+        // clear() returns $this
         $this->assertSame($dto, $result);
+        // after clearing, _filled should be empty,
         $this->assertSame([], $dto->_filled);
+        // and all public props reset to default values
+        foreach (get_object_vars($dto) as $propName => $value) {
+            // keys starting with "_" are considered internal and excluded from DTO state and operations
+            if ('_' === $propName[0]) {
+                continue;
+            }
+            $this->assertSame($dtoDefaultValues[$propName], $value);
+        }
+    }
 
-        $dtoDefaultValues = $dto->getDefaultValues()['defaults'];
-        $this->assertSame('foo', $dtoDefaultValues['hasDefault']);
-
-        $requiredProp = new \ReflectionProperty($dto, 'required');
-        $this->assertFalse($requiredProp->isInitialized($dto));
-        $this->assertNull($dto->optional);
-        $this->assertSame([], $dto->items);
+    public function testInvalidBaseDtoWithPropMissingDefaultValueThrows(): void
+    {
+        $this->expectException(InvalidConfigException::class);
+        $class = InvalidBaseDtoWithPropMissingDefaultValue::class;
+        $propName = 'propWithoutDefaultValue';
+        $this->expectExceptionMessage("Default value missing on DTO property: {$class}::\${$propName}.");
+        InvalidBaseDtoWithPropMissingDefaultValue::newInstance()->getDefaultValues();
     }
 }
 
@@ -120,7 +158,7 @@ final class BaseDtoClearDto extends BaseDto
     public static string $someStaticProp = 'staticValue';
 
     /** @psalm-suppress PossiblyUnusedProperty */
-    public ?string $required;
+    public ?string $required = null;
 
     /** @psalm-suppress PossiblyUnusedProperty */
     public string $hasDefault = 'foo';
@@ -129,9 +167,16 @@ final class BaseDtoClearDto extends BaseDto
 
     /** @var string[] */
     public array $items = [];
+}
 
+final class InvalidBaseDtoWithPropMissingDefaultValue extends BaseDto
+{
+    /** @psalm-suppress PossiblyUnusedProperty */
+    public string $propWithoutDefaultValue;
+
+    /** @psalm-suppress PossiblyUnusedMethod */
     public function __construct()
     {
-        $this->required = null;
+        $this->propWithoutDefaultValue = 'value';
     }
 }

@@ -38,10 +38,10 @@ class ProcessingException extends \RuntimeException implements DtoToolkitExcepti
         int $httpCode = 422,
     ) {
         $this->template = static::DOMAIN.($template_suffix ? ".$template_suffix" : '');
-        $this->parameters = $parameters;
+        $this->propertyPath = ProcessingNodeBase::getPropPath();
+        $this->parameters = ['propertyPath' => $this->propertyPath] + $parameters;
         $this->debug = $debug;
         $this->errorCode = $errorCode ?? static::$defaultErrorCode;
-        $this->propertyPath = ProcessingNodeBase::getPropPath();
 
         parent::__construct($this->template, $httpCode);
     }
@@ -116,11 +116,11 @@ class ProcessingException extends \RuntimeException implements DtoToolkitExcepti
             parameters: [
                 'expected'      => $expected,
                 'methodOrClass' => $methodOrClass,
+                'type'          => get_debug_type($operand),
             ] + $parameters,
             debug: [
                 'value'      => self::prepareOperandForDebug($operand),
                 'orig_value' => $operand,
-                'type'       => get_debug_type($operand),
             ],
         );
     }

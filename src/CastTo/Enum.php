@@ -11,6 +11,7 @@ use Nandan108\DtoToolkit\Exception\Process\TransformException;
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class Enum extends CastBase
 {
+    /** @param class-string<\BackedEnum> $enumClass */
     public function __construct(string $enumClass)
     {
         if (!enum_exists($enumClass)) {
@@ -27,22 +28,29 @@ final class Enum extends CastBase
     #[\Override]
     public function cast(mixed $value, array $args): \BackedEnum
     {
-        /** @var string $enumClass */
         [$enumClass] = $args;
 
-        try {
-            /** @psalm-suppress InvalidStringClass */
-            return $enumClass::tryFrom($value);
-        } catch (\Throwable $t) {
+        if (!\is_string($value) && !\is_int($value)) {
             throw TransformException::reason(
                 methodOrClass: self::class,
                 value: $value,
-                template_suffix: 'enum.unable_to_cast',
-                parameters: [
-                    'enum'    => $enumClass,
-                    'message' => $t->getMessage(),
-                ],
+                template_suffix: 'enum.invalid_type',
+                parameters: ['enum' => $enumClass],
             );
         }
+
+        /** @var class-string<\BackedEnum> $enumClass */
+        $enumInstance = $enumClass::tryFrom($value);
+
+        if (null === $enumInstance) {
+            throw TransformException::reason(
+                methodOrClass: self::class,
+                value: $value,
+                template_suffix: 'enum.invalid_value',
+                parameters: ['enum' => $enumClass],
+            );
+        }
+
+        return $enumInstance;
     }
 }

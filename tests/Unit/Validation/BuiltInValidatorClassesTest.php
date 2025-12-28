@@ -134,7 +134,7 @@ final class BuiltInValidatorClassesTest extends TestCase
             'not blank non stringable'               => [V\NotBlank::class, [], [], 'processing.guard.stringable.expected'], // must be a string/stringable to check blank
             'not blank untrimmed'                    => [V\NotBlank::class, [false], '', 'processing.guard.not_blank'],
             'not blank valid'                        => [V\NotBlank::class, [], 'foo'],
-            'not null invalid'                       => [V\NotNull::class, [], null, 'processing.guard.not_null'],
+            'not null invalid'                       => [V\NotNull::class, [], null, 'processing.guard.required.non_null_value'],
             'not null valid'                         => [V\NotNull::class, [], 'ok'],
             'range exclusive max'                    => [V\Range::class, ['max' => 1, 'inclusive' => false], 1, 'number.above_max', GuardException::class],
             'range exclusive min'                    => [V\Range::class, ['min' => 1, 'inclusive' => false], 1, 'number.below_min', GuardException::class],

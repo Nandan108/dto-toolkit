@@ -66,6 +66,7 @@ These provide a convenient, framework-free entry point with all standard functio
 
 - [DTO Fundamentals](docs/DtoFundamentals.md) – what DTOs are, why they matter, and how to use them in modern PHP
 - [Casting](docs/Casting.md) – how casting works and how to write your own
+- [Attributes](docs/Attributes.md) - List of attributes
 - [Lifecycle](docs/DtoLifecycle.md) – Understanding the lifecycle of a DTO
 - [Lifecycle Hooks](docs/Hooks.md) – customize behavior with `postLoad()` and `preOutput()`
 - [Toolkit Comparison](docs/Comparison.md) – see how this toolkit compares to other PHP DTO/mapping libraries

@@ -20,9 +20,10 @@ Behind the scenes, static calls to these `from*` and `with*` calls are handled b
 
 1. Under the hood, the `::newInstance()` static method is used to instantiate the DTO, possibly injecting necessary dependencies ([See DI doc for more details](DI.md)).
   ⚠️ DTO props are not initialized in the constructor, therefore each must have a default value (generally null).
-2. Public properties are populated with raw input values.
+  ⚠️ Public properties whose names start with `_` are treated as internal: they are skipped for input/output and processing.
+2. Public properties are populated with raw input values (excluding `_`-prefixed props).
   ⚠️ This means that the types of public properties must allow raw input value types to be stored.
-3. Each property filled by a non-null value is recorded in `$this->_filled`.
+3. Each property considered “present” by its `PresencePolicy` is recorded in `$this->_filled` (default: any provided value, including `null`). Override per DTO or property with `#[Presence(...)]`.
 4. Property values then flow through the inbound **processing chain** (validators + casters, optionally wrapped/controlled by modifiers) defined by attributes on the property (see section 2).
   ⚠️ This means that the types of public properties must also accomodate their post-processing type.
 

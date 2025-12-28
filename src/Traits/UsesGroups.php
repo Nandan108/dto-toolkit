@@ -36,7 +36,6 @@ trait UsesGroups // user must implement HasGroupsInterface, ScopedPropertyAccess
 
         return $this->_withContext([
             'groups.inbound.io'       => $inbound ?: $all,
-            'groups.inbound.validate' => $validation ?: $all,
             'groups.inbound.cast'     => $inboundCast ?: $inbound ?: $all,
             'groups.outbound.io'      => $outbound ?: $all,
             'groups.outbound.cast'    => $outboundCast ?: $outbound ?: $all,
@@ -51,7 +50,7 @@ trait UsesGroups // user must implement HasGroupsInterface, ScopedPropertyAccess
     public function getPropGroups(Phase $phase): array
     {
         /** @var array<string, PropGroups[]> $groupAttrByProp */
-        $groupAttrByProp = static::loadPhaseAwarePropMeta($phase, 'attr', PropGroups::class);
+        $groupAttrByProp = static::getPhaseAwarePropMeta($phase, 'attr', PropGroups::class);
 
         // Since Groups may be applied to both inbound and outbound phases, it is a repeatable attribute.
         // Therefore, there may be multiple PropGroups attributes for the same property (even in the same phase).

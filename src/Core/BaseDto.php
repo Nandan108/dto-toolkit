@@ -7,6 +7,7 @@ namespace Nandan108\DtoToolkit\Core;
 use Nandan108\DtoToolkit\Attribute\Inject;
 use Nandan108\DtoToolkit\Attribute\MapTo;
 use Nandan108\DtoToolkit\Attribute\Outbound;
+use Nandan108\DtoToolkit\Attribute\Presence;
 use Nandan108\DtoToolkit\Attribute\WithDefaultGroups;
 use Nandan108\DtoToolkit\Contracts\Bootable;
 use Nandan108\DtoToolkit\Contracts\Injectable;
@@ -15,12 +16,21 @@ use Nandan108\DtoToolkit\Contracts\ProcessesInterface;
 use Nandan108\DtoToolkit\Contracts\ScopedPropertyAccessInterface;
 use Nandan108\DtoToolkit\Enum\ErrorMode;
 use Nandan108\DtoToolkit\Enum\Phase;
+use Nandan108\DtoToolkit\Enum\PresencePolicy;
 use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
 use Nandan108\DtoToolkit\Support\ContainerBridge;
 
 /**
  * @method static static withErrorMode(ErrorMode $mode)
  * @method        $this  withErrorMode(ErrorMode $mode)
+ *
+ * @psalm-type DtoPropMetaCache = array{
+ *     classRef?: \ReflectionClass<static>,
+ *     propRef: array<string, \ReflectionProperty>,
+ *     defaultValue: array<string, mixed>,
+ *     phase?: array<string, array<string, PhaseAwareInterface|list<PhaseAwareInterface>>>,
+ *     presencePolicy:  array<string, PresencePolicy>
+ * }
  */
 abstract class BaseDto
 {
@@ -33,7 +43,6 @@ abstract class BaseDto
      * @var string[]
      **/
     protected ?array $_fillable = null;
-
     /**
      * List of properties that have been filled.
      * The key is the property name, and the value is ALWAYS true.
@@ -43,8 +52,13 @@ abstract class BaseDto
      **/
     public array $_filled = [];
 
-    // full metadata cache per class (static)
-    /** @var array<array<array-key, array<array-key, array{attr?: PhaseAwareInterface|list<PhaseAwareInterface>}>>> */
+    /**
+     * Full metadata cache per class (static).
+     *
+     * @psalm-import-type DtoPropMetaCache from self
+     *
+     * @psalm-var array<class-string, DtoPropMetaCache>
+     */
     private static array $_propertyMetadataCache = [];
 
     /** @var array<class-string, array{defaults: array<string, mixed>, withoutDefault: list<string>}> */
@@ -69,63 +83,151 @@ abstract class BaseDto
     }
 
     /**
+     * Initialize phase-agnostic property metadata for a DTO class.
+     * For each prop, gathers :
+     * - ReflectionProperty
+     * - default value
+     * - presence policy.
+     *
+     * @param class-string $class
+     */
+    private static function initPropMeta(string $class): void
+    {
+        self::$_propertyMetadataCache[$class] ??= ['defaultValue' => [], 'propRef' => []];
+        $refClass = static::getClassRef();
+
+        foreach ($refClass->getProperties(\ReflectionProperty::IS_PUBLIC) as $prop) {
+            $propName = $prop->getName();
+
+            // Ignore static properties
+            if ($prop->isStatic() || '_' === $propName[0]) {
+                continue;
+            }
+
+            self::$_propertyMetadataCache[$class]['propRef'][$propName] = $prop;
+
+            if ($prop->hasDefaultValue()) {
+                self::$_propertyMetadataCache[$class]['defaultValue'][$propName] = $prop->getDefaultValue();
+            } else {
+                throw new InvalidConfigException("Default value missing on DTO property: {$class}::\${$propName}.");
+            }
+        }
+
+        // Initialize policy-related property metadata for a DTO class.
+
+        $dtoDefaultPolicy = PresencePolicy::Default;
+
+        // DTO-level attribute
+        if ($attr = $refClass->getAttributes(Presence::class)[0] ?? null) {
+            $dtoDefaultPolicy = $attr->newInstance()->policy;
+        }
+
+        /** @psalm-var array<string, PresencePolicy> $resolved */
+        $resolved = [];
+
+        foreach (self::$_propertyMetadataCache[$class]['propRef'] as $propName => $propRef) {
+            $policy = $dtoDefaultPolicy;
+
+            // Property-level override
+            if ($attr = $propRef->getAttributes(Presence::class)[0] ?? null) {
+                $policy = $attr->newInstance()->policy;
+            }
+
+            $resolved[$propName] = $policy;
+        }
+
+        self::$_propertyMetadataCache[$class]['presencePolicy'] = $resolved;
+    }
+
+    /**
+     * @psalm-return DtoPropMetaCache
+     */
+    protected static function getPropMeta(): array
+    {
+        $class = static::class;
+
+        if (!isset(self::$_propertyMetadataCache[$class]['propRef'])) {
+            self::initPropMeta($class);
+        }
+
+        return self::$_propertyMetadataCache[$class];
+    }
+
+    /** @return array<string, \ReflectionProperty> */
+    protected static function getPropRefs(): array
+    {
+        return static::getPropMeta()['propRef'];
+    }
+
+    /** @return array<string, mixed> */
+    public static function getDefaultValues(): array
+    {
+        return static::getPropMeta()['defaultValue'];
+    }
+
+    /** @return array<string, PresencePolicy> */
+    public static function getPresencePolicy(): array
+    {
+        return static::getPropMeta()['presencePolicy'];
+    }
+
+    private static function initPhaseAwarePropMeta(): void
+    {
+        $cache = [];
+
+        foreach (static::getPropRefs() as $propName => $propRef) {
+            $isOutbound = false;
+
+            $attributes = $propRef->getAttributes();
+
+            foreach (Phase::cases() as $phaseCase) {
+                $cache[$phaseCase->value][$propName] = [];
+            }
+
+            foreach ($attributes as $attributeRef) {
+                $attrInstance = $attributeRef->newInstance();
+
+                /** @psalm-suppress ArgumentTypeCoercion */
+                /** @var int $flags */
+                $flags = (new \ReflectionClass($attributeRef->getName()))->getAttributes()[0]->newInstance()->flags;
+                $isRepeatable = ($flags & \Attribute::IS_REPEATABLE) === \Attribute::IS_REPEATABLE;
+
+                if ($attrInstance instanceof Outbound) {
+                    $isOutbound = true;
+                    continue;
+                }
+
+                if ($attrInstance instanceof PhaseAwareInterface) {
+                    $attrInstance->setOutbound($isOutbound);
+                    if ($isRepeatable) {
+                        /** @var array<array<array{attr?: list<PhaseAwareInterface>}>> $cache */
+                        $cache[$attrInstance->getPhase()->value][$propName]['attr'][] = $attrInstance;
+                    } else {
+                        $cache[$attrInstance->getPhase()->value][$propName]['attr'] = $attrInstance;
+                    }
+                }
+            }
+        }
+
+        /** @psalm-var array<string, array<string, PhaseAwareInterface|list<PhaseAwareInterface>>> $cache */
+        self::$_propertyMetadataCache[static::class]['phase'] = $cache;
+    }
+
+    /**
      * Load the metadata for the given phase.
      *
      * @param \Closure|class-string|null $filter
      *
-     * @/return array<string, array<string, mixed>>|array<string, mixed>
-     *
-     * @return array<array-key, array<never, never>|mixed>
+     * @return array<string, PhaseAwareInterface|list<PhaseAwareInterface>>
      */
-    public static function loadPhaseAwarePropMeta(Phase $phase, string $metaDataName, \Closure | string | null $filter, bool $ignoreEmpty = false): array
+    public static function getPhaseAwarePropMeta(Phase $phase, string $metaDataName, \Closure | string | null $filter, bool $ignoreEmpty = false): array
     {
-        if (!isset(self::$_propertyMetadataCache[static::class])) {
-            $cache = [];
-            $reflection = new \ReflectionClass(static::class);
-            $props = $reflection->getProperties(\ReflectionProperty::IS_PUBLIC);
-
-            foreach ($props as $prop) {
-                $isOutbound = false;
-                $propName = $prop->getName();
-                if ('_' === $propName[0]) {
-                    continue; // skip internal properties
-                }
-                $attributes = $prop->getAttributes();
-
-                foreach (Phase::cases() as $phaseCase) {
-                    $cache[$phaseCase->value][$propName] = [];
-                }
-
-                foreach ($attributes as $attributeRef) {
-                    $attrInstance = $attributeRef->newInstance();
-
-                    /** @psalm-suppress ArgumentTypeCoercion */
-                    /** @var int $flags */
-                    $flags = (new \ReflectionClass($attributeRef->getName()))->getAttributes()[0]->newInstance()->flags;
-                    $isRepeatable = ($flags & \Attribute::IS_REPEATABLE) === \Attribute::IS_REPEATABLE;
-
-                    if ($attrInstance instanceof Outbound) {
-                        $isOutbound = true;
-                        continue;
-                    }
-
-                    if ($attrInstance instanceof PhaseAwareInterface) {
-                        $attrInstance->setOutbound($isOutbound);
-                        if ($isRepeatable) {
-                            /** @var array<array<array{attr?: list<PhaseAwareInterface>}>> $cache */
-                            $cache[$attrInstance->getPhase()->value][$propName]['attr'][] = $attrInstance;
-                        } else {
-                            $cache[$attrInstance->getPhase()->value][$propName]['attr'] = $attrInstance;
-                        }
-                    }
-                }
-            }
-
-            self::$_propertyMetadataCache[static::class] = $cache;
+        if (!isset(self::$_propertyMetadataCache[static::class]['phase'])) {
+            self::initPhaseAwarePropMeta();
         }
 
         /** @var array $meta */
-        $meta = self::$_propertyMetadataCache[static::class][$phase->value] ?? [];
+        $meta = self::$_propertyMetadataCache[static::class]['phase'][$phase->value] ?? [];
 
         $metaByName = array_map(
             static function (array $propMeta) use ($metaDataName) {
@@ -159,25 +261,6 @@ abstract class BaseDto
         }
 
         return $metaByName;
-    }
-
-    /**
-     * Get the names of the public properties of an object.
-     *
-     * @param object|class-string|null $objectOrClass defaults to the current instance
-     */
-    protected function getPublicPropNames(object | string | null $objectOrClass = null, ?\ReflectionClass $reflectionClass = null): array
-    {
-        $reflectionClass ??= new \ReflectionClass($objectOrClass ?? $this);
-
-        $props = [];
-        foreach ($reflectionClass->getProperties(\ReflectionProperty::IS_PUBLIC) as $prop) {
-            if ($prop->isPublic() && '_filled' !== $prop->name) {
-                $props[] = $prop->getName();
-            }
-        }
-
-        return $props;
     }
 
     /**
@@ -226,12 +309,22 @@ abstract class BaseDto
 
     /**
      * Get the fillable properties of the DTO.
+     * These are public instance properties, excluding those prefixed with "_".
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
     public function getFillable(): array
     {
-        return $this->_fillable ??= $this->getPublicPropNames($this);
+        // Get the names of static's public properties, excluding those prefixed with "_".
+        return $this->_fillable ??= array_keys(static::getPropRefs());
+    }
+
+    /**
+     * Check if the given property has been filled.
+     */
+    public function isFilled(string $propName): bool
+    {
+        return $this->_filled[$propName] ?? false;
     }
 
     /**
@@ -250,23 +343,33 @@ abstract class BaseDto
     }
 
     /**
-     * Reset all public properties to their default values.
+     * Reset public properties (all or specified) to their default values.
+     * Properties prefixed with "_" are considered internal and are not cleared.
+     *
+     * This method is useful to prepare the DTO for safe reuse.
+     *
+     * @param list<string>         $propNames        specific property names to clear. If empty, all public props are cleared.
+     * @param array<string, mixed> $excludedPropsMap a property-name keyed map. These props will NOT be cleared.
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
-    public function clear(): static
+    public function clear(array $propNames = [], array $excludedPropsMap = []): static
     {
-        $defaults = static::getDefaultValues();
+        $defaultValues = static::getDefaultValues();
 
-        foreach ($defaults['defaults'] as $propName => $value) {
-            $this->$propName = $value;
+        // If specific prop names are given, restrict to those
+        if ($propNames) {
+            $defaultValues = array_intersect_key($defaultValues, array_flip($propNames));
+        }
+        // If excluded props are given, remove them from the defaults to be set
+        if ($excludedPropsMap) {
+            $defaultValues = array_diff_key($defaultValues, $excludedPropsMap);
         }
 
-        foreach ($defaults['withoutDefault'] as $propName) {
-            unset($this->$propName);
+        foreach ($defaultValues as $propName => $defaultValue) {
+            $this->$propName = $defaultValue;
+            unset($this->_filled[$propName]);
         }
-
-        $this->_filled = [];
 
         return $this;
     }
@@ -276,17 +379,18 @@ abstract class BaseDto
      *
      * This method will set the value of given properties and mark them as filled.
      * This means that they will be included in further processing such as
-     * normalization, export, or entity mapping.
+     * validation, normalization, export, or entity mapping.
+     * Null values are allowed and will be treated as filled.
+     *
+     * Note: '_' prefixed properties are ignored
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
     public function fill(array $values): static
     {
         foreach ($values as $key => $value) {
-            if (null !== $value) {
-                $this->$key = $value;
-                $this->_filled[$key] = true;
-            }
+            $this->$key = $value;
+            $this->_filled[$key] = true;
         }
 
         return $this;
@@ -435,10 +539,9 @@ abstract class BaseDto
 
     protected static function getClassRef(): \ReflectionClass
     {
-        static $refs = [];
-        $class = static::class;
-
-        return $refs[$class] ??= new \ReflectionClass($class);
+        /** @psalm-suppress PropertyTypeCoercion */
+        return static::$_propertyMetadataCache[static::class]['classRef'] ??=
+            new \ReflectionClass(static::class);
     }
 
     protected static function getValidMethodRef(string $method, \ReflectionClass $classRef, bool $visible = true): \ReflectionMethod
@@ -454,39 +557,5 @@ abstract class BaseDto
         }
 
         return $methodRef;
-    }
-
-    /**
-     * @return array{defaults: array<string, mixed>, withoutDefault: list<string>}
-     */
-    public static function getDefaultValues(): array
-    {
-        $className = static::class;
-        if (isset(self::$_defaultsMap[$className])) {
-            return self::$_defaultsMap[$className];
-        }
-
-        $classRef = static::getClassRef();
-        $defaultValues = $classRef->getDefaultProperties();
-        $withDefaults = [];
-        $withoutDefaults = [];
-
-        foreach ($classRef->getProperties(\ReflectionProperty::IS_PUBLIC) as $propRef) {
-            if ('_filled' === $propRef->getName() || $propRef->isStatic()) {
-                continue;
-            }
-
-            $propName = $propRef->getName();
-            if ($propRef->hasDefaultValue()) {
-                $withDefaults[$propName] = $defaultValues[$propName] ?? null;
-            } else {
-                $withoutDefaults[] = $propName;
-            }
-        }
-
-        return self::$_defaultsMap[$className] = [
-            'defaults'       => $withDefaults,
-            'withoutDefault' => $withoutDefaults,
-        ];
     }
 }

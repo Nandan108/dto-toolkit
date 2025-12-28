@@ -49,7 +49,7 @@ class MapTo implements PhaseAwareInterface
     public static function getMappers(BaseDto $dto, ?array $props = null): array
     {
         /** @var array<string, self> $mapToAttrByProp */
-        $mapToAttrByProp = ($dto::class)::loadPhaseAwarePropMeta(Phase::OutboundExport, 'attr', self::class, true);
+        $mapToAttrByProp = ($dto::class)::getPhaseAwarePropMeta(Phase::OutboundExport, 'attr', self::class, true);
 
         // if $props a specified, filter out the mappers that do not match the given properties
         /** @psalm-suppress RiskyTruthyFalsyComparison */

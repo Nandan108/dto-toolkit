@@ -284,7 +284,7 @@ abstract class ProcessingNodeBase implements PhaseAwareInterface, ProcessingNode
         if (!isset($processors[$phaseKey])) {
             $processors = [];
 
-            $attrInstancesByProp = ($dto::class)::loadPhaseAwarePropMeta($phase, 'attr', ProcessingNodeProducerInterface::class);
+            $attrInstancesByProp = ($dto::class)::getPhaseAwarePropMeta($phase, 'attr', ProcessingNodeProducerInterface::class);
 
             // build caster chains
             /** @var ProcessingNodeProducerInterface[]|ProcessingNodeProducerInterface $attrInstances

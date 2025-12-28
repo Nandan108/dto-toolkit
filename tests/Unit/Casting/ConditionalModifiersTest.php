@@ -28,11 +28,9 @@ final class ConditionalModifiersTest extends TestCase
             #[Mod\SkipNextIf('<dto:desiredCaseIs:["pascal","camel"]'), CastTo\RegexReplace('/^/', 'separated:')]
             public mixed $value = null;
 
-            public string $desiredCase = 'pascal';
-
             public function desiredCaseIs(mixed $value, string $prop, string | array $case): bool
             {
-                return in_array($this->desiredCase, (array) $case);
+                return in_array($this->contextGet('desiredCase'), (array) $case);
             }
         };
 
@@ -44,7 +42,7 @@ final class ConditionalModifiersTest extends TestCase
         ];
 
         foreach ($tests as $case => $expected) {
-            $dto->desiredCase = $case;
+            $dto->contextSet('desiredCase', $case);
             /** @psalm-suppress UndefinedMagicMethod */
             $dto->fromArray(['value' => "$case case"]);
             $this->assertSame($expected, $dto->value);

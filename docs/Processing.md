@@ -223,9 +223,38 @@ $dto = (new MyDto())->withGroups('admin');
 Groups apply globally for the duration of the inbound or outbound operation.
 Both inbound and outbound chain compilation respect the active group set.
 
----
+## 7.1 Class-Level Default Groups: `#[WithDefaultGroups(...)]`
 
-## 7.1 Property-Level Groups: `#[PropGroups([...])]`
+`#[WithDefaultGroups]` preloads group scopes automatically when a DTO is instantiated through DTOT factories (`newInstance()`, `fromArray()`, `fromDto()`, adapters, etc.). It accepts the same parameters as `withGroups()`:
+
+- `all` — baseline groups applied to every phase unless overridden
+- `inbound` / `inboundCast` — inbound IO vs. inbound processing
+- `outbound` / `outboundCast` — outbound IO vs. outbound processing
+
+Each argument may be a string or an array; unspecified values fall back to `all`, then to their IO phase. The attribute may only be used on DTOs implementing `HasGroupsInterface` (e.g., `FullDto`); otherwise an `InvalidConfigException` is thrown on instantiation. You can still override defaults at runtime with `withGroups()`.
+
+```php
+use Nandan108\DtoToolkit\CastTo;
+use Nandan108\DtoToolkit\Attribute\ChainModifier as Mod;
+use Nandan108\DtoToolkit\Attribute\Outbound;
+use Nandan108\DtoToolkit\Attribute\WithDefaultGroups;
+use Nandan108\DtoToolkit\Core\FullDto;
+
+#[WithDefaultGroups(all: 'api', inbound: 'admin', inboundCast: 'strict')]
+final class UserDto extends FullDto {
+    #[Mod\Groups('admin'), CastTo\SnakeCase]                     // inbound cast: strict/admin
+    #[Outbound, Mod\Groups('api'), CastTo\RegexReplace('/^/', 'prefix_')] // outbound cast: api
+    public ?string $tag = null;
+}
+
+$dto = UserDto::fromArray(['tag' => 'Some Value']);         // defaults applied automatically
+$dto = UserDto::withGroups('partner')->fromArray($payload); // override defaults when needed
+```
+
+---
+<a id='prop-groups'></a>
+
+## 7.2 Property-Level Groups: `#[PropGroups([...])]`
 
 `#[PropGroups]` controls whether the **property itself** participates in:
 
@@ -256,7 +285,7 @@ MyDto::withGroups('admin')->fromArray($input);   // roleId included
 
 ---
 
-## 7.2 Node-Level Groups: `#[Mod\Groups(groups: [...], count: N = 1)]`
+## 7.3 Node-Level Groups: `#[Mod\Groups(groups: [...], count: N = 1)]`
 
 `#[Mod\Groups]` applies grouping to **processing nodes** (casters, validators, modifiers), not to the property itself.
 
@@ -283,7 +312,7 @@ ProductDto::withGroups('web')->fromArray($input);   // only Slug
 
 ---
 
-## 7.3 Combined Use
+## 7.4 Combined Use
 
 You can combine both mechanisms for fully expressive behavior:
 
@@ -303,7 +332,7 @@ AdminUserDto::withGroups(['admin', 'strict'])->fromArray($i); // included, Requi
 
 ---
 
-## 7.4 Summary
+## 7.5 Summary
 
 | Attribute       | Applies To       | Controls                         | Granularity |
 | --------------- | ---------------- | -------------------------------- | ----------- |

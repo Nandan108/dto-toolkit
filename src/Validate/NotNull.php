@@ -14,7 +14,11 @@ final class NotNull extends ValidateBaseNoArgs
     public function validate(mixed $value, array $args = []): void
     {
         if (null === $value) {
-            throw GuardException::required('value', 'not_null');
+            throw GuardException::required(
+                what: 'non_null_value',
+                badValue: $value,
+                methodOrClass: __CLASS__,
+            );
         }
     }
 }

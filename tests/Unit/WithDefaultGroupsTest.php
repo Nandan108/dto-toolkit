@@ -36,6 +36,23 @@ final class WithDefaultGroupsTest extends TestCase
 
         ClassNotImplementingHasGroupsInterface::newInstance();
     }
+
+    public function testPropertyWithGroupsAttributesAreAppliedCorrectly(): void
+    {
+        /** @psalm-suppress ExtensionRequirementViolation */
+        $dto = WithGroupsDto::newInstance();
+
+        /** @psalm-suppress UndefinedMagicMethod */
+        $dto->_withGroups('bar')->fromArray(['someProp' => 'some value']);
+
+        // Inbound phase: only 'bar' group is active, so SnakeCase caster is applied
+        $this->assertSame('some_value', $dto->someProp);
+
+        // Outbound phase: only 'foo' group is active, so prefix_ is added
+        /** @psalm-suppress UndefinedMagicMethod */
+        $exported = $dto->toOutboundArray();
+        $this->assertSame('prefix_some_value', $exported['someProp']);
+    }
 }
 
 #[WithDefaultGroups(
@@ -54,7 +71,7 @@ final class WithGroupsDto extends FullDto
     #[Groups('bar'), CastTo\SnakeCase]
     #[Outbound]
     #[Groups('bar'), CastTo\RegexReplace('/^/', 'prefix_')]
-    public ?string $num = null;
+    public ?string $someProp = null;
 }
 
 #[WithDefaultGroups('foo')]

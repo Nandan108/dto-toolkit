@@ -2,6 +2,8 @@
 
 This document lists all built-in value transformation attributes (`CastTo`) provided by the DTO Toolkit.
 
+> Note: Framework-specific casters will be included in the corresponding framwork adapters
+
 ---
 
 ## 🎯 About CastTo Attributes

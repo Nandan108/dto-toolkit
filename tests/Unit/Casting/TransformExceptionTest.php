@@ -39,7 +39,7 @@ final class TransformExceptionTest extends TestCase
         $this->assertSame('numeric', $params['expected']);
         $this->assertSame('hello', $debug['orig_value']);
         $this->assertSame(json_encode('hello'), $debug['value']);
-        $this->assertSame('string', $debug['type']);
+        $this->assertSame('string', $params['type']);
         $this->assertSame('App\\CastTo\\NumericCaster', $params['methodOrClass']);
     }
 
@@ -125,8 +125,9 @@ final class TransformExceptionTest extends TestCase
 
         $resource && fclose($resource);
 
+        $params = $ex->getMessageParameters();
+        $this->assertSame('resource (stream)', $params['type']);
         $debug = $ex->getDebugInfo();
-        $this->assertSame('resource (stream)', $debug['type']);
         $this->assertSame('[unrepresentable]', $debug['value']);
     }
 
