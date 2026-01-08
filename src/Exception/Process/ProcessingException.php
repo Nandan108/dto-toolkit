@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nandan108\DtoToolkit\Exception\Process;
 
+use Nandan108\DtoToolkit\Attribute\ChainModifier\ErrorTemplate;
 use Nandan108\DtoToolkit\Contracts\DtoToolkitException;
 use Nandan108\DtoToolkit\Contracts\ProcessingExceptionInterface;
 use Nandan108\DtoToolkit\Internal\ProcessingNodeBase;
@@ -30,14 +31,17 @@ class ProcessingException extends \RuntimeException implements DtoToolkitExcepti
     protected string | int | null $errorCode = null;
     protected ?string $propertyPath = null;
 
+    /**
+     * @param non-empty-string $template_suffix
+     */
     public function __construct(
-        string $template_suffix = '',
+        string $template_suffix,
         array $parameters = [],
         array $debug = [],
         string | int | null $errorCode = null,
         int $httpCode = 422,
     ) {
-        $this->template = static::DOMAIN.($template_suffix ? ".$template_suffix" : '');
+        $this->template = ErrorTemplate::resolve(static::DOMAIN.'.'.$template_suffix);
         $this->propertyPath = ProcessingNodeBase::getPropPath();
         $this->parameters = ['propertyPath' => $this->propertyPath] + $parameters;
         $this->debug = $debug;
@@ -46,10 +50,15 @@ class ProcessingException extends \RuntimeException implements DtoToolkitExcepti
         parent::__construct($this->template, $httpCode);
     }
 
+    /**
+     * Basic reason builder with method/class and value info.
+     *
+     * @param non-empty-string $template_suffix
+     */
     final public static function reason(
         string $methodOrClass,
         mixed $value,
-        string $template_suffix = '',
+        string $template_suffix,
         array $parameters = [],
         string | int | null $errorCode = null,
         array $debugExtras = [],
