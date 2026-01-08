@@ -18,6 +18,8 @@ final class GuardException extends ProcessingException
      * - the value is unacceptable
      * - AND the validator is value-specific
      * - AND the rule applies to any Validator (string length, numeric range, email, etc.).
+     *
+     * @param non-empty-string $template_suffix
      */
     public static function invalidValue(
         mixed $value,
@@ -27,7 +29,7 @@ final class GuardException extends ProcessingException
         string | int | null $errorCode = 'guard.invalid_value',
         array $debug = [],
     ): self {
-        return new self(
+        return new static(
             template_suffix: $template_suffix,
             parameters: [
                 'type'          => get_debug_type($value),

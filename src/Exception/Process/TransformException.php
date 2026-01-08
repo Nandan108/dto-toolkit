@@ -14,7 +14,7 @@ final class TransformException extends ProcessingException
      */
     public static function invalidInterface(string $className): self
     {
-        return new self(
+        return new static(
             template_suffix: 'invalid_interface',
             parameters: ['className' => $className],
             errorCode: 'transform.invalid_interface',
