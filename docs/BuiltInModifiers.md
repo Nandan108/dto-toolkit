@@ -118,7 +118,7 @@ public ?string $slug;
 
 ---
 
-### Mod\FirstSuccess
+### Mod\Any
 
 **Arguments:** `int $count`
 
@@ -127,7 +127,7 @@ Tries the next `$count` casters/subchains in order and returns the result of the
 **Example:**
 
 ```php
-#[Mod\FirstSuccess(3)]
+#[Mod\Any(3)]
 #[CastTo\DateTimeFromLocalized(pattern: 'yyyy-MM-dd')]
 #[CastTo\DateTimeFromLocalized(dateStyle: \IntlDateFormatter::SHORT)]
 #[CastTo\DateTimeFromLocalized(dateStyle: \IntlDateFormatter::LONG)]
@@ -160,12 +160,12 @@ public ?string $slug;
 
 Groups the next `$count` casters into a single subchain treated as one unit.
 
-Useful when modifiers (like FirstSuccess) expect grouped casters.
+Useful when modifiers (like Any) expect grouped casters.
 
 **Example:**
 
 ```php
-#[FirstSuccess(2)]
+#[Any(2)]
 #[Wrap(3), Valid\Integer, CastTo\Integer, Valid\Range(0, 100)]
 #[Wrap(2), CastTo\Floating, Valid\Range(0, 1)]
 null|int|float $percent;

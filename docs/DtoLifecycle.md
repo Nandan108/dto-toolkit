@@ -40,7 +40,7 @@ E.g. a birthdate property could have type `null|string|DateTimeImmutable`, to su
 If the DTO implements `ProcessesInterface` (via the `ProcessesFromAttributes` trait), all processing nodes before `#[Outbound]` are applied in order:
 - **Validators** (`#[Assert\...]`) run in-chain and fail fast on the first violation
 - **Casters** (`#[CastTo\...]`) transform the value
-- **Modifiers** (`#[Mod\...]`) alter the control flow of whatever follows (validators or casters). For example `#[Mod\FirstSuccess]` can wrap multiple validators to accept any one passing range check.
+- **Modifiers** (`#[Mod\...]`) alter the control flow of whatever follows (validators or casters). For example `#[Mod\Any]` can wrap multiple validators to accept any one passing range check.
 
 For properties marked as *`filled`*, this phase:
 - Applies method-based or class-based validators, casters, and modifiers

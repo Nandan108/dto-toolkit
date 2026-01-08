@@ -14,17 +14,17 @@ use Nandan108\DtoToolkit\Exception\Process\ProcessingException;
 use Nandan108\DtoToolkit\Tests\Traits\CanTestCasterClassesAndMethods;
 use PHPUnit\Framework\TestCase;
 
-final class FirstSuccessTest extends TestCase
+final class AnyModifierTest extends TestCase
 {
     use CanTestCasterClassesAndMethods;
 
-    public function testFirstSuccessModifier(): void
+    public function testAnyModifier(): void
     {
         // Test the Collect modifier
         $dto = new class extends FullDto {
             // Using an int argument
             #[CastTo\FromJson]
-            #[Mod\FirstSuccess(4)]
+            #[Mod\Any(4)]
             // fails to return array unless context.allowArray is true
             /* - */ #[Mod\Wrap(2), CastTo\Extract('foo.bar'), FailIf('<context:allowArray', negate: true)]
             // fails to cast "not-a-number" to float
@@ -51,7 +51,7 @@ final class FirstSuccessTest extends TestCase
         $this->assertSame('123.4', $dto->value);
 
         try {
-            // Test that FirstSuccess fails when all nodes fail
+            // Test that Any fails when all nodes fail
 
             $dto->withGroups('fux')->loadArray(['value' => $input]);
         } catch (ProcessingException $e) {
@@ -60,10 +60,10 @@ final class FirstSuccessTest extends TestCase
         }
     }
 
-    public function testFirstSuccessWithValidators(): void
+    public function testAnyWithValidators(): void
     {
         $dto = new class extends FullDto {
-            #[Mod\FirstSuccess(2)]
+            #[Mod\Any(2)]
             #[Assert\Range(min: 1, max: 3)]
             #[Assert\Range(min: 10, max: 12)]
             public mixed $num = null;

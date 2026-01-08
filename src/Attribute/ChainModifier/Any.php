@@ -12,7 +12,7 @@ use Nandan108\DtoToolkit\Exception\Process\ProcessingException;
 use Nandan108\DtoToolkit\Internal\ProcessingChain;
 
 /**
- * FirstSuccess is conceptually a “multi-strategy evaluation” modifier.
+ * `Any` is conceptually a “multi-strategy evaluation” modifier.
  * It attempts to apply multiple strategies (casters or validators)
  * in sequence until one of them succeeds.
  *
@@ -20,7 +20,7 @@ use Nandan108\DtoToolkit\Internal\ProcessingChain;
  * the unchanged value if the strategy is a validator, or the transformed value
  * if the strategy is a caster.
  *
- * Internally, FirstSuccess will attempt each strategy in order, catching
+ * Internally, `Any` will attempt each strategy in order, catching
  * any ProcessingException thrown by individual strategies. If all strategies
  * fail, the modifier throws a single ProcessingException describing the
  * aggregated failure.
@@ -28,12 +28,12 @@ use Nandan108\DtoToolkit\Internal\ProcessingChain;
  * @psalm-api
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
-class FirstSuccess extends ChainModifierBase
+class Any extends ChainModifierBase
 {
     public function __construct(
         public readonly int $count = 1,
     ) {
-        $this->count > 1 or throw new InvalidArgumentException('FirstSuccess: $count must be greater than or equal to 1.');
+        $this->count > 1 or throw new InvalidArgumentException('Any: $count must be greater than or equal to 1.');
     }
 
     /**
@@ -77,7 +77,7 @@ class FirstSuccess extends ChainModifierBase
                         'strategy_count' => count($closures),
                     ],
                     errorCode: 'modifier.first_success.all_failed',
-                    // messageOverride: "All  nodes wrapped by FirstSuccess have failed.",
+                    // messageOverride: "All  nodes wrapped by Any have failed.",
                     debugExtras: ['failures' => $failures],
                 );
                 // $this->count
@@ -89,7 +89,7 @@ class FirstSuccess extends ChainModifierBase
             queue: $queue,
             dto: $dto,
             count: $this->count,
-            className: "FirstSuccess(count:$this->count)",
+            className: "Any(count:$this->count)",
             buildCasterClosure: $builder,
         );
     }
