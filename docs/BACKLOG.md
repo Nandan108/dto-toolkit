@@ -3,7 +3,34 @@
 ## Product Backlog Items
 
 ### TODO before v.1.0
-- **[075]** Port a majority of Symfony validation constraints (`#[Assert\...]`) to DTOT Core
+- **[075]** Port a majority of basic Symfony validation constraints (`#[Assert\...]`) to DTOT Core
+  - #[Assert\CompareTo(string $op, $scalar)] // $op in [==, ===, !=, !==, <, <=, >, >=]
+  - #[Assert\CompareToExtract($op, $rightPath, $leftPath=null)] // use #[Extract] logic with propPath expressions `$path` extract from roots `['dto' => $dto, 'context' => $dto->context]`, `$leftPath` (optional): extracts from roots `[value, dto, context]`
+  - #[Assert\Equals($value, $strict = true)] // same as CompareTo("===", $value)
+  - #[Assert\IsType(string $type)] // See symfony constraints/Type. $type is one of: 'bool', 'boolean', 'int', 'integer', 'long', 'float', 'double', 'real', 'numeric', 'string', 'class-string', 'scalar', 'array', 'iterable', 'countable', 'callable', 'object', 'resource', 'null', [...$types].
+  - #[Assert\IsNull(bool $expect = true)] // sugar for IsType('null')
+  - #[Assert\IsBlank(bool $expect = true)] // returns true for null, empty string "", string containing only whitespace, empty array, empty iterable
+  - #[Assert\Contains(string|array|iterable $haystack, null|"start"|"end" $at)] // Checks whether the input value, interpreted as a sequence, appears as a contiguous subsequence of the $haystack sequence. Both input and haystack must be of the same kind (string ↔ string, array|iterable ↔ array|iterable). Thows GuardException::invalidValue() in case of type mismatch.
+  - Already implemented, some modifications needed (no need for BC, deprecation, etc..):
+    - DateFormat
+    - Email
+    - EnumBackedValue
+    - EnumCase
+    - InArray // TODO: rename to `In`
+    - InstanceOfClass // TODO: rename to InstanceOf
+    - IsArray // TODO: fold into IsType('array')
+    - IsFloat // TODO: fold into  IsType('float')
+    - IsInteger // TODO: fold into IsType('int')
+    - IsNumeric // TODO: fold into IsType('numeric') or IsType(['int', 'float', ...])
+    - IsNumericString
+    - Length
+    - NotBlank // TODO: rename/replace by #[Assert\IsBlank(bool $expect = true)]
+    - NotNull // TODO: rename/replace by #[Assert\IsBlank(bool $expect = true)]
+    - Range(?float $min = null, ?float $max = null, bool $inclusive = true)
+    - Regex
+    - Url
+    - Uuid
+
 - **[077]** Add `#[Assert\CompareTo($operator, $value)]`, `#[Assert\CompareToExtract($operator, $path)]`
 - **[028]** Add nested DTO support with `CastTo\Dto(class, groups: 'api')` (from array or object)
   - support recursive normalization and validation
@@ -27,8 +54,11 @@
 - **[050]** Add `#[LogCast($debugOnly = true)]` to also allow logging non-failing chains.
 
 ### Post v1.0
+- **[080]** Port domain-specific asserts from Symfony (post v1.0)
+  - Ip, StartsWith, Bic, CardScheme, Currency, Luhn, Iban, Isbn, Issn
+- **[083]** Consider a modifier-based mechanism for dynamically overriding node arguments via extraction (DynamicArg or ExtractToArg).
 - **[044]** Add support for DTO transforms (`\$dto->toDto($otherDtoClass)`) [See details](#PBI-044)
-- **[088]** Introduce new processor node type more similar to modifiers: rather than having a single cast() or validate() method, they'd have a makeValidator()/makeCaster() method, that can return an optimized Closure, which might be different depending on $constructorArgs.
+- **[082]** Introduce new processor node type more similar to modifiers: rather than having a single cast() or validate() method, they'd have a makeValidator()/makeCaster() method, that can return an optimized Closure, which might be different depending on $constructorArgs.
 - **[034]** Add support for logging failed casts in FailTo/FailNextTo. `CastTo::$castSoftFailureLogger = function (CastingException $e, $returnedVal)`
 - **[058]** Add a doc about FullDto and making one's own slimmed-down version if not all features are needed
 
@@ -94,7 +124,7 @@
 - [073] Refactor DTO pipeline methods (from*, with*) to get psalm happy w/o suppress.
 - [074] Consider renaming or aliasing Validate namespace to Assert, and revise namespace aliasing suggestions.
 - [079] Add `#[Mod\Assert($count)]`: run all sub-nodes in parallel with same input, bubble errors and return the original value.
-
+- [081] Introduce #[ErrorTemplate] override Attribute
 ---
 
 ### <a id="PBI-043"></a>**🔧 PBI 43: Add support for scoping groups (cross-cutting concern)**

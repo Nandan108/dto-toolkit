@@ -104,10 +104,18 @@ DTOT instantiates the class which must implement CasterInterface or ValidatorInt
 ## 3.3 DTO Method-Based Producers
 
 ```php
+#[Assert('customCondition', args: ['foo'])]
 #[CastTo('slug', args: ['-'])]
 public string $name;
 
-public function castToSlug(string $v, $sep): string { ... }
+public function assertCustomCondition(string $v, $sep): void {
+    if ($someCondition === false) {
+        // throw GuardException::reason( ... );
+    }
+ }
+public function castToSlug(string $value, $separator): string { ... }
+
+
 ```
 
 Resolved via `castTo<MethodName>` convention.

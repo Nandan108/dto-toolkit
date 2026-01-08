@@ -79,6 +79,13 @@ These provide a convenient, framework-free entry point with all standard functio
 
 ---
 
+## 🏃 Runtime & Concurrency
+
+- Multi-threaded runtimes (`pthreads`/`parallel`) are not supported by the core and are not planned.
+- Event-loop/fiber-based long-lived workers (Swoole, RoadRunner, ReactPHP, etc.) are not officially supported today but may be considered in the future; expect request-local state to be process-local for now.
+
+---
+
 ## 🧩 Adapter Packages<a id="adapter-packages"></a>
 
 - Laravel Adapter: [`nandan108/dto-toolkit-laravel`](https://github.com/nandan108/dto-toolkit-laravel) *(planned)*
