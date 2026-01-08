@@ -93,6 +93,7 @@
 - [078] Introduce PresencePolicy to clear up semantics around `null` vs `missing` input values.
 - [073] Refactor DTO pipeline methods (from*, with*) to get psalm happy w/o suppress.
 - [074] Consider renaming or aliasing Validate namespace to Assert, and revise namespace aliasing suggestions.
+- [079] Add `#[Mod\Assert($count)]`: run all sub-nodes in parallel with same input, bubble errors and return the original value.
 
 ---
 

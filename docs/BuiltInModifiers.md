@@ -136,6 +136,27 @@ public null|string|DateTimeInterface $date;
 
 ---
 
+### Mod\Assert
+
+**Arguments:** `int $count = 1`
+
+*Forks the value into validation sandboxes*
+
+`#[Mod\Assert]` executes one or more isolated subchains starting from the same input value. Any transformations performed inside these subchains are local and discarded; only failures propagate.
+
+*Use when assertions require validation-specific preprocessing.*
+
+**Example:**
+
+```php
+#[CastTo\DateTime]
+#[Mod\Assert]
+#[Mod\Wrap(2), CastTo\Age, Assert\CompareTo('>=', 18)]
+public null|string|DateTimeInterface $birthdate = null;
+```
+
+---
+
 ### Mod\Groups
 
 **Arguments:** `string|array $groups, int $count = 1`
