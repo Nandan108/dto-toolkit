@@ -12,7 +12,8 @@ use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
 use Nandan108\DtoToolkit\Internal\ProcessingChain;
 
 /**
- * The Collect attribute is used to.
+ * The Collect attribute is used to run input through multiple parallel subchains and collects their outputs.
+ * If keys are provided, returns an associative array.
  *
  * @psalm-api
  */

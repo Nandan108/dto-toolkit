@@ -35,10 +35,6 @@ final class Groups extends ChainModifierBase
             throw new InvalidConfigException('To use #[Groups], DTO must use UsesGroups trait or implement HasGroupsInterface');
         }
 
-        /*
-        xpects       callable(array<array-key, Nandan108\DtoToolkit\Contracts\ProcessingNodeInterface>, callable|null):Closure|null,
-        but    impure-Closure(array<array-key, Nandan108\DtoToolkit\Contracts\ProcessingNodeInterface>, callable|null):(callable|pure-Closure(mixed):mixed) provided
-        */
         // consume the subchain, whether it'll be applied or not, decide application at cast-time
         return new ProcessingChain(
             $queue,

@@ -14,9 +14,9 @@ final class ConditionalModifiersTest extends TestCase
 {
     use CanTestCasterClassesAndMethods;
 
-    public function testFirstSuccessModifier(): void
+    public function testApplyNextIf(): void
     {
-        // Test the Collect modifier
+        // Test the ApplyNextIf modifier
         $dto = new class extends FullDto {
             // Apply Case caster depending on desiredCase
             #[Mod\ApplyNextIf('<dto:desiredCaseIs:pascal'), CastTo\PascalCase]
