@@ -33,9 +33,6 @@ abstract class ProcessingNodeBase implements PhaseAwareInterface, ProcessingNode
 
     protected static string $methodPrefix = '';
 
-    /** @var \Closure(ProcessingNodeMeta, bool): void */
-    public static \Closure $onNodeResolved;
-
     /** @var class-string<ProcessingException> */
     protected string $exceptionType = ProcessingException::class;
 
@@ -45,11 +42,6 @@ abstract class ProcessingNodeBase implements PhaseAwareInterface, ProcessingNode
     protected static array $globalMemoized = [];
 
     protected static ?BaseDto $currentDto = null;
-
-    /**
-     * @var \Closure(ProcessingNodeMeta, bool): void
-     */
-    public static \Closure $onResolved;
 
     public ?string $methodOrClass = null;
 
@@ -73,9 +65,6 @@ abstract class ProcessingNodeBase implements PhaseAwareInterface, ProcessingNode
         if (($this->methodOrClass ?? '') === '') {
             throw new InvalidConfigException('No method name or class provided.');
         }
-
-        /** @psalm-suppress RedundantPropertyInitializationCheck */
-        static::$onResolved ??= static function (): void {};
     }
 
     #[\Override]
@@ -89,8 +78,41 @@ abstract class ProcessingNodeBase implements PhaseAwareInterface, ProcessingNode
         $cache = &static::$globalMemoized;
         $args = $this->args;
         $this->methodOrClass ??= $this::class;
+        $normalize = function (mixed $value) use (&$normalize): mixed {
+            if (\is_array($value)) {
+                $normalized = [];
+                foreach ($value as $key => $item) {
+                    $normalized[$key] = $normalize($item);
+                }
+
+                return $normalized;
+            }
+
+            if ($value instanceof \BackedEnum) {
+                return ['__enum__' => $value::class, 'value' => $value->value];
+            }
+
+            if ($value instanceof \UnitEnum) {
+                return ['__enum__' => $value::class, 'name' => $value->name];
+            }
+
+            if ($value instanceof \DateTimeInterface) {
+                return ['__datetime__' => $value::class, 'value' => $value->format(\DateTimeInterface::ATOM)];
+            }
+
+            if (\is_object($value)) {
+                return ['__object__' => $value::class, 'id' => spl_object_id($value)];
+            }
+
+            if (\is_resource($value)) {
+                return ['__resource__' => get_resource_type($value)];
+            }
+
+            return $value;
+        };
+
         /** @psalm-suppress RiskyTruthyFalsyComparison */
-        $serialize = fn (mixed $args): string => json_encode($args) ?: '[]';
+        $serialize = fn (mixed $args): string => json_encode($normalize($args)) ?: '[]';
 
         /** @psalm-suppress RiskyTruthyFalsyComparison, PossiblyNullArgument */
         $getMemoizeKey = function (string $keyType, BaseDto $dto) use ($isDev, $serialize): string {
@@ -107,8 +129,6 @@ abstract class ProcessingNodeBase implements PhaseAwareInterface, ProcessingNode
             $memoKey = $getMemoizeKey($keyType, $dto);
             $meta = $cache[$memoKey]['nodes'][$serialize($args)] ?? null;
             if ($meta) {
-                (static::$onResolved)($meta, true);
-
                 return $meta;
             }
         }
@@ -170,8 +190,6 @@ abstract class ProcessingNodeBase implements PhaseAwareInterface, ProcessingNode
                 sourceMethod: $method,
             );
 
-            (static::$onResolved)($meta, false);
-
             return $meta;
         };
 
@@ -209,8 +227,6 @@ abstract class ProcessingNodeBase implements PhaseAwareInterface, ProcessingNode
             $callable = $this->makeClosureFromInstance($instance, $this->args);
         }
 
-        /** @psalm-suppress RiskyTruthyFalsyComparison */
-        $serialize = fn (mixed $args): string => json_encode($args) ?: '[]';
         $memoKey = $this->methodOrClass.':'.$serialize($this->constructorArgs);
         /** @psalm-suppress UnsupportedPropertyReferenceUsage */
         $cache = &static::$globalMemoized;
@@ -221,8 +237,6 @@ abstract class ProcessingNodeBase implements PhaseAwareInterface, ProcessingNode
             sourceClass: static::$customNodeResolver::class,
             sourceMethod: $this->methodOrClass,
         );
-
-        (static::$onNodeResolved)($meta, false);
 
         return $meta;
     }

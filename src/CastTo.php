@@ -31,9 +31,6 @@ class CastTo extends ProcessingNodeBase
         public ?array $constructorArgs = null,
     ) {
         parent::__construct($methodOrClass, $args, $constructorArgs);
-        /** @psalm-suppress RedundantPropertyInitializationCheck */
-        parent::$onNodeResolved ??= static function (): void {};
-        static::$onResolved = static::$onNodeResolved;
     }
 
     #[\Override]
