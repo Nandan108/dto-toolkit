@@ -99,7 +99,7 @@ final class FailToTest extends TestCase
     public function testFallbackHandlesValidationFailure(): void
     {
         $dto = new class extends FullDto {
-            #[V\NotBlank]
+            #[V\IsBlank(false)]
             #[FailTo(fallback: 'fallback')]
             public mixed $name = null;
         };

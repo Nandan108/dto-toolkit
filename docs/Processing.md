@@ -74,7 +74,7 @@ class ProductDto extends FullDto {
     #[CastTo\Slug(separator: '-')]
     public ?string $title;
 
-    #[Assert\NotNull]
+    #[Assert\IsNull(false)]
     #[Assert\Length(min: 3)]
     public ?string $code;
 }

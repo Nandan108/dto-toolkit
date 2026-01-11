@@ -56,7 +56,7 @@ trait UsesParamResolver
         // $config = $this->getParamResolverConfig($paramName);
 
         /** @var \Closure|null $provider */
-        /** @psalm-suppress UnsupportedPropertyReferenceUsage */
+        /** @psalm-suppress UnsupportedPropertyReferenceUsage,PossiblyNullArrayOffset */
         $provider = &$config->providers[$paramValueOrProviderClass] ?? null;
         if ($provider) {
             return $provider;

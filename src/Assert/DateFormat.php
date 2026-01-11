@@ -8,6 +8,9 @@ use Nandan108\DtoToolkit\Core\ValidatorBase;
 use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
 use Nandan108\DtoToolkit\Exception\Process\GuardException;
 
+/**
+ * Validates that a string matches the given date format.
+ */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class DateFormat extends ValidatorBase
 {

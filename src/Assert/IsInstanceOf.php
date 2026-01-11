@@ -8,8 +8,11 @@ use Nandan108\DtoToolkit\Core\ValidatorBase;
 use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
 use Nandan108\DtoToolkit\Exception\Process\GuardException;
 
+/**
+ * Validates that a value is an instance of the given class or interface.
+ */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
-final class InstanceOfClass extends ValidatorBase
+final class IsInstanceOf extends ValidatorBase
 {
     /**
      * @psalm-suppress PossiblyUnusedMethod
@@ -20,7 +23,7 @@ final class InstanceOfClass extends ValidatorBase
     {
         /** @psalm-suppress DocblockTypeContradiction */
         if ('' === $className) {
-            throw new InvalidConfigException('InstanceOfClass validator requires a class name.');
+            throw new InvalidConfigException('IsInstanceOf validator requires a class or interface name.');
         }
         parent::__construct([$className]);
     }

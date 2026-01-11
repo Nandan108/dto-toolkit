@@ -9,6 +9,9 @@ use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
 use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
 use Nandan108\DtoToolkit\Exception\Process\GuardException;
 
+/**
+ * Validates that a numeric value is within a configured range.
+ */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class Range extends ValidatorBase
 {

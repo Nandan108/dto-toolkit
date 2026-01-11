@@ -33,7 +33,7 @@ final class GuardException extends ProcessingException
             template_suffix: $template_suffix,
             parameters: [
                 'type'          => get_debug_type($value),
-            ],
+            ] + $parameters,
             errorCode: $errorCode,
             httpCode: 422,
             debug: [

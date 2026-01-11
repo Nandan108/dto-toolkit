@@ -3,36 +3,10 @@
 ## Product Backlog Items
 
 ### TODO before v.1.0
-- **[075]** Port a majority of basic Symfony validation constraints (`#[Assert\...]`) to DTOT Core
-  - #[Assert\CompareTo(string $op, $scalar)] // $op in [==, ===, !=, !==, <, <=, >, >=]
-  - #[Assert\CompareToExtract($op, $rightPath, $leftPath=null)] // use #[Extract] logic with propPath expressions `$path` extract from roots `['dto' => $dto, 'context' => $dto->context]`, `$leftPath` (optional): extracts from roots `[value, dto, context]`
-  - #[Assert\Equals($value, $strict = true)] // same as CompareTo("===", $value)
-  - #[Assert\IsType(string $type)] // See symfony constraints/Type. $type is one of: 'bool', 'boolean', 'int', 'integer', 'long', 'float', 'double', 'real', 'numeric', 'string', 'class-string', 'scalar', 'array', 'iterable', 'countable', 'callable', 'object', 'resource', 'null', [...$types].
-  - #[Assert\IsNull(bool $expect = true)] // sugar for IsType('null')
-  - #[Assert\IsBlank(bool $expect = true)] // returns true for null, empty string "", string containing only whitespace, empty array, empty iterable
-  - #[Assert\Contains(string|array|iterable $haystack, null|"start"|"end" $at)] // Checks whether the input value, interpreted as a sequence, appears as a contiguous subsequence of the $haystack sequence. Both input and haystack must be of the same kind (string ↔ string, array|iterable ↔ array|iterable). Thows GuardException::invalidValue() in case of type mismatch.
-  - Already implemented, some modifications needed (no need for BC, deprecation, etc..):
-    - DateFormat
-    - Email
-    - EnumBackedValue
-    - EnumCase
-    - InArray // TODO: rename to `In`
-    - InstanceOfClass // TODO: rename to InstanceOf
-    - IsArray // TODO: fold into IsType('array')
-    - IsFloat // TODO: fold into  IsType('float')
-    - IsInteger // TODO: fold into IsType('int')
-    - IsNumeric // TODO: fold into IsType('numeric') or IsType(['int', 'float', ...])
-    - IsNumericString
-    - Length
-    - NotBlank // TODO: rename/replace by #[Assert\IsBlank(bool $expect = true)]
-    - NotNull // TODO: rename/replace by #[Assert\IsBlank(bool $expect = true)]
-    - Range(?float $min = null, ?float $max = null, bool $inclusive = true)
-    - Regex
-    - Url
-    - Uuid
-
-- **[077]** Add `#[Assert\CompareTo($operator, $value)]`, `#[Assert\CompareToExtract($operator, $path)]`
-- **[028]** Add nested DTO support with `CastTo\Dto(class, groups: 'api')` (from array or object)
+- **[084]** Add `#[CastTo\Age("seconds"|"days"|"years" $in = years, IsoDateTimeString $relativeTo = null): float]`
+- **[028]** Add nested DTO support
+  - `CastTo\Dto($dtoClassName)` (from array or object)
+  - `CastTo\Entity($cassName)` (from dto to entity)
   - support recursive normalization and validation
 - **[064]** Add framework-specific ValidationException mappers in adapters
   - Add a "ProcessingErrorMapperInterface" for adapter overrides
@@ -125,6 +99,9 @@
 - [074] Consider renaming or aliasing Validate namespace to Assert, and revise namespace aliasing suggestions.
 - [079] Add `#[Mod\Assert($count)]`: run all sub-nodes in parallel with same input, bubble errors and return the original value.
 - [081] Introduce #[ErrorTemplate] override Attribute
+- [075] Port a majority of basic Symfony validation constraints (`#[Assert\...]`) to DTOT Core
+- [077] Add `#[Assert\CompareTo($op, $scalar)]`, `#[Assert\CompareToExtract($op, $rightPath, $leftPath = null)]`
+
 ---
 
 ### <a id="PBI-043"></a>**🔧 PBI 43: Add support for scoping groups (cross-cutting concern)**
@@ -142,7 +119,7 @@
 - **Caster syntax**: Caster attributes should allow optional `groups: string|array`
     - `#[CastTo\Slug(groups: ['public', 'seo'])]`
 - **Future-compatible**
-    - Architecture should anticipate applying scoping groups to validation (e.g. `#[Assert\NotBlank(groups: ['api'])]`)
+    - Architecture should anticipate applying scoping groups to validation (e.g. `#[Assert\IsBlank(false, groups: ['api'])]`)
 
 ### <a id="PBI-044"></a>🔄 PBI 44: Add support for DTO-to-DTO transformation
 

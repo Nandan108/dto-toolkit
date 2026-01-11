@@ -91,7 +91,7 @@ final class MappingTest extends TestCase
     {
         $dtoClassWithMapperThatThrows = new class extends FullDto {
             #[MapFrom(['qux1' => 'foo', 'qux2' => ['!!baz', 'bar']])]
-            #[Assert\NotNull] // guard not executed
+            #[Assert\IsNull(false)] // guard not executed
             public ?array $bar = null;
         };
 
@@ -100,7 +100,7 @@ final class MappingTest extends TestCase
             'bar' => 'BAR-val',
             'baz' => null, // null value makes mapper fail in this case (!!baz), resulting in missing value
         ]);
-        // Since the bar prop is not marked as filled, it is not further processed by the NotNull validator,
+        // Since the bar prop is not marked as filled, it is not further processed by the IsNull validator,
         // therefore no GuardException is thrown here.
 
         $this->assertSame(false, $dto->isFilled('bar'));

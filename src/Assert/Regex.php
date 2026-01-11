@@ -10,6 +10,9 @@ use Nandan108\DtoToolkit\Exception\Process\GuardException;
 
 // use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
 
+/**
+ * Validates that a string matches (or does not match) a regex pattern.
+ */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class Regex extends ValidatorBase
 {

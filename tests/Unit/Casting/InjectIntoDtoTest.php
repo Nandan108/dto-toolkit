@@ -128,7 +128,7 @@ final class DtoWithInjectedDummySlugger extends FullDto
         return $this->_slugger?->slugify($value);
     }
 
-    /** @psalm-suppress PossiblyUnusedReturnValue */
+    /** @psalm-suppress PossiblyUnusedReturnValue, PossiblyUnusedMethod */
     protected function getSlugger(): ?DummySluggerForDtoInjection
     {
         return $this->_slugger;

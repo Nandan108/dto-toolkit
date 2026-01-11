@@ -60,9 +60,6 @@ abstract class BaseDto
      */
     private static array $_propertyMetadataCache = [];
 
-    /** @var array<class-string, array{defaults: array<string, mixed>, withoutDefault: list<string>}> */
-    private static array $_defaultsMap = [];
-
     public static function setDefaultErrorMode(ErrorMode $mode): void
     {
         static::$defaultErrorMode = $mode;

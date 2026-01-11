@@ -23,32 +23,77 @@ Validators are repeatable, so you can stack multiple constraints on the same pro
 
 ---
 
-### Assert\NotNull
+### Assert\IsNull
 
-**Arguments:** _none_
+**Arguments:** `bool $expect = true`
 
-Fails if the value is `null`.
+Passes when the value is `null` (or fails when `$expect` is `false`).
 
 **Example:**
 
 ```php
-#[Assert\NotNull]
+#[Assert\IsNull(false)]
 public ?string $name;
 ```
 
 ---
 
-### Assert\NotBlank
+### Assert\IsBlank
 
-**Arguments:** `bool $trim = true`
+**Arguments:** `bool $expect = true`
 
-Fails if the value is an empty string (optionally trimmed).
+Blank values include: `null`, empty string, whitespace-only strings, empty arrays, and empty iterables. `0`, `'0'`, and `false` are **not** blank.
 
 **Example:**
 
 ```php
-#[Assert\NotBlank(trim: true)]
+#[Assert\IsBlank(false)]
 public ?string $title;
+```
+
+---
+
+### Assert\CompareTo
+
+**Arguments:** `string $op, mixed $scalar`
+
+Compares the value against a scalar using a comparison operator.
+
+**Example:**
+
+```php
+#[Assert\CompareTo('>=', 18)]
+public int $age;
+```
+
+---
+
+### Assert\CompareToExtract
+
+**Arguments:** `string $op, string $rightPath, ?string $leftPath = null`
+
+Compares a value (or extracted left path) against a value extracted from the DTO/context.
+
+**Example:**
+
+```php
+#[Assert\CompareToExtract('==', '$context.expectedRole')]
+public string $role;
+```
+
+---
+
+### Assert\Equals
+
+**Arguments:** `mixed $value, bool $strict = true`
+
+Checks the value equals the expected value (strict by default).
+
+**Example:**
+
+```php
+#[Assert\Equals('draft', strict: true)]
+public string $status;
 ```
 
 ---
@@ -158,7 +203,7 @@ public ?string $id;
 
 ---
 
-### Assert\InArray
+### Assert\In
 
 **Arguments:** `array $choices, bool $strict = true`
 
@@ -167,22 +212,22 @@ Fails unless the value is one of the provided choices (strict comparison by defa
 **Example:**
 
 ```php
-#[Assert\InArray(['draft', 'published', 'archived'])]
+#[Assert\In(['draft', 'published', 'archived'])]
 public ?string $status;
 ```
 
 ---
 
-### Assert\InstanceOfClass
+### Assert\IsInstanceOf
 
 **Arguments:** `class-string $className`
 
-Requires the value to be an instance of the given class.
+Requires the value to be an instance of the given class or interface.
 
 **Example:**
 
 ```php
-#[Assert\InstanceOfClass(\DateTimeInterface::class)]
+#[Assert\InstanceOf(\DateTimeInterface::class)]
 public ?\DateTimeInterface $endsAt;
 ```
 
@@ -218,62 +263,63 @@ public string|int $statusValue;
 
 ---
 
-### Assert\IsArray
+### Assert\IsType
 
-**Arguments:** _none_
+**Arguments:** `string|array $type`
 
-Checks the value is an array.
+Checks the value matches one of the supported types (string or list). Supports: `bool`, `int`, `float`, `numeric`, `string`, `class-string`, `scalar`, `array`, `iterable`, `countable`, `callable`, `object`, `resource`, `null` (plus common aliases).
 
 **Example:**
 
 ```php
-#[Assert\IsArray]
-public ?array $items;
+#[Assert\IsType(['int', 'float'])]
+public int|float $amount;
 ```
 
 ---
 
-### Assert\IsInteger
+### Assert\ContainedIn
 
-**Arguments:** _none_
+**Arguments:** `string|array|iterable $haystack, null|"start"|"end"|int $at`
 
-Accepts ints, float integers (e.g., `5.0`), or integer strings.
+Checks whether the **value** appears as a contiguous subsequence of the haystack.
+The value and haystack must both be strings or both be iterables.
+When `$at` is:
+- `null`: match anywhere
+- `"start"` / `"end"`: anchored match
+- `int`: absolute start index; negative values are end-relative (e.g. `-1` means
+  the match ends 1 element before the end); `0` behaves like `"start"`.
+
+Negative `$at` requires a countable iterable and throws an `InvalidConfigException` otherwise.
 
 **Example:**
 
 ```php
-#[Assert\IsInteger]
-public int|float|string|null $count;
+#[Assert\ContainedIn(['a', 'b', 'c'])]
+public array $letters;
 ```
 
 ---
 
-### Assert\IsFloat
+### Assert\Contains
 
-**Arguments:** _none_
+**Arguments:** `string|array|iterable $needle, null|"start"|"end"|int $at`
 
-Accepts floats or float strings.
+Checks whether the **value** contains the needle as a contiguous subsequence.
+The value and needle must both be strings or both be iterables.
+When `$at` is:
+- `null`: match anywhere
+- `"start"` / `"end"`: anchored match
+- `int`: absolute start index; negative values are end-relative (e.g. `-1` means
+  the match ends 1 element before the end); `0` behaves like `"start"`.
 
-**Example:**
-
-```php
-#[Assert\IsFloat]
-public float|string|null $price;
-```
-
----
-
-### Assert\IsNumeric
-
-**Arguments:** _none_
-
-Checks `is_numeric($value)`; accepts numeric strings too.
+Negative `$at` requires a countable iterable and throws an `InvalidConfigException` otherwise.
 
 **Example:**
 
 ```php
-#[Assert\IsNumeric]
-public mixed $amount;
+#[Assert\Contains('foo')]
+public string $title;
 ```
 
 ---
@@ -290,4 +336,3 @@ Requires a string that is numeric (rejects non-strings even if numeric).
 #[Assert\IsNumericString]
 public ?string $amountRaw;
 ```
-

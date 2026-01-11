@@ -7,6 +7,9 @@ namespace Nandan108\DtoToolkit\Assert;
 use Nandan108\DtoToolkit\Core\ValidatorBase;
 use Nandan108\DtoToolkit\Exception\Process\GuardException;
 
+/**
+ * Validates that a value is a URL with optional scheme/host rules.
+ */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class Url extends ValidatorBase
 {

@@ -88,7 +88,7 @@ final class FailNextToTest extends TestCase
     {
         $dto = new class extends FullDto {
             #[FailNextTo('fallback', count: 1)]
-            #[V\NotBlank]
+            #[V\IsBlank(false)]
             public mixed $name = null;
         };
 

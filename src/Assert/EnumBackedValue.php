@@ -8,6 +8,9 @@ use Nandan108\DtoToolkit\Core\ValidatorBase;
 use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
 use Nandan108\DtoToolkit\Exception\Process\GuardException;
 
+/**
+ * Validates that a value is a backing value of a BackedEnum class.
+ */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class EnumBackedValue extends ValidatorBase
 {

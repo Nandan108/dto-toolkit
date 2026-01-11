@@ -8,6 +8,9 @@ use Nandan108\DtoToolkit\Core\ValidatorBase;
 use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
 use Nandan108\DtoToolkit\Exception\Process\GuardException;
 
+/**
+ * Validates string or array length constraints.
+ */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class Length extends ValidatorBase
 {
@@ -25,9 +28,10 @@ final class Length extends ValidatorBase
     {
         /** @var ?int $min */
         /** @var ?int $max */
-        [$min, $max] = $args ?: $this->args + [null, null];
+        [$min, $max] = $args + [null, null];
 
         $type = gettype($value);
+
         $len = match ($type) {
             'array'  => \count($value),
             'string' => \mb_strlen($value),

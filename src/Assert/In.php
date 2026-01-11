@@ -8,8 +8,11 @@ use Nandan108\DtoToolkit\Core\ValidatorBase;
 use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
 use Nandan108\DtoToolkit\Exception\Process\GuardException;
 
+/**
+ * Validates that a value is one of the allowed choices (strict or loose).
+ */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
-final class InArray extends ValidatorBase
+final class In extends ValidatorBase
 {
     /**
      * @param array<int|string, mixed> $choices
@@ -19,7 +22,7 @@ final class InArray extends ValidatorBase
     public function __construct(array $choices, bool $strict = true)
     {
         if ([] === $choices) {
-            throw new InvalidConfigException('InArray validator requires at least one choice.');
+            throw new InvalidConfigException('In validator requires at least one choice.');
         }
         parent::__construct([$choices, $strict]);
     }
@@ -37,7 +40,7 @@ final class InArray extends ValidatorBase
 
             throw GuardException::invalidValue(
                 value: $value,
-                template_suffix: 'in_array.not_allowed',
+                template_suffix: 'in.not_allowed',
                 parameters: ['allowed' => $allowedValues],
                 methodOrClass: self::class,
             );
