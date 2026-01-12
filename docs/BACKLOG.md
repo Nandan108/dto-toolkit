@@ -3,7 +3,6 @@
 ## Product Backlog Items
 
 ### TODO before v.1.0
-- **[084]** Add `#[CastTo\Age("seconds"|"days"|"years" $in = years, IsoDateTimeString $relativeTo = null): float]`
 - **[028]** Add nested DTO support
   - `CastTo\Dto($dtoClassName)` (from array or object)
   - `CastTo\Entity($cassName)` (from dto to entity)
@@ -101,6 +100,7 @@
 - [081] Introduce #[ErrorTemplate] override Attribute
 - [075] Port a majority of basic Symfony validation constraints (`#[Assert\...]`) to DTOT Core
 - [077] Add `#[Assert\CompareTo($op, $scalar)]`, `#[Assert\CompareToExtract($op, $rightPath, $leftPath = null)]`
+- [084] Add `#[CastTo\Age("seconds"|"days"|"years" $in = years, IsoDateTimeString $relativeTo = null): float]`
 
 ---
 

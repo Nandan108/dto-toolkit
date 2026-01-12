@@ -123,6 +123,19 @@ Throws a `CastingException` if the input is not a `DateTimeInterface`.
 
 ---
 
+### CastTo\Age
+
+**Arguments:**
+- `string $in = 'years'` (`'seconds'|'hours'|'days'|'years'`)
+- `?string $relativeTo = null` (ISO datetime string, timezone allowed)
+
+Computes the age/difference between the input ISO datetime string and `$relativeTo`.
+If `$relativeTo` is `null`, the current time in UTC is used.
+Negative values are allowed for future dates.
+Years are computed as 365 days.
+
+---
+
 ### CastTo\Enum
 
 **Arguments:** `string $enumClass`

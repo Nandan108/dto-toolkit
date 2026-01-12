@@ -8,8 +8,10 @@ namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 // use Nandan108\DtoToolkit\Traits\CanCastBasicValues;
 
 use Nandan108\DtoToolkit\CastTo;
+use Nandan108\DtoToolkit\Core\FullDto;
 use Nandan108\DtoToolkit\Enum\DateTimeFormat;
 use Nandan108\DtoToolkit\Enum\IntCastMode;
+use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
 use Nandan108\DtoToolkit\Exception\Process\TransformException;
 use Nandan108\DtoToolkit\Tests\Traits\CanTestCasterClassesAndMethods;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -102,6 +104,12 @@ final class CanCastBasicValuesTest extends TestCase
             'FromBase64:invalid'              => [new CastTo\FromBase64(), ' invalid string ', TransformException::class],
             'Base64Encode'                    => [new CastTo\Base64(), $someString, base64_encode($someString)],
             'Base64Encode:invalid'            => [new CastTo\Base64(), [], TransformException::class],
+            'Age:seconds'                     => [new CastTo\Age('seconds', '2024-01-01T00:00:10+00:00'), '2024-01-01T00:00:00+00:00', 10.0],
+            'Age:hours'                       => [new CastTo\Age('hours', '2024-01-01T02:00:00+00:00'), '2024-01-01T00:00:00+00:00', 2.0],
+            'Age:days'                        => [new CastTo\Age('days', '2024-01-03T00:00:00+00:00'), '2024-01-01T00:00:00+00:00', 2.0],
+            'Age:years'                       => [new CastTo\Age('years', '2024-01-01T00:00:00+00:00'), '2023-01-01T00:00:00+00:00', 1.0],
+            'Age:negative'                    => [new CastTo\Age('days', '2024-01-01T00:00:00+00:00'), '2024-01-03T00:00:00+00:00', -2.0],
+            'Age:invalid'                     => [new CastTo\Age('days', '2024-01-01T00:00:00+00:00'), 'not-a-date', TransformException::class],
         ];
     }
 
@@ -135,5 +143,39 @@ final class CanCastBasicValuesTest extends TestCase
     public function testDateTimeWithNonStringValue(): void
     {
         $this->casterTest(new CastTo\DateTime(format: DateTimeFormat::SQL), new \stdClass(), TransformException::class);
+    }
+
+    public function testAgeRejectsInvalidUnit(): void
+    {
+        $this->expectException(InvalidConfigException::class);
+        $this->expectExceptionMessage("Age caster: invalid unit 'weeks'.");
+
+        /** @psalm-suppress InvalidArgument */
+        new CastTo\Age('weeks', '2024-01-01T00:00:00+00:00');
+    }
+
+    public function testAgeCastsRelativeToNowByDefault(): void
+    {
+        $dto = new class extends FullDto {
+            #[CastTo\Age('days'), CastTo\Rounded(1)]
+            public \DateTimeImmutable | float | null $ageInDays = null;
+        };
+        $days = 10;
+        $timestamp = strtotime("-{$days} days");
+        $dateTime = new \DateTimeImmutable("@$timestamp");
+
+        /** @psalm-suppress PossiblyFalseArgument */
+        $dto->loadArray(['ageInDays' => $dateTime]);
+
+        $this->assertEquals($days, $dto->ageInDays);
+    }
+
+    public function testAgeWithInvalidRelativeToConfig(): void
+    {
+        $this->expectException(InvalidConfigException::class);
+        $this->expectExceptionMessage("Age caster: invalid relativeTo ISO datetime string 'not-a-date'.");
+
+        /** @psalm-suppress InvalidArgument */
+        new CastTo\Age('days', relativeTo: 'not-a-date');
     }
 }
