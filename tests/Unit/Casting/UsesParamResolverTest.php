@@ -13,10 +13,12 @@ use Nandan108\DtoToolkit\CastTo\LocalizedDateTime;
 use Nandan108\DtoToolkit\Contracts\ProcessesInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Core\FullDto;
+use Nandan108\DtoToolkit\Core\ProcessingContext;
+use Nandan108\DtoToolkit\Core\ProcessingFrame;
 use Nandan108\DtoToolkit\Enum\PresencePolicy;
 use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
 use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
-use Nandan108\DtoToolkit\Internal\ProcessingNodeBase;
+use Nandan108\DtoToolkit\Exception\Context\ContextException;
 use Nandan108\DtoToolkit\Traits\CreatesFromArrayOrEntity;
 use Nandan108\DtoToolkit\Traits\ProcessesFromAttributes;
 use Nandan108\PropAccess\PropAccess;
@@ -102,13 +104,19 @@ final class UsesParamResolverTest extends TestCase
     {
         // test calling getParamResolverConfig() without having called configureParamResolver()
         try {
-            ProcessingNodeBase::setCurrentDto(new UsesParamResolverDateTestDtoNeedsContextButGotNone());
-            new class extends DateTime {
-                public function __construct()
-                {
-                    $this->getParamResolverConfig('locale');
-                }
-            };
+            $dto = new UsesParamResolverDateTestDtoNeedsContextButGotNone();
+            $frame = new ProcessingFrame($dto, $dto->getErrorList(), $dto->getErrorMode());
+            ProcessingContext::pushFrame($frame);
+            try {
+                new class extends DateTime {
+                    public function __construct()
+                    {
+                        $this->getParamResolverConfig('locale');
+                    }
+                };
+            } finally {
+                ProcessingContext::popFrame();
+            }
         } catch (InvalidConfigException $e) {
             $this->assertStringContainsString('configureParamResolver() must be called before resolveParamProvider()', $e->getMessage());
         }
@@ -150,6 +158,30 @@ final class UsesParamResolverTest extends TestCase
             $dto->loadArray(['date' => new \DateTimeImmutable('2025-10-05 12:34')]);
         } catch (InvalidConfigException $e) {
             $this->assertStringContainsString('Cannot resolve locale from "not-a-valid-class-or-locale"', $e->getMessage());
+        }
+    }
+
+    public function testResolveParamRequiresPropPath(): void
+    {
+        $dto = new class extends BaseDto {
+        };
+        $frame = new ProcessingFrame($dto, $dto->getErrorList(), $dto->getErrorMode());
+        ProcessingContext::pushFrame($frame);
+        try {
+            $caster = new class extends DateTime {
+                public function callResolve(mixed $value): mixed
+                {
+                    return $this->resolveParam('timezone', $value, null);
+                }
+            };
+
+            $caster->bootOnDto();
+
+            $this->expectException(ContextException::class);
+            $this->expectExceptionMessage('prop path is not set');
+            $caster->callResolve('2025-01-01T00:00:00+00:00');
+        } finally {
+            ProcessingContext::popFrame();
         }
     }
 

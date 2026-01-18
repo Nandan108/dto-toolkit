@@ -6,6 +6,8 @@ namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
 use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Core\FullDto;
+use Nandan108\DtoToolkit\Core\ProcessingContext;
+use Nandan108\DtoToolkit\Core\ProcessingFrame;
 use Nandan108\DtoToolkit\Enum\DateTimeFormat;
 use Nandan108\DtoToolkit\Exception\Process\TransformException;
 use PHPUnit\Framework\TestCase;
@@ -45,7 +47,13 @@ final class DateTimeCastTest extends TestCase
 
         // Throws on input value that's not a stringable
         try {
-            $dt->cast(new \stdClass(), [$format, null, null]);
+            $frame = new ProcessingFrame($dto, $dto->getErrorList(), $dto->getErrorMode());
+            ProcessingContext::pushFrame($frame);
+            try {
+                $dt->cast(new \stdClass(), [$format, null, null]);
+            } finally {
+                ProcessingContext::popFrame();
+            }
             $this->fail('DateTime cast should not be able to cast "invalid date" string into a DateTimeImmutable');
         } catch (TransformException $e) {
             $this->assertSame('processing.transform.stringable.non_empty_expected', $e->getMessageTemplate());

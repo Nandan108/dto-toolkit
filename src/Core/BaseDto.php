@@ -35,6 +35,7 @@ abstract class BaseDto
 {
     protected static ErrorMode $defaultErrorMode = ErrorMode::FailFast;
     protected ?ErrorMode $errorMode = null;
+    protected ?ProcessingErrorList $errorList = null;
 
     /**
      * List of properties that can be filled.
@@ -76,6 +77,16 @@ abstract class BaseDto
         $this->errorMode = $mode;
 
         return $this;
+    }
+
+    public function setErrorList(ProcessingErrorList $newErrorList): ProcessingErrorList
+    {
+        return $this->errorList = $newErrorList;
+    }
+
+    public function getErrorList(): ProcessingErrorList
+    {
+        return $this->errorList ??= new ProcessingErrorList();
     }
 
     /**
@@ -344,10 +355,11 @@ abstract class BaseDto
      *
      * @param list<string>         $propNames        specific property names to clear. If empty, all public props are cleared.
      * @param array<string, mixed> $excludedPropsMap a property-name keyed map. These props will NOT be cleared.
+     * @param bool                 $clearErrors      whether to clear DTO's errorList
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
-    public function clear(array $propNames = [], array $excludedPropsMap = []): static
+    public function clear(array $propNames = [], array $excludedPropsMap = [], bool $clearErrors = true): static
     {
         $defaultValues = static::getDefaultValues();
 
@@ -363,6 +375,10 @@ abstract class BaseDto
         foreach ($defaultValues as $propName => $defaultValue) {
             $this->$propName = $defaultValue;
             unset($this->_filled[$propName]);
+        }
+
+        if ($clearErrors) {
+            $this->getErrorList()->clear();
         }
 
         return $this;

@@ -7,7 +7,7 @@ namespace Nandan108\DtoToolkit\Exception\Process;
 use Nandan108\DtoToolkit\Attribute\ChainModifier\ErrorTemplate;
 use Nandan108\DtoToolkit\Contracts\DtoToolkitException;
 use Nandan108\DtoToolkit\Contracts\ProcessingExceptionInterface;
-use Nandan108\DtoToolkit\Internal\ProcessingNodeBase;
+use Nandan108\DtoToolkit\Core\ProcessingContext;
 
 /**
  * Base exception for processing nodes (casting + validation).
@@ -42,7 +42,7 @@ class ProcessingException extends \RuntimeException implements DtoToolkitExcepti
         int $httpCode = 422,
     ) {
         $this->template = ErrorTemplate::resolve(static::DOMAIN.'.'.$template_suffix);
-        $this->propertyPath = ProcessingNodeBase::getPropPath();
+        $this->propertyPath = ProcessingContext::propPath();
         $this->parameters = ['propertyPath' => $this->propertyPath] + $parameters;
         $this->debug = $debug;
         $this->errorCode = $errorCode ?? static::$defaultErrorCode;

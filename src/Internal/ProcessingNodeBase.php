@@ -19,7 +19,6 @@ use Nandan108\DtoToolkit\Enum\Phase;
 use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
 use Nandan108\DtoToolkit\Exception\Config\MissingDependencyException;
 use Nandan108\DtoToolkit\Exception\Config\NodeProducerResolutionException;
-use Nandan108\DtoToolkit\Exception\Context\ContextException;
 use Nandan108\DtoToolkit\Exception\Process\ProcessingException;
 
 /**
@@ -40,8 +39,6 @@ abstract class ProcessingNodeBase implements PhaseAwareInterface, ProcessingNode
 
     /** @var array<string, array{nodes: array<string, ProcessingNodeMeta>, instance?: ProcessingNodeInterface}> */
     protected static array $globalMemoized = [];
-
-    protected static ?BaseDto $currentDto = null;
 
     public ?string $methodOrClass = null;
 
@@ -275,7 +272,6 @@ abstract class ProcessingNodeBase implements PhaseAwareInterface, ProcessingNode
     {
         /** @var array<class-string, array<int, array<string, ProcessingChain>>|null> */
         static $cache = [];
-        self::$currentDto = $dto;
         $reflection = new \ReflectionClass($dto);
         $dtoClass = $reflection->getName();
         $processors = &$cache[$dtoClass];
@@ -370,77 +366,6 @@ abstract class ProcessingNodeBase implements PhaseAwareInterface, ProcessingNode
         } else {
             self::$globalMemoized = [];
         }
-    }
-
-    protected static array $currentPropPath = [];
-
-    public static function setCurrentDto(?BaseDto $dto): void
-    {
-        self::$currentDto = $dto;
-    }
-
-    /**
-     * Set the current casting property.
-     *
-     * @param string $propName The name of the property being cast
-     */
-    public static function setCurrentPropName(?string $propName): void
-    {
-        self::$currentPropPath = ($propName ?? '') ? [$propName] : [];
-    }
-
-    public static function pushPropPath(int | string $segment): void
-    {
-        self::$currentPropPath[] = $segment;
-    }
-
-    public static function popPropPath(): int | string | null
-    {
-        return array_pop(self::$currentPropPath);
-    }
-
-    public static function getPropPath(): ?string
-    {
-        $propPath = '';
-        foreach (self::$currentPropPath as $segment) {
-            $propPath .= is_int($segment) ? "[$segment]" : ".$segment";
-        }
-
-        return ltrim($propPath, '.') ?: null;
-    }
-
-    /**
-     * Get the current $dto instance.
-     *
-     * @throws ContextException if the $currentDto is not set
-     *
-     * @internal
-     */
-    public static function getCurrentDto(): BaseDto
-    {
-        // Can't use this trait without being a CastTo, but this should never happen under normal circumstances
-        static::$currentDto or throw new ContextException('Out-of-context call: ProcessingNodeBase::$currentDto is null');
-
-        return static::$currentDto;
-    }
-
-    /**
-     * Get the name of the property currently being cast.
-     *
-     * @return non-empty-string
-     *
-     * @throws ContextException if $currentPropName is not set
-     *
-     * @internal
-     */
-    public static function getCurrentPropName(): string
-    {
-        /** @var string $propName */
-        $propName = static::$currentPropPath[0] ?? '';
-        $propName > '' or throw new ContextException('Out-of-context call: ProcessingNodeBase::$currentPropName is not set.');
-
-        /** @var non-empty-string $propName */
-        return $propName;
     }
 
     /**

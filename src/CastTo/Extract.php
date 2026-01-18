@@ -6,6 +6,7 @@ namespace Nandan108\DtoToolkit\CastTo;
 
 use Nandan108\DtoToolkit\Contracts\HasContextInterface;
 use Nandan108\DtoToolkit\Core\CastBase;
+use Nandan108\DtoToolkit\Core\ProcessingContext;
 use Nandan108\DtoToolkit\Exception\Config\ExtractionSyntaxError;
 use Nandan108\DtoToolkit\Exception\Process\ExtractionException;
 use Nandan108\PropPath\Exception\SyntaxError;
@@ -52,7 +53,7 @@ final class Extract extends CastBase
     #[\Override]
     public function cast(mixed $value, array $args): mixed
     {
-        $dto = self::getCurrentDto();
+        $dto = ProcessingContext::dto();
         $roots = ['value' => $value, 'dto'   => $dto];
         if ($dto instanceof HasContextInterface) {
             /** @psalm-var mixed */

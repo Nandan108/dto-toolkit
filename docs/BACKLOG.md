@@ -15,6 +15,10 @@
   - Keep validation logic and error reporting fully pluggable and framework-agnostic
 
 ### Preferable before v1.0 (negotiable)
+- **[084]** `#[CastTo\Pad($length, $char = ' ', 'right'|'left', $end = 'left')]`
+- **[085]** `#[Assert\Json(array<'object'|'array'|'number'|'string'|'bool'|'null'> $allowedTypes = [])]`
+- **[086]** Bump min PHP version to 8.3 (and get typed constants!)
+  - Move some static props to typed constants: `(Assert|CastTo)::$methodPrefix`, `GuardException::$template_prefix`,`GuardException::$error_code`, `ProcessingException::$defaultErrorCode.`
 - **[056]** Support multi-step casting by making withGroups(inboundCast: ...) take a sequence of group(s)
   Then apply each step in sequence. Same with outboundCast.
 - **[046]** Add modifier `#[SkipIfMatch(array $values, $return=null)]`, allows short-circuitting following caster(s) by returning \$return if input is found in \$values or input in $values.
@@ -103,23 +107,6 @@
 - [084] Add `#[CastTo\Age("seconds"|"days"|"years" $in = years, IsoDateTimeString $relativeTo = null): float]`
 
 ---
-
-### <a id="PBI-043"></a>**🔧 PBI 43: Add support for scoping groups (cross-cutting concern)**
-
-> “Scoping groups allow properties and their associated attributes (mapping, casting, validation) to selectively participate in a transformation context.”
-- **Property selection and mapping**
-    - Property: `#[PropGroups('api')]` makes attributed property invisible outside of 'api' scope.
-    - Modifier: `#[Groups('api', 4)]` adds 'api' group scoping to the next 4 chained casters
-    - Mapping: `#[MapFrom(..., groups: [...])]` and `#[MapTo(..., groups: [...])]`
-    - `BaseDto::toArray(array $props = [], array $groups = [])` should filter properties based on group matching
-    - Downstream consumers (`fromArray`, `fromDto`, `toOutboundArray`, `toEntity`) must accept and pass `?array $groups` to `toArray`
-- **Casting**
-    - `CastTo::getProcessingNodeClosureMap(BaseDto $dto, array $groups = [])` should filter out processing attributes that declare `groups` not intersecting with the active group set
-    - `ProcessesFromAttributes` must pass `groups` into processing closure map resolution
-- **Caster syntax**: Caster attributes should allow optional `groups: string|array`
-    - `#[CastTo\Slug(groups: ['public', 'seo'])]`
-- **Future-compatible**
-    - Architecture should anticipate applying scoping groups to validation (e.g. `#[Assert\IsBlank(false, groups: ['api'])]`)
 
 ### <a id="PBI-044"></a>🔄 PBI 44: Add support for DTO-to-DTO transformation
 

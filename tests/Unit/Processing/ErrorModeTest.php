@@ -32,7 +32,7 @@ final class FailsInboundDto extends BaseDto implements ProcessesInterface
 {
     use Traits\CreatesFromArrayOrEntity; // for creating DTOs from arrays
     use Traits\ProcessesFromAttributes; // for casting/transforming properties
-    use Traits\ExportsToEntity; // for exporting DTOs to entities
+    use Traits\ExportsOutbound; // for exporting DTOs to entities
 
     #[AlwaysFails]
     public ?string $foo = null;
@@ -42,7 +42,7 @@ final class FailsOutboundDto extends BaseDto implements ProcessesInterface
 {
     use Traits\CreatesFromArrayOrEntity; // for creating DTOs from arrays
     use Traits\ProcessesFromAttributes; // for casting/transforming properties
-    use Traits\ExportsToEntity; // for exporting DTOs to entities
+    use Traits\ExportsOutbound; // for exporting DTOs to entities
 
     /** @psalm-suppress PossiblyUnusedProperty */
     #[CastTo\Uppercase]

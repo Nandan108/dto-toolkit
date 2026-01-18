@@ -7,6 +7,7 @@ namespace Nandan108\DtoToolkit\Traits;
 use Nandan108\DtoToolkit\Attribute\MapFrom;
 use Nandan108\DtoToolkit\Contracts\ProcessesInterface;
 use Nandan108\DtoToolkit\Contracts\ScopedPropertyAccessInterface;
+use Nandan108\DtoToolkit\Core\ProcessingContext;
 use Nandan108\DtoToolkit\Core\ProcessingErrorList;
 use Nandan108\DtoToolkit\Enum\ErrorMode;
 use Nandan108\DtoToolkit\Enum\Phase;
@@ -41,27 +42,63 @@ trait CreatesFromArrayOrEntity
         ?ErrorMode $errorMode = null,
         bool $clear = true,
     ): static {
-        // fill the DTO with the input values
+        $errorList and $this->setErrorList($errorList);
+
+        return ProcessingContext::wrapProcessing(
+            $this,
+            $errorMode,
+            function ($frame) use ($input, $ignoreUnknownProps, $clear): static {
+                // check for unknown properties
+                if (!$ignoreUnknownProps) {
+                    $unknownProperties = array_diff(array_keys($input), $this->getFillable());
+                    if ($unknownProperties) {
+                        throw new InvalidConfigException('Unknown properties: '.implode(', ', $unknownProperties));
+                    }
+                }
+
+                // determine the input to be filled
+                $inputToBeFilled = $this->getInputToBeFilled($input);
+
+                // and fill the DTO
+                $this->fill($inputToBeFilled);
+
+                // reset unfilled properties to default values
+                if ($clear) {
+                    $this->clear(excludedPropsMap: $inputToBeFilled, clearErrors: false);
+                }
+
+                // cast the values to their respective types and return the DTO
+                if ($this instanceof ProcessesInterface) {
+                    /** @psalm-suppress UnusedMethodCall */
+                    $this->processInbound();
+                }
+
+                // call post-load hook
+                /** @psalm-suppress UndefinedMethod */
+                $this->postLoad();
+
+                return $this;
+            },
+        );
+    }
+
+    protected function getInputToBeFilled(array $input): array
+    {
         /** @psalm-suppress InaccessibleMethod */
-        $toBeFilled = $fillables = $this->getFillable();
+        $fillables = $this->getFillable();
 
-        if (!$ignoreUnknownProps) {
-            $unknownProperties = array_diff(array_keys($input), $fillables);
-            if ($unknownProperties) {
-                throw new InvalidConfigException('Unknown properties: '.implode(', ', $unknownProperties));
-            }
-        }
-
-        // restrict properties to current scope
+        // If needed, restrict properties to current scope
         if ($this instanceof ScopedPropertyAccessInterface) {
             $propsInScope = $this->getPropertiesInScope(Phase::InboundLoad);
             $toBeFilled = array_intersect($fillables, $propsInScope);
+        } else {
+            $toBeFilled = $fillables;
         }
 
         $presencePolicy = static::getPresencePolicy();
         $defaultValues = static::getDefaultValues();
 
-        // get mappers for the properties to be filled
+        // get mappers ($[MapFrom] attribute) for the properties to be filled
         $mappers = MapFrom::getMappers($this, $toBeFilled);
 
         $inputToBeFilled = array_intersect_key($input, array_flip($toBeFilled));
@@ -103,25 +140,7 @@ trait CreatesFromArrayOrEntity
             }
         }
 
-        // and fill the DTO
-        $this->fill($inputToBeFilled);
-
-        // reset unfilled properties to default values
-        if ($clear) {
-            $this->clear(excludedPropsMap: $inputToBeFilled);
-        }
-
-        // cast the values to their respective types and return the DTO
-        if ($this instanceof ProcessesInterface) {
-            /** @psalm-suppress UnusedMethodCall */
-            $this->processInbound($errorList, $errorMode);
-        }
-
-        // call post-load hook
-        /** @psalm-suppress UndefinedMethod */
-        $this->postLoad();
-
-        return $this;
+        return $inputToBeFilled;
     }
 
     /**

@@ -32,6 +32,11 @@ final class ProcessingErrorList implements \Countable, \IteratorAggregate
         return [] === $this->errors;
     }
 
+    public function clear(): void
+    {
+        $this->errors = [];
+    }
+
     /** @psalm-suppress PossiblyUnusedMethod */
     #[\Override]
     public function count(): int

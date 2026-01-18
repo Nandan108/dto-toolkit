@@ -9,11 +9,12 @@ use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Core\ProcessingErrorList;
 use Nandan108\DtoToolkit\Enum\ErrorMode;
 use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
+use Nandan108\DtoToolkit\Support\ContainerBridge;
 
 /**
  * @psalm-require-extends BaseDto
  **/
-trait ExportsToEntity
+trait ExportsOutbound
 {
     /**
      * The class name of the entity that this DTO maps to.
@@ -101,7 +102,11 @@ trait ExportsToEntity
             throw new InvalidConfigException('Entity class '.static::$entityClass.' does not exist');
         }
 
-        $entity = new static::$entityClass();
+        // Instanciate entity via container if possible.
+        // In a framework context, instantiation will be delegated to the DI container.
+        $entity = ContainerBridge::has(static::$entityClass)
+            ? ContainerBridge::get(static::$entityClass)
+            : new static::$entityClass();
 
         // TODO: run inject() after instanciation if instance is injectable
 

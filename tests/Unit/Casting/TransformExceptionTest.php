@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Nandan108\DtoToolkit\Tests\Unit\Processing;
 
+use Nandan108\DtoToolkit\Core\BaseDto;
+use Nandan108\DtoToolkit\Core\ProcessingContext;
+use Nandan108\DtoToolkit\Core\ProcessingFrame;
 use Nandan108\DtoToolkit\Exception\Process\ProcessingException;
 use Nandan108\DtoToolkit\Exception\Process\TransformException;
 use PHPUnit\Framework\TestCase;
@@ -20,6 +23,24 @@ use PHPUnit\Framework\TestCase;
  */
 final class TransformExceptionTest extends TestCase
 {
+    /** @psalm-suppress PropertyNotSetInConstructor */
+    private BaseDto $dto;
+
+    #[\Override]
+    protected function setUp(): void
+    {
+        $this->dto = new class extends BaseDto {
+        };
+        $frame = new ProcessingFrame($this->dto, $this->dto->getErrorList(), $this->dto->getErrorMode());
+        ProcessingContext::pushFrame($frame);
+    }
+
+    #[\Override]
+    protected function tearDown(): void
+    {
+        ProcessingContext::popFrame();
+    }
+
     public function testExpectedBuildsCorrectTemplateAndParameters(): void
     {
         $ex = TransformException::expected(

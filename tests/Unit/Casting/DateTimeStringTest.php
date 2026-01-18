@@ -6,6 +6,8 @@ namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
 use Nandan108\DtoToolkit\CastTo\DateTimeString;
 use Nandan108\DtoToolkit\Core\FullDto;
+use Nandan108\DtoToolkit\Core\ProcessingContext;
+use Nandan108\DtoToolkit\Core\ProcessingFrame;
 use Nandan108\DtoToolkit\Enum\DateTimeFormat;
 use PHPUnit\Framework\TestCase;
 
@@ -73,8 +75,16 @@ final class DateTimeStringTest extends TestCase
     public function testThrowsTransformExceptionForNonDateTime(): void
     {
         $caster = new DateTimeString(format: 'c');
+        $dto = new class extends FullDto {
+        };
+        $frame = new ProcessingFrame($dto, $dto->getErrorList(), $dto->getErrorMode());
 
-        $this->expectException(\Nandan108\DtoToolkit\Exception\Process\TransformException::class);
-        $caster->cast('not-a-datetime', ['c']);
+        ProcessingContext::pushFrame($frame);
+        try {
+            $this->expectException(\Nandan108\DtoToolkit\Exception\Process\TransformException::class);
+            $caster->cast('not-a-datetime', ['c']);
+        } finally {
+            ProcessingContext::popFrame();
+        }
     }
 }

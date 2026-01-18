@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nandan108\DtoToolkit\Assert;
 
 use Nandan108\DtoToolkit\Contracts\HasContextInterface;
+use Nandan108\DtoToolkit\Core\ProcessingContext;
 use Nandan108\DtoToolkit\Core\ValidatorBase;
 use Nandan108\DtoToolkit\Exception\Config\ExtractionSyntaxError;
 use Nandan108\DtoToolkit\Exception\Process\ExtractionException;
@@ -80,7 +81,7 @@ final class CompareToExtract extends ValidatorBase
     {
         [$op, $rightPath, $leftPath] = $this->constructorArgs ?? [];
 
-        $dto = self::getCurrentDto();
+        $dto = ProcessingContext::dto();
         $roots = ['dto' => $dto];
         if ($dto instanceof HasContextInterface) {
             $roots['context'] = $dto->getContext();

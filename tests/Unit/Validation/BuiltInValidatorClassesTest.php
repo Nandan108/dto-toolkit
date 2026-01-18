@@ -8,11 +8,12 @@ use Nandan108\DtoToolkit\Assert as V;
 use Nandan108\DtoToolkit\Contracts\BootsOnDtoInterface;
 use Nandan108\DtoToolkit\Contracts\ProcessesInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
+use Nandan108\DtoToolkit\Core\ProcessingContext;
+use Nandan108\DtoToolkit\Core\ProcessingFrame;
 use Nandan108\DtoToolkit\Core\ValidatorBase;
 use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
 use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
 use Nandan108\DtoToolkit\Exception\Process\GuardException;
-use Nandan108\DtoToolkit\Internal\ProcessingNodeBase;
 use Nandan108\DtoToolkit\Traits\ProcessesFromAttributes;
 use PHPUnit\Framework\TestCase;
 
@@ -71,24 +72,30 @@ final class BuiltInValidatorClassesTest extends TestCase
             $this->fail('Invalid method type: '.gettype($validatorClass));
         }
 
-        ProcessingNodeBase::setCurrentPropName('test');
-        ProcessingNodeBase::setCurrentDto($dto);
-        if ($validator->instance instanceof BootsOnDtoInterface) {
-            $validator->instance->bootOnDto();
-        }
+        $frame = new ProcessingFrame($dto, $dto->getErrorList(), $dto->getErrorMode());
+        ProcessingContext::pushFrame($frame);
+        ProcessingContext::pushPropPath('test');
+        try {
+            if ($validator->instance instanceof BootsOnDtoInterface) {
+                $validator->instance->bootOnDto();
+            }
 
-        // positive check
-        if (null === $exceptionMessage) {
+            // positive check
+            if (null === $exceptionMessage) {
+                $validator($value);
+                self::assertTrue(true); // reached without exception
+
+                return;
+            }
+
+            // negative check
+            $this->expectException($exceptionClass);
+            $this->expectExceptionMessage($exceptionMessage);
             $validator($value);
-            self::assertTrue(true); // reached without exception
-
-            return;
+        } finally {
+            ProcessingContext::popPropPath();
+            ProcessingContext::popFrame();
         }
-
-        // negative check
-        $this->expectException($exceptionClass);
-        $this->expectExceptionMessage($exceptionMessage);
-        $validator($value);
     }
 
     public static function validatorProvider(): array

@@ -21,6 +21,6 @@ class FullDto extends BaseDto implements // -- --- IGNORE ---
     use Traits\UsesGroups; // for phase-scoping properties and casters
     use Traits\CreatesFromArrayOrEntity; // for creating DTOs from arrays
     use Traits\ProcessesFromAttributes; // for casting/transforming properties
-    use Traits\ExportsToEntity; // for exporting DTOs to entities
+    use Traits\ExportsOutbound; // for exporting DTOs to entities
     use Traits\IsInjectable; // for injecting dependencies marked with #[Inject]
 }

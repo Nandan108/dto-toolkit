@@ -10,14 +10,14 @@ use Nandan108\DtoToolkit\Contracts\ProcessesInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Core\FullDto;
 use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
-use Nandan108\DtoToolkit\Traits\ExportsToEntity;
+use Nandan108\DtoToolkit\Traits\ExportsOutbound;
 use Nandan108\DtoToolkit\Traits\ProcessesFromAttributes;
 use Nandan108\PropAccess\Exception\AccessorException;
 use Nandan108\PropAccess\PropAccess;
 use PHPUnit\Framework\TestCase;
 
 /** @psalm-suppress UnusedClass */
-final class ExportsToEntityTest extends TestCase
+final class ExportsOutboundTest extends TestCase
 {
     #[\Override]
     public function setUp(): void
@@ -30,7 +30,7 @@ final class ExportsToEntityTest extends TestCase
     public function testDtoInstanciatesNewEntityFromEntityClassProperty(): void
     {
         $dto = new class extends BaseDto {
-            use ExportsToEntity;
+            use ExportsOutbound;
             public ?string $fooProp = null;
 
             public function __construct()
@@ -93,7 +93,7 @@ final class ExportsToEntityTest extends TestCase
         /** @psalm-suppress ExtensionRequirementViolation (psalm = dumb+blind+crazy! Aaargh!) */
         $dto = new class extends BaseDto implements ProcessesInterface {
             use ProcessesFromAttributes;
-            use ExportsToEntity;
+            use ExportsOutbound;
             // use CanCastBasicValues;
 
             public ?int $id = null;
@@ -133,7 +133,7 @@ final class ExportsToEntityTest extends TestCase
     public function testThrowsExceptionIfEntityClassDoesNotExist(): void
     {
         $dto = new class extends BaseDto {
-            use ExportsToEntity;
+            use ExportsOutbound;
 
             public function __construct()
             {
@@ -151,7 +151,7 @@ final class ExportsToEntityTest extends TestCase
     public function testThrowsExceptionIfEntityClassIsNotSet(): void
     {
         $dto = new class extends BaseDto {
-            use ExportsToEntity;
+            use ExportsOutbound;
         };
 
         $this->expectException(InvalidConfigException::class);
@@ -164,7 +164,7 @@ final class ExportsToEntityTest extends TestCase
     {
         /** @psalm-suppress ExtensionRequirementViolation */
         $dto = new class {
-            use ExportsToEntity;
+            use ExportsOutbound;
         };
 
         $this->expectException(InvalidConfigException::class);
@@ -176,7 +176,7 @@ final class ExportsToEntityTest extends TestCase
     public function testThrowsExceptionIfEntityClassHasNoWayToSetProperty(): void
     {
         $dto = new class extends BaseDto {
-            use ExportsToEntity;
+            use ExportsOutbound;
             /** @psalm-suppress NonInvariantDocblockPropertyType */
             public ?string $fooProp = null;
             public ?string $email = null;
@@ -198,7 +198,7 @@ final class ExportsToEntityTest extends TestCase
     public function testToEntityAllowsOverridingNewEntityInstance(): void
     {
         $dto = new class extends BaseDto {
-            use ExportsToEntity;
+            use ExportsOutbound;
             public ?string $fooProp = null;
 
             public function __construct()

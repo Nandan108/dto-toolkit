@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Nandan108\DtoToolkit\Attribute\ChainModifier;
 
-use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Core\BaseDto;
+use Nandan108\DtoToolkit\Core\ProcessingContext;
 use Nandan108\DtoToolkit\Exception\Process\ProcessingException;
 use Nandan108\DtoToolkit\Internal\ProcessingChain;
 
@@ -60,11 +60,11 @@ class PerItem extends ChainModifierBase
                     }
                     $result = [];
                     foreach ($value as $k => $v) {
-                        CastTo::pushPropPath($k);
+                        ProcessingContext::pushPropPath($k);
                         try {
                             $result[$k] = $subchain($v);
                         } finally {
-                            CastTo::popPropPath();
+                            ProcessingContext::popPropPath();
                         }
                     }
 

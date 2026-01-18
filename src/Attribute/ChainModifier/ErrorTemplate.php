@@ -6,6 +6,7 @@ namespace Nandan108\DtoToolkit\Attribute\ChainModifier;
 
 use Nandan108\DtoToolkit\Contracts\ProcessingNodeProducerInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
+use Nandan108\DtoToolkit\Core\ProcessingContext;
 use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
 use Nandan108\DtoToolkit\Internal\ProcessingChain;
 
@@ -15,16 +16,6 @@ use Nandan108\DtoToolkit\Internal\ProcessingChain;
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 class ErrorTemplate extends ChainModifierBase
 {
-    /**
-     * Stack of active error template overrides.
-     *
-     * This is request-local and assumes synchronous processing.
-     * Not safe for concurrent/fiber-based execution.
-     *
-     * @var list<non-empty-string|array<non-empty-string, non-empty-string>>
-     */
-    private static array $overridesContext = [];
-
     /**
      * Overrides error message templates for the duration of the subchain.
      *
@@ -59,7 +50,7 @@ class ErrorTemplate extends ChainModifierBase
      */
     public static function resolve(string $default): string
     {
-        foreach (self::$overridesContext as $overrides) {
+        foreach (ProcessingContext::current()->errorTemplateOverrides as $overrides) {
             if (\is_array($overrides)) {
                 if (isset($overrides[$default])) {
                     return $overrides[$default];
@@ -92,11 +83,12 @@ class ErrorTemplate extends ChainModifierBase
 
                 // wrap its execution with override context push/pop
                 return function (mixed $value) use ($subchain, $upstreamChain): mixed {
-                    array_unshift(static::$overridesContext, $this->override);
+                    $frame = ProcessingContext::current();
+                    array_unshift($frame->errorTemplateOverrides, $this->override);
                     try {
                         return $subchain($upstreamChain ? $upstreamChain($value) : $value);
                     } finally {
-                        array_shift(static::$overridesContext);
+                        array_shift($frame->errorTemplateOverrides);
                     }
                 };
             },

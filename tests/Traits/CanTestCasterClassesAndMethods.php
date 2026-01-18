@@ -9,7 +9,8 @@ use Nandan108\DtoToolkit\Contracts\BootsOnDtoInterface;
 use Nandan108\DtoToolkit\Contracts\ProcessesInterface;
 use Nandan108\DtoToolkit\Contracts\ProcessingExceptionInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
-use Nandan108\DtoToolkit\Internal\ProcessingNodeBase;
+use Nandan108\DtoToolkit\Core\ProcessingContext;
+use Nandan108\DtoToolkit\Core\ProcessingFrame;
 use Nandan108\DtoToolkit\Traits\ProcessesFromAttributes;
 
 trait CanTestCasterClassesAndMethods
@@ -38,15 +39,15 @@ trait CanTestCasterClassesAndMethods
             $this->fail('Invalid method type: '.gettype($method));
         }
 
-        ProcessingNodeBase::setCurrentPropName('test');
-        ProcessingNodeBase::setCurrentDto($dto);
-
-        if ($caster->instance instanceof BootsOnDtoInterface) {
-            $caster->instance->bootOnDto();
-        }
-
-        // Call the caster closure with the input value and get the result
+        $frame = new ProcessingFrame($dto, $dto->getErrorList(), $dto->getErrorMode());
+        ProcessingContext::pushFrame($frame);
+        ProcessingContext::pushPropPath('test');
         try {
+            if ($caster->instance instanceof BootsOnDtoInterface) {
+                $caster->instance->bootOnDto();
+            }
+
+            // Call the caster closure with the input value and get the result
             $result = $caster($input);
 
             if (is_object($expected)) {
@@ -73,6 +74,9 @@ trait CanTestCasterClassesAndMethods
             } else {
                 throw $e;
             }
+        } finally {
+            ProcessingContext::popPropPath();
+            ProcessingContext::popFrame();
         }
     }
 }

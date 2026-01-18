@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Nandan108\DtoToolkit\Exception\Process;
 
-final class GuardException extends ProcessingException
+class GuardException extends ProcessingException
 {
     public const DOMAIN = 'processing.guard';
     /** @psalm-suppress PossiblyUnusedProperty */
@@ -29,7 +29,7 @@ final class GuardException extends ProcessingException
         string | int | null $errorCode = 'guard.invalid_value',
         array $debug = [],
     ): self {
-        return new static(
+        return new self(
             template_suffix: $template_suffix,
             parameters: [
                 'type'          => get_debug_type($value),

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Nandan108\DtoToolkit\Attribute\ChainModifier;
 
-use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Contracts\ProcessingNodeInterface;
 use Nandan108\DtoToolkit\Contracts\ProcessingNodeProducerInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
+use Nandan108\DtoToolkit\Core\ProcessingContext;
 use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
 use Nandan108\DtoToolkit\Internal\ProcessingChain;
 
@@ -20,11 +20,11 @@ use Nandan108\DtoToolkit\Internal\ProcessingChain;
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 class Collect extends ChainModifierBase
 {
-    /** @var array<string> */
+    /** @var array<non-empty-string> */
     private array $keys;
 
     /**
-     * @param array<string>|int $countOrKeys
+     * @param array<non-empty-string>|int $countOrKeys
      */
     public function __construct(
         public array | int $countOrKeys,
@@ -76,13 +76,13 @@ class Collect extends ChainModifierBase
                     $result = [];
 
                     foreach ($closures as $i => $closure) {
-                        CastTo::pushPropPath($this->keys[$i]);
+                        ProcessingContext::pushPropPath($this->keys[$i]);
 
                         try {
                             /** @psalm-var mixed */
                             $result[$this->keys[$i]] = $closure($value);
                         } finally {
-                            CastTo::popPropPath();
+                            ProcessingContext::popPropPath();
                         }
                     }
 

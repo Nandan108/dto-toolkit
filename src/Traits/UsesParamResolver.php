@@ -7,9 +7,10 @@ namespace Nandan108\DtoToolkit\Traits;
 use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Contracts\HasContextInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
+use Nandan108\DtoToolkit\Core\ProcessingContext;
 use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
 use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
-use Nandan108\DtoToolkit\Internal\ProcessingNodeBase;
+use Nandan108\DtoToolkit\Exception\Context\ContextException;
 
 /**
  * This trait provides a way to resolve caster parameters for DTOs.
@@ -27,7 +28,7 @@ trait UsesParamResolver
     {
         // Can't use this trait without being a CastTo
         // $this instanceof CastTo or throw new InvalidConfigException('Caster must implement CastTo to use UsesLocaleResolver');
-        $dto = ProcessingNodeBase::getCurrentDto();
+        $dto = ProcessingContext::dto();
 
         if (!isset(static::$paramProvidersMap) || !isset(static::$paramProvidersMap[$dto])) {
             throw new InvalidConfigException('configureParamResolver() must be called before resolveParamProvider()');
@@ -206,7 +207,7 @@ trait UsesParamResolver
 
     protected function configureParamResolver(string $paramName, mixed $valueOrProvider, ?\Closure $checkValid = null, ?\Closure $hydrate = null, ?\Closure $fallback = null): void
     {
-        $dto = ProcessingNodeBase::getCurrentDto();
+        $dto = ProcessingContext::dto();
 
         // Can't use ??= here, because psalm complains about type coersion
         if (null === static::$paramProvidersMap) {
@@ -240,16 +241,33 @@ trait UsesParamResolver
         // if no $paramValueOrProviderClass is passed, check for a constructorArg with the same name as the parameter to resolve
         $paramValueOrProviderClass ??= $this->constructorArgs[$paramName] ?? null;
 
-        $dto = ProcessingNodeBase::getCurrentDto();
+        $dto = ProcessingContext::dto();
 
         /** @var CastTo|UsesParamResolver $this */
         $provider = $this->resolveParamProvider($config, $paramValueOrProviderClass, $dto);
 
-        $paramValue = $provider($value, ProcessingNodeBase::getCurrentPropName(), $dto);
+        $paramValue = $provider($value, $this->getCurrentPropName(), $dto);
 
         $hydrate = $config->hydrate;
 
         return $hydrate ? $hydrate($paramValue) : $paramValue;
+    }
+
+    /**
+     * Returns the current property name from the ProcessingContext.
+     *
+     * @return non-empty-string
+     *
+     * @throws ContextException
+     */
+    private function getCurrentPropName(): string
+    {
+        $segment = ProcessingContext::current()->propPathSegments[0] ?? null;
+        if (null === $segment) {
+            throw new ContextException('Out-of-context call: ProcessingContext prop path is not set.');
+        }
+
+        return (string) $segment;
     }
 }
 
