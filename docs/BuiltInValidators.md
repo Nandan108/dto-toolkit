@@ -83,6 +83,23 @@ public string $role;
 
 ---
 
+### Assert\DtoHasNoErrors
+
+**Arguments:** *none*
+
+Validates that a nested DTO has no collected processing errors.
+Throws `InnerDtoErrorsException` when the nested DTO has errors.
+
+**Example:**
+
+```php
+#[CastTo\Dto(ProfileDto::class)]
+#[Assert\DtoHasNoErrors]
+public ProfileDto | array | null $profile = null;
+```
+
+---
+
 ### Assert\Equals
 
 **Arguments:** `mixed $value, bool $strict = true`

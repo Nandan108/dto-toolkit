@@ -38,7 +38,7 @@ final class Length extends ValidatorBase
             default  => throw GuardException::expected(
                 methodOrClass: self::class,
                 operand: $value,
-                expected: 'string_or_array',
+                expected: 'string|array',
             ),
         };
 

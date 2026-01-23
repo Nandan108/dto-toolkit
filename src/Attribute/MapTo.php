@@ -11,8 +11,8 @@ use Nandan108\DtoToolkit\Traits\HasPhase;
 use Nandan108\PropAccess\PropAccess;
 
 /**
- * This attribute is used to specify the scoping groups for a property.
- * If it is positioned after a #[Outbound] attribute, the groups will be set for the outbound phase.
+ * Use `MapTo` to rename or discard properties during outbound transformation (DTO → array or entity),
+ * or to specify a custom setter method to use when hydrating an entity.
  *
  * @psalm-api
  */
@@ -105,13 +105,12 @@ class MapTo implements PhaseAwareInterface
         // and collecting mapped or non-mapped names where a setter name is not provided
         foreach ($propNames as $propName) {
             if ($mapper = $mappers[$propName] ?? null) {
-                if ($mapper->customSetter > '') {
-                    $setterName = $mapper->customSetter;
-                    // If the mapper has a setter name, we use it
+                if (($customSetter = $mapper->customSetter) > '') {
+                    // If the mapper has a custom setter, we use it
                     // ⚠️ it might throw an error if the setter method doesn't exist
-                    $setters[$propName] = static function (object $entity, mixed $value) use ($setterName): void {
+                    $setters[$propName] = static function (object $entity, mixed $value) use ($customSetter): void {
                         /** @psalm-suppress MixedMethodCall */
-                        $entity->$setterName($value);
+                        $entity->$customSetter($value);
                     };
                 } elseif (null !== $mapper->outboundName) {
                     $propsWithoutCustomSetter[$propName] = $mapper->outboundName;
@@ -122,7 +121,11 @@ class MapTo implements PhaseAwareInterface
         }
 
         // use the collection of mapped and non-mapped property names to get matching setters
-        $standardSetters = PropAccess::getSetterMapOrThrow($targetEntity, $propsWithoutCustomSetter, ignoreInaccessibleProps: false);
+        $standardSetters = PropAccess::getSetterMapOrThrow(
+            $targetEntity,
+            $propsWithoutCustomSetter,
+            ignoreInaccessibleProps: false,
+        );
 
         // values of $propsWithoutCustomSetter may be mapped property names,
         // when merging with custom setters we must use the original property names

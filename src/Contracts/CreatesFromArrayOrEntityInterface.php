@@ -23,7 +23,7 @@ interface CreatesFromArrayOrEntityInterface
         bool $clear = true,
     ): static;
 
-    /** @psalm-suppress PossiblyUnusedMethod */
+    /** @psalm-suppress PossiblyUnusedMethod, PossiblyUnusedReturnValue */
     public function loadArrayLoose(
         array $input,
         ?ProcessingErrorList $errorList = null,

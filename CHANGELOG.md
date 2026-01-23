@@ -4,6 +4,71 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [0.11.0] - 2026-01-23
+
+### Added
+
+#### Unified processing context
+
+* Introduced a processing-context stack (`ProcessingContext`, `ProcessingFrame`, `ContextStorageInterface`, `GlobalContextStorage`) providing consistent context, group scope, property paths, and error-template handling across nested and recursive processing.
+* DTO processing now executes within an explicit execution context rather than relying on static state.
+* Processing context storage is decoupled behind ContextStorageInterface, allowing adapters to provide execution-local storage (e.g. for fibers or other concurrent runtimes).
+
+#### Nested DTO processing
+
+* Recursive processing support for both inbound and outbound flows, allowing nested DTO structures to be processed in the same direction as the initiating operation.
+* Context (including groups and custom context values) is forwarded across nested DTO processing.
+* `CastTo\Dto` for declarative nested DTO construction from arrays or objects.
+
+#### Outbound projection and export
+
+* Introduced a unified internal exporter (`Internal\Exporter`) that centralizes array and entity projection logic, shared by imperative helpers and declarative casters, with consistent recursion and entity-resolution semantics.
+* `CastTo\Entity` for declarative entity construction from DTO or array values, with optional recursion.
+* `CastTo\ToArray` for declarative projection of objects or DTOs to arrays, with optional recursion.
+* `#[DefaultOutboundEntity]` attribute to declare default outbound entity targets (optionally scoped by groups).
+* `ExportsOutbound` trait providing `exportToEntity()` and `exportToArray()` helpers.
+* `PreparesEntityInterface` for custom entity instantiation logic.
+* `CreatesFromArrayOrEntityInterface` to standardize DTO creation from arrays or entities.
+
+#### Error handling for nested DTOs
+
+* `Assert\DtoHasNoErrors` to guard nested DTOs with accumulated processing errors.
+* `InnerDtoErrorsException` to surface nested DTO error lists explicitly.
+* `ProcessingErrorList::clear()` for explicit error-list lifecycle control.
+
+---
+
+### Changed
+
+* Trait `ExportsToEntity` renamed to `ExportsOutbound`.
+
+  * `toEntity()` replaced by `exportToEntity()`
+  * `exportToArray()` added
+* DTO processing internals now rely on `ProcessingContext` for current DTO resolution, property paths, context, and error-template overrides.
+* `BaseDto::clear()` now clears processing errors by default (`$clearErrors = true`).
+* `BaseDto::getErrorList()` no longer accepts a replacement list; use `setErrorList()` instead.
+
+---
+
+### Fixed
+
+* Property-path tracking and error-template overrides are now scoped per processing frame instead of using global static state.
+* Nested processing correctly preserves context in validators and casters that depend on the current DTO or property path.
+* Export-to-entity now throws a configuration error when an explicit entity class does not exist.
+* `FullDto` now implements `CreatesFromArrayOrEntityInterface`.
+
+---
+
+### Breaking
+
+* Trait `ExportsToEntity` renamed to `ExportsOutbound`.
+  * `ExportsOutbound::toEntity()` renamed to `exportToEntity()`
+  * `ExportsOutbound::exportToEntity()` now uses `$extraProps` instead of `$context`
+* `CreatesFromArrayInterface` removed in favor of `CreatesFromArrayOrEntityInterface`.
+* Custom processing nodes must migrate from `ProcessingNodeBase` statics to `ProcessingContext` APIs.
+* `BaseDto::getErrorList()` signature changed; callers must use `setErrorList()`.
+
+
 ## [0.10.0] - 2026-01-15
 
 ### Added

@@ -3,10 +3,6 @@
 ## Product Backlog Items
 
 ### TODO before v.1.0
-- **[028]** Add nested DTO support
-  - `CastTo\Dto($dtoClassName)` (from array or object)
-  - `CastTo\Entity($cassName)` (from dto to entity)
-  - support recursive normalization and validation
 - **[064]** Add framework-specific ValidationException mappers in adapters
   - Add a "ProcessingErrorMapperInterface" for adapter overrides
   - Core DTOT will throw a generic ValidationException on validation failure
@@ -105,6 +101,7 @@
 - [075] Port a majority of basic Symfony validation constraints (`#[Assert\...]`) to DTOT Core
 - [077] Add `#[Assert\CompareTo($op, $scalar)]`, `#[Assert\CompareToExtract($op, $rightPath, $leftPath = null)]`
 - [084] Add `#[CastTo\Age("seconds"|"days"|"years" $in = years, IsoDateTimeString $relativeTo = null): float]`
+- [028] Add nested DTO support, `CastTo\Dto($dtoClassName)`, `CastTo\Entity($cassName)`, support recursive normalization and validation
 
 ---
 

@@ -33,7 +33,7 @@ protected function preOutput(array|object $outputData): array|object
 Called just before returning from:
 
 - `toArray()`
-- `toEntity()`
+- `exportToEntity()`
 - `toModel()` (via adapter)
 
 ### ✅ Use Cases

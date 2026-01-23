@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Nandan108\DtoToolkit\Traits;
 
+use Nandan108\DtoToolkit\Core\ProcessingContext;
+
 /**
  * @method static static newWithContext(array $values)
  */
@@ -61,6 +63,8 @@ trait HasContext
     #[\Override]
     public function getContext(): array
     {
-        return $this->_context;
+        $activeFrame = ProcessingContext::tryCurrent();
+
+        return $activeFrame?->context ?? $this->_context;
     }
 }

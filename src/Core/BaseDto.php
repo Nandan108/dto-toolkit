@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Nandan108\DtoToolkit\Core;
 
+use Nandan108\DtoToolkit\Attribute\DefaultOutboundEntity;
 use Nandan108\DtoToolkit\Attribute\Inject;
 use Nandan108\DtoToolkit\Attribute\MapTo;
 use Nandan108\DtoToolkit\Attribute\Outbound;
 use Nandan108\DtoToolkit\Attribute\Presence;
 use Nandan108\DtoToolkit\Attribute\WithDefaultGroups;
 use Nandan108\DtoToolkit\Contracts\Bootable;
+use Nandan108\DtoToolkit\Contracts\HasGroupsInterface;
 use Nandan108\DtoToolkit\Contracts\Injectable;
 use Nandan108\DtoToolkit\Contracts\PhaseAwareInterface;
 use Nandan108\DtoToolkit\Contracts\ProcessesInterface;
@@ -23,12 +25,14 @@ use Nandan108\DtoToolkit\Support\ContainerBridge;
 /**
  * @method static static newWithErrorMode(ErrorMode $mode)
  *
+ * @psalm-type EntityClassGroupMap = array<list<string>>
  * @psalm-type DtoPropMetaCache = array{
- *     classRef?: \ReflectionClass<static>,
- *     propRef: array<string, \ReflectionProperty>,
  *     defaultValue: array<string, mixed>,
+ *     propRef: array<string, \ReflectionProperty>,
+ *     defaultOutboundEntityClasses: EntityClassGroupMap|null, // map of entity class to scoping groups
+ *     presencePolicy:  array<string, PresencePolicy>,
+ *     classRef?: \ReflectionClass<static>,
  *     phase?: array<string, array<string, PhaseAwareInterface|list<PhaseAwareInterface>>>,
- *     presencePolicy:  array<string, PresencePolicy>
  * }
  */
 abstract class BaseDto
@@ -100,7 +104,11 @@ abstract class BaseDto
      */
     private static function initPropMeta(string $class): void
     {
-        self::$_propertyMetadataCache[$class] ??= ['defaultValue' => [], 'propRef' => []];
+        self::$_propertyMetadataCache[$class] ??= [
+            'defaultValue'                 => [],
+            'propRef'                      => [],
+            'defaultOutboundEntityClasses' => null,
+        ];
         $refClass = static::getClassRef();
 
         foreach ($refClass->getProperties(\ReflectionProperty::IS_PUBLIC) as $prop) {
@@ -557,5 +565,49 @@ abstract class BaseDto
         }
 
         return $methodRef;
+    }
+
+    /**
+     * Get the default outbound entity class for this DTO, based on the DefaultOutboundEntity attributes.
+     *
+     * @return ?class-string
+     *
+     * @throws InvalidConfigException
+     */
+    public function getDefaultOutboundEntityClass(): ?string
+    {
+        /** @psalm-suppress UnsupportedPropertyReferenceUsage */
+        $meta = &self::$_propertyMetadataCache[static::class]['defaultOutboundEntityClasses'];
+        $meta ??= [];
+
+        // initialize defaultOutboundEntityClasses cache if not done yet
+        if (!\array_key_exists('defaultOutboundEntityClasses', $meta)) {
+            // initialize values from DefaultOutboundEntity attribute
+            $refClass = static::getClassRef();
+            $attrs = $refClass->getAttributes(DefaultOutboundEntity::class);
+            $implementsGroups = $this instanceof HasGroupsInterface;
+            foreach ($attrs as $attrRef) {
+                $attrInstance = $attrRef->newInstance();
+                if ($attrInstance->groups && !$implementsGroups) {
+                    throw new InvalidConfigException('The DefaultOutboundEntity attribute on DTO '.static::class.' declares scoping groups, but the DTO does not implement HasGroupsInterface.');
+                }
+                // throw if entity class does not exist
+                if (!class_exists($attrInstance->entityClass)) {
+                    throw new InvalidConfigException("Entity class '$attrInstance->entityClass' does not exist");
+                }
+                $meta[$attrInstance->entityClass] = (array) $attrInstance->groups;
+            }
+        }
+
+        // filter by scoping groups if any -- Phase: OutboundExport
+        foreach ($meta as $entityClass => $groups) {
+            if (empty($groups)
+                || ($this instanceof HasGroupsInterface
+                    && $this->groupsAreInScope(Phase::OutboundExport, $groups))) {
+                return $entityClass;
+            }
+        }
+
+        return null;
     }
 }

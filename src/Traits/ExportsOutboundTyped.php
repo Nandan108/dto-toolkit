@@ -12,16 +12,28 @@ use Nandan108\DtoToolkit\Internal\Exporter;
 
 /**
  * @psalm-require-extends BaseDto
+ *
+ * @template TEntity
  **/
-trait ExportsOutbound
+trait ExportsOutboundTyped
 {
     /**
      * Convert the DTO to an entity.
+     *
+     * This trait has a template parameter TEntity which represents the type of the entity being exported to.
+     *
+     * If you use psalm, place a docblock above `use ExportsOutbound`: /** @use ExportsOutbound\<YourEntityClass\> *\/
      *
      * @param object|class-string|null $entity     The entity to fill. If null, a new instance will be created.
      * @param array                    $extraProps Additional data to set on the entity. This can be used to set
      *                                             relations or other properties that are not part of the DTO.
      * @param bool                     $recursive  whether to recursively convert nested DTOs to entities
+     *
+     * @psalm-suppress InvalidReturnType
+     *
+     * @return TEntity
+     *
+     * Will auto-fill the entity's public properties with the DTO's public properties
      *
      * @throws InvalidConfigException
      */
@@ -32,29 +44,12 @@ trait ExportsOutbound
         ?ErrorMode $errorMode = null,
         bool $recursive = false,
     ): object {
-        /** @var object */
         return Exporter::export(
             source: $this,
             as: 'entity',
             entity: $entity,
             errorList: $errorList,
             extraProps: $extraProps,
-            errorMode: $errorMode,
-            recursive: $recursive,
-        );
-    }
-
-    public function exportToArray(
-        ?ProcessingErrorList $errorList = null,
-        ?ErrorMode $errorMode = null,
-        bool $recursive = false,
-    ): array {
-        /** @var array */
-        return Exporter::export(
-            source: $this,
-            as: 'array',
-            entity: null,
-            errorList: $errorList,
             errorMode: $errorMode,
             recursive: $recursive,
         );

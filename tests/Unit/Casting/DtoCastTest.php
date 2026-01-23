@@ -18,11 +18,13 @@ use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
 use Nandan108\DtoToolkit\Exception\Process\GuardException;
 use Nandan108\DtoToolkit\Exception\Process\InnerDtoErrorsException;
 use Nandan108\DtoToolkit\Exception\Process\TransformException;
+use Nandan108\DtoToolkit\Internal\Exporter;
 use Nandan108\PropAccess\PropAccess;
 use PHPUnit\Framework\TestCase;
 
 final class DtoCastTest extends TestCase
 {
+    /** @psalm-suppress PossiblyUnusedMethod */
     public function testConstructorRejectsMissingClass(): void
     {
         $this->expectException(InvalidConfigException::class);
@@ -31,6 +33,7 @@ final class DtoCastTest extends TestCase
         new CastTo\Dto('MissingDto');
     }
 
+    /** @psalm-suppress PossiblyUnusedMethod */
     public function testConstructorRejectsNonCreatesFromArray(): void
     {
         $this->expectException(InvalidConfigException::class);
@@ -40,6 +43,7 @@ final class DtoCastTest extends TestCase
         new CastTo\Dto(NonCreatesFromArrayDto::class);
     }
 
+    /** @psalm-suppress PossiblyUnusedMethod */
     public function testConstructorRejectsNonBaseDto(): void
     {
         $this->expectException(InvalidConfigException::class);
@@ -49,6 +53,7 @@ final class DtoCastTest extends TestCase
         new CastTo\Dto(NonBaseDto::class);
     }
 
+    /** @psalm-suppress PossiblyUnusedMethod */
     public function testCastRejectsNonArrayObjectInput(): void
     {
         $dto = new class extends BaseDto {
@@ -66,6 +71,7 @@ final class DtoCastTest extends TestCase
         }
     }
 
+    /** @psalm-suppress PossiblyUnusedMethod */
     public function testCastReturnsDtoFromArrayAndObject(): void
     {
         PropAccess::bootDefaultResolvers();
@@ -92,6 +98,7 @@ final class DtoCastTest extends TestCase
         }
     }
 
+    /** @psalm-suppress PossiblyUnusedMethod */
     public function testDtoHasNoErrorsAcceptsCleanDto(): void
     {
         $validator = new DtoHasNoErrors();
@@ -102,6 +109,7 @@ final class DtoCastTest extends TestCase
         $this->assertTrue($dto->getErrorList()->isEmpty());
     }
 
+    /** @psalm-suppress PossiblyUnusedMethod */
     public function testDtoHasNoErrorsRejectsNonDto(): void
     {
         $validator = new DtoHasNoErrors();
@@ -119,7 +127,7 @@ final class DtoCastTest extends TestCase
         }
     }
 
-    public function getStandardInput(): array
+    public static function getStandardInput(): array
     {
         return [
             'id'             => 123,
@@ -143,9 +151,10 @@ final class DtoCastTest extends TestCase
         ];
     }
 
+    /** @psalm-suppress PossiblyUnusedMethod */
     public function testNestedDtoCastingWithGuardPassesOnValidInput(): void
     {
-        $input = $this->getStandardInput();
+        $input = self::getStandardInput();
 
         $dto = UserDto::newFromArray($input);
 
@@ -157,11 +166,33 @@ final class DtoCastTest extends TestCase
         $this->assertSame([1, 2, 3], $dto->public_profile->interests->categories);
         $this->assertSame('US', $dto->address->ctry_code);
         $this->assertTrue($dto->public_profile->getErrorList()->isEmpty());
+
+        $arrayExport = $dto->exportToArray(recursive: true);
+        // Array export should have same values as the original input,
+        // except where casting/transformations were applied (dates and comma-split lists in this case).
+        $this->assertSame(
+            expected: $input['public_profile']['interests']['categories'],
+            actual: implode(',', $arrayExport['public_profile']['interests']['categories']),
+        );
+
+        $partialArrayExport = $dto->exportToArray(recursive: false);
+
+        // test Exporter directly: from array (recursively converting DTOs) to array
+        /** @var array<array-key, mixed> */
+        $arrayExport = Exporter::export(source: $partialArrayExport, as: 'array', recursive: true);
+        // Array export should have same values as the original input,
+        // except where casting/transformations were applied (dates and comma-split lists in this case).
+        $this->assertSame(
+            expected: $input['public_profile']['interests']['categories'],
+            actual: implode(',', $arrayExport['public_profile']['interests']['categories']),
+        );
+
     }
 
+    /** @psalm-suppress PossiblyUnusedMethod */
     public function testNestedDtoCastingWithGuardThrowsOnInnerErrors(): void
     {
-        $input = $this->getStandardInput();
+        $input = self::getStandardInput();
         $input['public_profile']['birthdate'] = 'not-a-date';
 
         try {
@@ -178,9 +209,10 @@ final class DtoCastTest extends TestCase
         }
     }
 
+    /** @psalm-suppress PossiblyUnusedMethod */
     public function testNestedDtoCastingWithoutGuardKeepsInnerErrors(): void
     {
-        $input = $this->getStandardInput();
+        $input = self::getStandardInput();
         $input['public_profile']['birthdate'] = 'not-a-date';
 
         $dto = UserDtoNoGuard::newFromArray($input);
@@ -215,13 +247,13 @@ final class NonBaseDto implements CreatesFromArrayOrEntityInterface
     }
 }
 
-final class SimpleDto extends FullDto implements CreatesFromArrayOrEntityInterface
+final class SimpleDto extends FullDto
 {
     public string $name = '';
 }
 
 /** @psalm-suppress PossiblyUnusedProperty */
-final class InterestsDto extends FullDto implements CreatesFromArrayOrEntityInterface
+final class InterestsDto extends FullDto
 {
     #[CastTo\Split]
     #[Mod\PerItem, CastTo\Integer]
@@ -233,7 +265,7 @@ final class InterestsDto extends FullDto implements CreatesFromArrayOrEntityInte
 }
 
 /** @psalm-suppress PossiblyUnusedProperty */
-final class PublicProfileDto extends FullDto implements CreatesFromArrayOrEntityInterface
+final class PublicProfileDto extends FullDto
 {
     protected static ErrorMode $defaultErrorMode = ErrorMode::CollectFailToNull;
 
@@ -249,7 +281,7 @@ final class PublicProfileDto extends FullDto implements CreatesFromArrayOrEntity
 }
 
 /** @psalm-suppress PossiblyUnusedProperty */
-final class AddressDto extends FullDto implements CreatesFromArrayOrEntityInterface
+final class AddressDto extends FullDto
 {
     public string $street = '';
     public string $locality = '';
@@ -259,7 +291,7 @@ final class AddressDto extends FullDto implements CreatesFromArrayOrEntityInterf
 }
 
 /** @psalm-suppress PossiblyUnusedProperty */
-final class UserDto extends FullDto implements CreatesFromArrayOrEntityInterface
+final class UserDto extends FullDto
 {
     public int $id = 0;
     public string $username = '';
@@ -271,7 +303,7 @@ final class UserDto extends FullDto implements CreatesFromArrayOrEntityInterface
     public AddressDto | array | null $address = null;
 }
 
-final class UserDtoNoGuard extends FullDto implements CreatesFromArrayOrEntityInterface
+final class UserDtoNoGuard extends FullDto
 {
     /** @psalm-suppress PossiblyUnusedProperty */
     public int $id = 0;
