@@ -7,6 +7,7 @@ namespace Nandan108\DtoToolkit\Traits;
 use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Core\ProcessingContext;
 use Nandan108\DtoToolkit\Core\ProcessingErrorList;
+use Nandan108\DtoToolkit\Core\ProcessingFrame;
 use Nandan108\DtoToolkit\Enum\ErrorMode;
 use Nandan108\DtoToolkit\Exception\Process\ProcessingException;
 
@@ -19,7 +20,7 @@ trait ProcessesFromAttributes // implements ProcessesInterface
     {
         $errorList and $this->setErrorList($errorList);
 
-        ProcessingContext::wrapProcessing($this, $errorMode, function ($frame): void {
+        $callback = function (ProcessingFrame $frame): void {
             $processorMap = CastTo::getProcessingNodeClosureMap(dto: $this, outbound: false);
             foreach ($processorMap as $prop => $process) {
                 if ($this->_filled[$prop] ?? false) {
@@ -50,7 +51,9 @@ trait ProcessesFromAttributes // implements ProcessesInterface
                     }
                 }
             }
-        });
+        };
+
+        ProcessingContext::wrapProcessing($this, $callback, $errorMode);
     }
 
     // will be used if using class implements NormalizesOutboundInterface
@@ -62,7 +65,7 @@ trait ProcessesFromAttributes // implements ProcessesInterface
     ): array {
         $errorList and $this->setErrorList($errorList);
 
-        return ProcessingContext::wrapProcessing($this, $errorMode, function ($frame) use ($props): array {
+        $callback = function (ProcessingFrame $frame) use ($props): array {
             $processorMap = CastTo::getProcessingNodeClosureMap(dto: $this, outbound: true);
             $normalized = [];
             foreach ($props as $prop => $value) {
@@ -96,7 +99,8 @@ trait ProcessesFromAttributes // implements ProcessesInterface
             }
 
             return $normalized;
-        });
+        };
 
+        return ProcessingContext::wrapProcessing($this, $callback, $errorMode);
     }
 }

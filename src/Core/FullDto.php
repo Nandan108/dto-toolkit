@@ -15,7 +15,8 @@ class FullDto extends BaseDto implements // -- --- IGNORE ---
     Contracts\ScopedPropertyAccessInterface, // for phase-scoping properties
     Contracts\HasContextInterface, // for holding context
     Contracts\HasGroupsInterface, // for group scoping
-    Contracts\Injectable // for injecting dependencies marked with #[Inject]
+    Contracts\Injectable, // for injecting dependencies marked with #[Inject]
+    Contracts\CreatesFromArrayOrEntityInterface // for creating DTOs from arrays
 {
     // use Traits\HasContext; // for holding context
     use Traits\UsesGroups; // for phase-scoping properties and casters

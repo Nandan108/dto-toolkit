@@ -104,7 +104,7 @@ public Address $address;
 * `MapFrom` and `MapTo` may be used independently or together
 * `MapFrom` runs **before** any casting or normalization
 * `MapTo(null)` discards the property completely (e.g. internal use only)
-* The `setterName` parameter is only used when hydrating entities with `$dto->toEntity()`. In the rare cases where your property setter doesn't use the standard `"set".$propName` method name, you can specify the exact setter method name this way. It is ignored when exporting content with `$dto->toOutboundArray()`.
+* The `setterName` parameter is only used when hydrating entities with `$dto->exportToEntity()`. In the rare cases where your property setter doesn't use the standard `"set".$propName` method name, you can specify the exact setter method name this way. It is ignored when exporting content with `$dto->toOutboundArray()`.
 
 ---
 
@@ -129,6 +129,69 @@ class AddressDto extends FullDto
 ```
 
 This mapping system provides powerful, precise control over how data flows into and out of your DTOs — with clear, declarative syntax.
+
+---
+
+### 🧭 `#[DefaultOutboundEntity($entityClass, $groups = [])]`
+
+Sets the default entity class used by `exportToEntity()` when no explicit target is provided.
+If `groups` are supplied, the DTO must implement `HasGroupsInterface` and the entity will only
+be selected when the groups are in scope for the outbound export phase.
+
+```php
+#[DefaultOutboundEntity(UserEntity::class)]
+final class UserDto extends FullDto
+{
+    public int $id = 0;
+}
+```
+
+---
+
+### InstantiatesEntityInterface<a id='InstantiatesEntityInterface'></a>
+
+For advanced or conditional export scenarios, DTOs may implement `InstantiatesEntityInterface`
+to take full control over entity instantiation during outbound export.
+
+This interface is consulted **last in the resolution order** when exporting to an entity if:
+1. no explicit entity class name or pre-build object is provided
+2. no `#[DefaultOutboundEntity]` matches the active scope
+
+```php
+interface InstantiatesEntityInterface
+{
+    /**
+     * @param array<string, mixed> $propsToSet
+     * @return array{0: object, 1: bool}
+     */
+    public function newEntityInstance(array $propsToSet): array;
+}
+```
+
+The method must return:
+
+* the instantiated entity
+* a boolean indicating whether properties are already hydrated
+
+#### Scope-aware instantiation
+
+Because this method is executed within an active processing context,
+it may inspect the current scope or context to adapt behavior:
+
+```php
+if ($this->groupsAreInScope(Phase::OutboundExport, ['api'])) {
+    return [new ApiUserEntity(), false];
+}
+
+return [new DomainUserEntity(), false];
+```
+
+This allows:
+
+* conditional entity selection
+* constructor-based hydration
+* framework- or adapter-specific instantiation
+* clean separation between declarative mapping and imperative construction logic
 
 ---
 

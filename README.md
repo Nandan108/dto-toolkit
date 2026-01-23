@@ -7,7 +7,7 @@
 
 ✅ Requires PHP 8.1–8.5
 
-DTO Toolkit Core is a lightweight, framework-agnostic library for defining, transforming, and (soon) validating **Data Transfer Objects** (DTOs) in PHP.
+DTO Toolkit Core is a lightweight, framework-agnostic library for defining and **processing** Data Transfer Objects (DTOs) in PHP, with first-class support for nested structures, declarative validations and transformations, and context-aware execution.
 
 It offers a clean, declarative API powered by attributes — handling normalization, casting, and output shaping — all without coupling to any specific framework.
 
@@ -20,6 +20,7 @@ Casters, modifiers, and validators are composed into a fully declarative transfo
 - 🏷️ Attribute-based processing system with flexible resolution
 - 🎯 Optional validation and normalization layers
 - 🔄 Easily transform between DTOs and entities/models
+- 🧬 First-class support for nested DTO processing (inbound and outbound), with consistent context propagation
 - 🧩 Designed to work with pluggable [framework adapters](#adapter-packages) (Laravel, Symfony, etc.)
 
 
@@ -34,17 +35,22 @@ composer require nandan108/dto-toolkit
 ```php
 use Nandan108\DtoToolkit\Core\{FullDto, CastTo};
 
-// FullDto includes all standard traits (CreatesFromArray, NormalizesFromAttributes, ExportsToEntity)
+// FullDto includes all standard traits (CreatesFromArrayOrEntity, ProcessesFromAttributes, ExportsOutbound)
 class MyDto extends FullDto {
     #[CastTo\Trimmed()]
+    public ?string $name = null;
+}
+
+final class MyEntity
+{
     public ?string $name = null;
 }
 
 // Build DTO from array
 $dto = MyDto::newFromArray(['name' => '  Alice  ']);
 
-// Transform into an entity
-$entity = $dto->toEntity();
+// Transform into an entity (optionally recursive)
+$entity = $dto->exportToEntity(MyEntity::class, recursive: true);
 ```
 
 Use a framework adapter (e.g. Symfony or Laravel) to unlock request/response integration and validation support.
@@ -81,8 +87,9 @@ These provide a convenient, framework-free entry point with all standard functio
 
 ## 🏃 Runtime & Concurrency
 
-- Multi-threaded runtimes (`pthreads`/`parallel`) are not supported by the core and are not planned.
-- Event-loop/fiber-based long-lived workers (Swoole, RoadRunner, ReactPHP, etc.) are not officially supported today but may be considered in the future; expect request-local state to be process-local for now.
+- Multi-threaded runtimes (`pthreads` / `parallel`) are not supported by the core and are not planned to be.
+- DTO Toolkit no longer relies on global static state for execution context. Context storage is abstracted behind `ContextStorageInterface`, allowing adapters to provide execution-local storage (e.g. for fibers or other concurrent runtimes).
+- While fiber- or event-loop–based runtimes (Swoole, RoadRunner, ReactPHP, etc.) are not officially supported yet, the core execution model is designed to make such support possible in adapters.
 
 ---
 
@@ -94,7 +101,7 @@ These provide a convenient, framework-free entry point with all standard functio
 Adapters will provide support for:
 - Framework-compatible error handling and translations, for both validators and casters
 - `fromRequest()` for DTO hydration from HTTP requests
-- `toEntity()` or `toModel()` adapter-specific hydration
+- `exportToEntity()` or `toModel()` adapter-specific hydration
 - `toResponse()` generation
 - DI for class-based casters resolution
 - Graceful handling of validation and casting exceptions in HTTP contexts, with standardized API error responses

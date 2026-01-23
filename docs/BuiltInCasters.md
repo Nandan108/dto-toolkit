@@ -123,6 +123,77 @@ Throws a `CastingException` if the input is not a `DateTimeInterface`.
 
 ---
 
+### CastTo\Dto
+
+**Arguments:**
+- `class-string<BaseDto&CreatesFromArrayOrEntityInterface> $dtoClass`
+
+Converts an array or object into a nested DTO instance using `newFromArray()` / `newFromEntity()`.
+Throws a `TransformException` if the input is not an array or object.
+
+**Example:**
+
+```php
+#[CastTo\Dto(AddressDto::class)]
+public AddressDto | array | null $address = null;
+```
+
+---
+
+### CastTo\Entity
+
+**Arguments:**
+- `?class-string $entityClass = null`
+- `bool $recursive = false`
+
+Exports a DTO or array into an entity instance.
+
+- When the source is a DTO, outbound processing is applied before export.
+- When the source is an array, values are used as-is.
+
+If `$entityClass` is omitted, the target entity is resolved in this order:
+1. A `#[DefaultOutboundEntity]` attribute on the DTO (matching the current scope)
+2. [InstantiatesEntityInterface](Attributes.md#InstantiatesEntityInterface) implemented by the DTO (`newEntityInstance()` method)
+3. Otherwise, an `InvalidConfigException` is thrown
+
+When `$recursive` is true, nested DTOs encountered during export are also converted to entities using the same execution context. This means that all nested DTOs must be exportable; otherwise a configuration error is raised. For partial exports, use explicit casting on individual properties.
+
+
+**Example:**
+
+```php
+#[CastTo\Entity(UserEntity::class, recursive: true)]
+public UserEntity | array | null $user = null;
+```
+
+---
+
+### CastTo\AsArray
+
+**Arguments:**
+- `array $extraProps = []`
+- `bool $recursive = false`
+
+Exports a DTO or other object into an array.
+
+- When the source is a DTO, outbound processing is applied before export.
+- When the source is a plain object, public properties/accessors are read directly.
+
+Extra props are merged into the output.
+
+When `$recursive` is true, nested DTOs encountered during export are converted to arrays using the same execution context.
+
+This caster is useful when fine-grained, property-level control is needed, as an alternative to calling `exportToArray(recursive: true)` imperatively.
+
+**Example:**
+
+```php
+#[CastTo\AsArray(['role' => 'admin'], recursive: true)]
+public array $user_export = [];
+
+
+---
+
 ### CastTo\Age
 
 **Arguments:**

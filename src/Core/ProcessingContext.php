@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nandan108\DtoToolkit\Core;
 
 use Nandan108\DtoToolkit\Contracts\ContextStorageInterface;
+use Nandan108\DtoToolkit\Contracts\HasContextInterface;
 use Nandan108\DtoToolkit\Enum\ErrorMode;
 use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
 
@@ -23,11 +24,9 @@ final class ProcessingContext
     /**
      * Push a processing frame onto the context stack.
      */
-    public static function pushFrame(ProcessingFrame $frame): ProcessingFrame
+    public static function pushFrame(ProcessingFrame $frame): void
     {
         self::storage()->pushFrame($frame);
-
-        return $frame;
     }
 
     /**
@@ -36,18 +35,6 @@ final class ProcessingContext
     public static function popFrame(): void
     {
         self::storage()->popFrame();
-    }
-
-    /**
-     * Push a new frame unless the current frame already targets the DTO.
-     *
-     * @return ProcessingFrame|null the frame when a new frame is pushed, null otherwise
-     */
-    public static function pushFrameIfNeeded(BaseDto $dto, \Closure $frameFactory): ?ProcessingFrame
-    {
-        return self::tryCurrent()?->dto === $dto
-            ? null
-            : self::pushFrame($frameFactory());
     }
 
     /**
@@ -60,7 +47,9 @@ final class ProcessingContext
 
     public static function tryCurrent(): ?ProcessingFrame
     {
-        return self::storage()->hasFrames() ? self::storage()->currentFrame() : null;
+        return self::storage()->hasFrames()
+            ? self::storage()->currentFrame()
+            : null;
     }
 
     /**
@@ -142,16 +131,18 @@ final class ProcessingContext
      *
      * @template T
      *
-     * @param \Closure(ProcessingFrame): T $processingFunction
+     * @param \Closure(ProcessingFrame): T $callback
      *
      * @return T
      */
     public static function wrapProcessing(
         BaseDto $dto,
+        \Closure $callback,
         ?ErrorMode $errorMode = null,
-        \Closure $processingFunction,
     ): mixed {
+        // is there a current frame for the same DTO?
         if (($frame = self::tryCurrent())?->dto === $dto) {
+            /** @var ProcessingFrame $frame */
             if (null !== $errorMode && $errorMode !== $frame->errorMode) {
                 throw new InvalidConfigException('Cannot override errorMode within an existing processing frame.');
             }
@@ -159,22 +150,24 @@ final class ProcessingContext
                 throw new InvalidConfigException('Cannot override errorList within an existing processing frame.');
             }
 
-            return $processingFunction($frame);
+            // run processing function within existing frame
+            return $callback($frame);
         }
 
-        $frameFactory = fn (): ProcessingFrame => new ProcessingFrame(
+        // otherwise, push a new frame
+        $context = self::tryCurrent()?->context
+            ?? ($dto instanceof HasContextInterface ? $dto->getContext() : []);
+        $frame = new ProcessingFrame(
             $dto,
             $dto->getErrorList(),
             $errorMode ?? $dto->getErrorMode(),
+            $context,
         );
-        $frame = ProcessingContext::pushFrameIfNeeded($dto, $frameFactory);
-
+        self::pushFrame($frame);
         try {
-            return $processingFunction($frame ?? ProcessingContext::current());
+            return $callback($frame);
         } finally {
-            if ($frame) {
-                ProcessingContext::popFrame();
-            }
+            ProcessingContext::popFrame();
         }
     }
 }

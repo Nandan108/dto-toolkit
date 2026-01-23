@@ -6,7 +6,10 @@ namespace Nandan108\DtoToolkit\Traits;
 
 use Nandan108\DtoToolkit\Enum\Phase;
 
-trait HasPhase // implements PhaseAwareInterface
+/**
+ * This trait implements PhaseAwareInterface.
+ */
+trait HasPhase
 {
     protected bool $isIoBound = false;
     protected bool $isOutbound = false;

@@ -195,7 +195,7 @@ Triggered when building the DTO from external data:
 Triggered when exporting DTOs:
 
 - `toOutboundArray()`
-- `toEntity()`
+- `exportToEntity()`
 - framework adapters (`toResponse`, etc.)
 
 Processing nodes and chain modifiers are filtered by phase (and by active groups)

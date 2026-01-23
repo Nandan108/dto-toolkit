@@ -44,42 +44,40 @@ trait CreatesFromArrayOrEntity
     ): static {
         $errorList and $this->setErrorList($errorList);
 
-        return ProcessingContext::wrapProcessing(
-            $this,
-            $errorMode,
-            function ($frame) use ($input, $ignoreUnknownProps, $clear): static {
-                // check for unknown properties
-                if (!$ignoreUnknownProps) {
-                    $unknownProperties = array_diff(array_keys($input), $this->getFillable());
-                    if ($unknownProperties) {
-                        throw new InvalidConfigException('Unknown properties: '.implode(', ', $unknownProperties));
-                    }
+        $callback = function () use ($input, $ignoreUnknownProps, $clear): mixed {
+            // check for unknown properties
+            if (!$ignoreUnknownProps) {
+                $unknownProperties = array_diff(array_keys($input), $this->getFillable());
+                if ($unknownProperties) {
+                    throw new InvalidConfigException('Unknown properties: '.implode(', ', $unknownProperties));
                 }
+            }
 
-                // determine the input to be filled
-                $inputToBeFilled = $this->getInputToBeFilled($input);
+            // determine the input to be filled
+            $inputToBeFilled = $this->getInputToBeFilled($input);
 
-                // and fill the DTO
-                $this->fill($inputToBeFilled);
+            // and fill the DTO
+            $this->fill($inputToBeFilled);
 
-                // reset unfilled properties to default values
-                if ($clear) {
-                    $this->clear(excludedPropsMap: $inputToBeFilled, clearErrors: false);
-                }
+            // reset unfilled properties to default values
+            if ($clear) {
+                $this->clear(excludedPropsMap: $inputToBeFilled, clearErrors: false);
+            }
 
-                // cast the values to their respective types and return the DTO
-                if ($this instanceof ProcessesInterface) {
-                    /** @psalm-suppress UnusedMethodCall */
-                    $this->processInbound();
-                }
+            // cast the values to their respective types and return the DTO
+            if ($this instanceof ProcessesInterface) {
+                /** @psalm-suppress UnusedMethodCall */
+                $this->processInbound();
+            }
 
-                // call post-load hook
-                /** @psalm-suppress UndefinedMethod */
-                $this->postLoad();
+            // call post-load hook
+            /** @psalm-suppress UndefinedMethod */
+            $this->postLoad();
 
-                return $this;
-            },
-        );
+            return $this;
+        };
+
+        return ProcessingContext::wrapProcessing($this, $callback, $errorMode);
     }
 
     protected function getInputToBeFilled(array $input): array
