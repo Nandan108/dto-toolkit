@@ -8,7 +8,7 @@ Properties may have both inbound and outbound chains. To separate them, use the 
 - **Inbound casters** are all casters that appear before an **`#[Outbound]`** attribute
   They will be applied by a `->normalizeInbound()` step which is run immediately after the raw input is populated into the DTO, via a `fromArray()`, `fromEntity()`, or in adapter packages `fromRequest()` or `fromModel()`.
 - **Outbound casters** are those that appear *after* an `#[Outbound]` attribute
-  These are be applied by a `->normalizeOutbound()` step which is run as a transformation step on DTO data before it is returned by `toOutboundArray()` or used to populate object such as in `toEntity()`, and in adapters: `toResponse()` or `toModel()`.
+  These are be applied by a `->normalizeOutbound()` step which is run as a transformation step on DTO data before it is returned by `toOutboundArray()` or used to populate object such as in `exportToEntity()`, and in adapters: `toResponse()` or `toModel()`.
 
 For a full list of built-in casters and modifiers, see:
 - [Built-In Casters](BuiltInCasters.md)

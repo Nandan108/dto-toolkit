@@ -68,11 +68,8 @@ final class ContainerBridge
     public static function has(string $id): bool
     {
         // Check manual bindings first, then container if available
-        if (\array_key_exists($id, self::$manualBindings)) {
-            return true;
-        }
-
-        return self::$container?->has($id) ?? false;
-
+        return \array_key_exists($id, self::$manualBindings)
+            ? true
+            : self::$container?->has($id) ?? false;
     }
 }

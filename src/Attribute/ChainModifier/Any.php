@@ -80,7 +80,6 @@ class Any extends ChainModifierBase
                     // messageOverride: "All  nodes wrapped by Any have failed.",
                     debugExtras: ['failures' => $failures],
                 );
-                // $this->count
             };
         };
 

@@ -11,7 +11,6 @@ use Nandan108\DtoToolkit\Assert\IsType;
 use Nandan108\DtoToolkit\Assert\Support\SequenceMatcher;
 use Nandan108\DtoToolkit\Core\FullDto;
 use Nandan108\DtoToolkit\Core\ProcessingContext;
-use Nandan108\DtoToolkit\Core\ProcessingFrame;
 use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
 use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
 use Nandan108\PropPath\PropPath;
@@ -68,18 +67,13 @@ final class ValidatorInternalCoverageTest extends TestCase
     {
         PropPath::boot();
 
-        $dto = new class extends FullDto {
-        };
+        $dto = new class extends FullDto {};
         $dto->withContext(['expected' => 'ok']);
-        $frame = new ProcessingFrame($dto, $dto->getErrorList(), $dto->getErrorMode());
-        ProcessingContext::pushFrame($frame);
 
-        try {
+        ProcessingContext::wrapProcessing($dto, function (): void {
             $validator = new CompareToExtract('==', '$context.expected');
             $validator->validate('ok');
-        } finally {
-            ProcessingContext::popFrame();
-        }
+        });
 
         $this->assertTrue(true);
     }

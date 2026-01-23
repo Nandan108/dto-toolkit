@@ -15,6 +15,9 @@ final class ProcessingFrame
 
     public ErrorMode $errorMode;
 
+    /** @var array<string, mixed> */
+    public array $context;
+
     /** @var array<int|non-empty-string> */
     public array $propPathSegments;
 
@@ -38,11 +41,19 @@ final class ProcessingFrame
      */
     public array $errorTemplateOverrides;
 
-    public function __construct(BaseDto $dto, ProcessingErrorList $errorList, ErrorMode $errorMode)
-    {
+    /**
+     * @param array<string, mixed> $context
+     */
+    public function __construct(
+        BaseDto $dto,
+        ProcessingErrorList $errorList,
+        ErrorMode $errorMode,
+        array $context = [],
+    ) {
         $this->dto = $dto;
         $this->errorList = $errorList;
         $this->errorMode = $errorMode;
+        $this->context = $context;
         $this->propPathSegments = [];
         $this->errorTemplateOverrides = [];
     }

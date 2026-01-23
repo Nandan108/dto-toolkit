@@ -68,9 +68,11 @@ DTOs are not a dumping ground for behavior or unrelated data. They're lean by de
 In this toolkit:
 
 - Input DTOs are created with `fromArray()`, `fromRequest()`, etc.
-- Output DTOs can produce `toArray()`, `toEntity()`, `toModel()`...
+- Output DTOs can produce `toArray()`, `exportToEntity()`, `toModel()`...
 - Traits and attributes provide validation, casting, and mapping
 - Adapters let you plug into Symfony, Laravel, or your own architecture
+
+For the default base class (`FullDto`) and its trait bundle, see `docs/Traits.md`. That document also covers the opt-in typed export trait (`ExportsOutboundTyped`).
 
 ---
 

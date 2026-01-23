@@ -29,7 +29,10 @@ final class ContainerBridgeTest extends TestCase
 
     public function testRegistersAndReturnsFromClosure(): void
     {
+        $this->assertFalse(ContainerBridge::has('ClosureTest'));
         ContainerBridge::register('ClosureTest', fn () => new \stdClass());
+        $this->assertTrue(ContainerBridge::has('ClosureTest'));
+
         $a = ContainerBridge::get('ClosureTest');
         $b = ContainerBridge::get('ClosureTest');
         $this->assertInstanceOf(\stdClass::class, $a);
