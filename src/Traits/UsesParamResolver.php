@@ -116,11 +116,6 @@ trait UsesParamResolver
                     }
                 }
 
-                //  ?? fn ($value) => is_string($value)
-                //         && is_bool($val = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE))
-                //             ? $val
-                //             : (bool) $value;
-
                 // if the value is '<context', return a provider that gets the value from the context
                 if (!$dto instanceof HasContextInterface) {
                     throw new InvalidConfigException("To use '<context' as a parameter value, the DTO must implement HasContextInterface.");

@@ -86,11 +86,11 @@ Recursive export follows the same directional semantics as the initiating call: 
 This is done by calling one of:
 
 - `toOutboundArray()` - returns outbound-cast DTO content as an array (processing + export primitive, non-recursive)
-- `exportToEntity(object|class-string|null $entity = null, array $extraProps = [], bool $recursive = false)` *(trait `ExportsOutbound`, or if you want a strongly typed return: `ExportsOutboundTyped`)*
+- `exportToEntity(object|class-string|null $entity = null, array $supplementalProps = [], bool $recursive = false)` *(trait `ExportsOutbound`, or if you want a strongly typed return: `ExportsOutboundTyped`)*
   - prepares outbound data
   - uses passed entity or instantiates a new one
   - loads result into the entity via public props or setters, then returns entity
-- `exportToArray(array $extraProps = [], bool $recursive = false)` *(trait `ExportsOutbound`)*
+- `exportToArray(array $supplementalProps = [], bool $recursive = false)` *(trait `ExportsOutbound`)*
   - returns outbound-cast DTO content as an array, with optional recursive DTO export
 - `toResponse()` or `toModel()` _(coming soon via adapters)_
 

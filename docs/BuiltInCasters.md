@@ -171,7 +171,7 @@ public UserEntity | array | null $user = null;
 ### CastTo\AsArray
 
 **Arguments:**
-- `array $extraProps = []`
+- `array $supplementalProps = []`
 - `bool $recursive = false`
 
 Exports a DTO or other object into an array.

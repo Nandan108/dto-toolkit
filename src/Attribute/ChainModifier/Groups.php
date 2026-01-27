@@ -40,7 +40,7 @@ final class Groups extends ChainModifierBase
             $queue,
             $dto,
             $this->count,
-            'PerItem',
+            'Groups',
             buildCasterClosure:
             /**
              * @param ProcessingNodeInterface[] $chainElements

@@ -267,7 +267,7 @@ final class InterestsDto extends FullDto
 /** @psalm-suppress PossiblyUnusedProperty */
 final class PublicProfileDto extends FullDto
 {
-    protected static ErrorMode $defaultErrorMode = ErrorMode::CollectFailToNull;
+    protected static ErrorMode $_defaultErrorMode = ErrorMode::CollectFailToNull;
 
     public string $name = '';
 

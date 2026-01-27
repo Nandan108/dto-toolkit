@@ -94,6 +94,21 @@ These provide a convenient, framework-free entry point with all standard functio
 
 ---
 
+## 🔒 Immutability & Value Objects
+
+DTO Toolkit is **not an immutable DTO library**.
+
+DTOs in DTOT are **mutable by design** and act as **transformation builders**: they ingest raw input, apply validation and normalization, and produce clean, structured output. This mutability is what enables DTOT’s dynamic processing model (casting chains, modifiers, context-aware behavior, recursive imports/exports).
+
+That said, DTOT **plays very well with immutable objects**.
+
+While DTOs themselves are mutable, DTOT is designed to **export into immutable value objects or entities** via constructor-based instantiation. This allows you to use DTOT as a *builder* for immutable domain models (value objects), without compromising immutability where it matters.
+
+👉 If you’re looking for *immutability at the DTO layer itself*, DTOT may not be the right fit.
+👉 If you want **powerful, declarative transformation pipelines to produce immutable domain objects**, DTOT is a strong match.
+
+---
+
 ## 🧩 Adapter Packages<a id="adapter-packages"></a>
 
 - Laravel Adapter: [`nandan108/dto-toolkit-laravel`](https://github.com/nandan108/dto-toolkit-laravel) *(coming soon)*

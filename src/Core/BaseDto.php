@@ -4,14 +4,12 @@ declare(strict_types=1);
 
 namespace Nandan108\DtoToolkit\Core;
 
-use Nandan108\DtoToolkit\Attribute\DefaultOutboundEntity;
 use Nandan108\DtoToolkit\Attribute\Inject;
 use Nandan108\DtoToolkit\Attribute\MapTo;
 use Nandan108\DtoToolkit\Attribute\Outbound;
 use Nandan108\DtoToolkit\Attribute\Presence;
 use Nandan108\DtoToolkit\Attribute\WithDefaultGroups;
 use Nandan108\DtoToolkit\Contracts\Bootable;
-use Nandan108\DtoToolkit\Contracts\HasGroupsInterface;
 use Nandan108\DtoToolkit\Contracts\Injectable;
 use Nandan108\DtoToolkit\Contracts\PhaseAwareInterface;
 use Nandan108\DtoToolkit\Contracts\ProcessesInterface;
@@ -25,11 +23,9 @@ use Nandan108\DtoToolkit\Support\ContainerBridge;
 /**
  * @method static static newWithErrorMode(ErrorMode $mode)
  *
- * @psalm-type EntityClassGroupMap = array<list<string>>
  * @psalm-type DtoPropMetaCache = array{
  *     defaultValue: array<string, mixed>,
  *     propRef: array<string, \ReflectionProperty>,
- *     defaultOutboundEntityClasses: EntityClassGroupMap|null, // map of entity class to scoping groups
  *     presencePolicy:  array<string, PresencePolicy>,
  *     classRef?: \ReflectionClass<static>,
  *     phase?: array<string, array<string, PhaseAwareInterface|list<PhaseAwareInterface>>>,
@@ -37,9 +33,9 @@ use Nandan108\DtoToolkit\Support\ContainerBridge;
  */
 abstract class BaseDto
 {
-    protected static ErrorMode $defaultErrorMode = ErrorMode::FailFast;
-    protected ?ErrorMode $errorMode = null;
-    protected ?ProcessingErrorList $errorList = null;
+    protected static ErrorMode $_defaultErrorMode = ErrorMode::FailFast;
+    protected ?ErrorMode $_errorMode = null;
+    protected ?ProcessingErrorList $_errorList = null;
 
     /**
      * List of properties that can be filled.
@@ -63,34 +59,34 @@ abstract class BaseDto
      *
      * @psalm-var array<class-string, DtoPropMetaCache>
      */
-    private static array $_propertyMetadataCache = [];
+    private static array $_dtoMetaCache = [];
 
     public static function setDefaultErrorMode(ErrorMode $mode): void
     {
-        static::$defaultErrorMode = $mode;
+        static::$_defaultErrorMode = $mode;
     }
 
     public function getErrorMode(): ErrorMode
     {
-        return $this->errorMode ?? static::$defaultErrorMode;
+        return $this->_errorMode ?? static::$_defaultErrorMode;
     }
 
     /** @psalm-suppress PossiblyUnusedMethod */
     public function withErrorMode(ErrorMode $mode): static
     {
-        $this->errorMode = $mode;
+        $this->_errorMode = $mode;
 
         return $this;
     }
 
     public function setErrorList(ProcessingErrorList $newErrorList): ProcessingErrorList
     {
-        return $this->errorList = $newErrorList;
+        return $this->_errorList = $newErrorList;
     }
 
     public function getErrorList(): ProcessingErrorList
     {
-        return $this->errorList ??= new ProcessingErrorList();
+        return $this->_errorList ??= new ProcessingErrorList();
     }
 
     /**
@@ -104,10 +100,9 @@ abstract class BaseDto
      */
     private static function initPropMeta(string $class): void
     {
-        self::$_propertyMetadataCache[$class] ??= [
+        self::$_dtoMetaCache[$class] ??= [
             'defaultValue'                 => [],
             'propRef'                      => [],
-            'defaultOutboundEntityClasses' => null,
         ];
         $refClass = static::getClassRef();
 
@@ -119,10 +114,10 @@ abstract class BaseDto
                 continue;
             }
 
-            self::$_propertyMetadataCache[$class]['propRef'][$propName] = $prop;
+            self::$_dtoMetaCache[$class]['propRef'][$propName] = $prop;
 
             if ($prop->hasDefaultValue()) {
-                self::$_propertyMetadataCache[$class]['defaultValue'][$propName] = $prop->getDefaultValue();
+                self::$_dtoMetaCache[$class]['defaultValue'][$propName] = $prop->getDefaultValue();
             } else {
                 throw new InvalidConfigException("Default value missing on DTO property: {$class}::\${$propName}.");
             }
@@ -140,7 +135,7 @@ abstract class BaseDto
         /** @psalm-var array<string, PresencePolicy> $resolved */
         $resolved = [];
 
-        foreach (self::$_propertyMetadataCache[$class]['propRef'] as $propName => $propRef) {
+        foreach (self::$_dtoMetaCache[$class]['propRef'] as $propName => $propRef) {
             $policy = $dtoDefaultPolicy;
 
             // Property-level override
@@ -151,7 +146,7 @@ abstract class BaseDto
             $resolved[$propName] = $policy;
         }
 
-        self::$_propertyMetadataCache[$class]['presencePolicy'] = $resolved;
+        self::$_dtoMetaCache[$class]['presencePolicy'] = $resolved;
     }
 
     /**
@@ -161,11 +156,11 @@ abstract class BaseDto
     {
         $class = static::class;
 
-        if (!isset(self::$_propertyMetadataCache[$class]['propRef'])) {
+        if (!isset(self::$_dtoMetaCache[$class]['propRef'])) {
             self::initPropMeta($class);
         }
 
-        return self::$_propertyMetadataCache[$class];
+        return self::$_dtoMetaCache[$class];
     }
 
     /** @return array<string, \ReflectionProperty> */
@@ -225,7 +220,7 @@ abstract class BaseDto
         }
 
         /** @psalm-var array<string, array<string, PhaseAwareInterface|list<PhaseAwareInterface>>> $cache */
-        self::$_propertyMetadataCache[static::class]['phase'] = $cache;
+        self::$_dtoMetaCache[static::class]['phase'] = $cache;
     }
 
     /**
@@ -237,12 +232,12 @@ abstract class BaseDto
      */
     public static function getPhaseAwarePropMeta(Phase $phase, string $metaDataName, \Closure | string | null $filter, bool $ignoreEmpty = false): array
     {
-        if (!isset(self::$_propertyMetadataCache[static::class]['phase'])) {
+        if (!isset(self::$_dtoMetaCache[static::class]['phase'])) {
             self::initPhaseAwarePropMeta();
         }
 
         /** @var array $meta */
-        $meta = self::$_propertyMetadataCache[static::class]['phase'][$phase->value] ?? [];
+        $meta = self::$_dtoMetaCache[static::class]['phase'][$phase->value] ?? [];
 
         $metaByName = array_map(
             static function (array $propMeta) use ($metaDataName) {
@@ -545,10 +540,10 @@ abstract class BaseDto
         return $instance;
     }
 
-    protected static function getClassRef(): \ReflectionClass
+    public static function getClassRef(): \ReflectionClass
     {
         /** @psalm-suppress PropertyTypeCoercion */
-        return static::$_propertyMetadataCache[static::class]['classRef'] ??=
+        return static::$_dtoMetaCache[static::class]['classRef'] ??=
             new \ReflectionClass(static::class);
     }
 
@@ -565,49 +560,5 @@ abstract class BaseDto
         }
 
         return $methodRef;
-    }
-
-    /**
-     * Get the default outbound entity class for this DTO, based on the DefaultOutboundEntity attributes.
-     *
-     * @return ?class-string
-     *
-     * @throws InvalidConfigException
-     */
-    public function getDefaultOutboundEntityClass(): ?string
-    {
-        /** @psalm-suppress UnsupportedPropertyReferenceUsage */
-        $meta = &self::$_propertyMetadataCache[static::class]['defaultOutboundEntityClasses'];
-        $meta ??= [];
-
-        // initialize defaultOutboundEntityClasses cache if not done yet
-        if (!\array_key_exists('defaultOutboundEntityClasses', $meta)) {
-            // initialize values from DefaultOutboundEntity attribute
-            $refClass = static::getClassRef();
-            $attrs = $refClass->getAttributes(DefaultOutboundEntity::class);
-            $implementsGroups = $this instanceof HasGroupsInterface;
-            foreach ($attrs as $attrRef) {
-                $attrInstance = $attrRef->newInstance();
-                if ($attrInstance->groups && !$implementsGroups) {
-                    throw new InvalidConfigException('The DefaultOutboundEntity attribute on DTO '.static::class.' declares scoping groups, but the DTO does not implement HasGroupsInterface.');
-                }
-                // throw if entity class does not exist
-                if (!class_exists($attrInstance->entityClass)) {
-                    throw new InvalidConfigException("Entity class '$attrInstance->entityClass' does not exist");
-                }
-                $meta[$attrInstance->entityClass] = (array) $attrInstance->groups;
-            }
-        }
-
-        // filter by scoping groups if any -- Phase: OutboundExport
-        foreach ($meta as $entityClass => $groups) {
-            if (empty($groups)
-                || ($this instanceof HasGroupsInterface
-                    && $this->groupsAreInScope(Phase::OutboundExport, $groups))) {
-                return $entityClass;
-            }
-        }
-
-        return null;
     }
 }

@@ -41,7 +41,7 @@ final class AsArrayCastTest extends TestCase
         $this->assertSame('US', $result['address']['ctry_code']);
     }
 
-    public function testCastIncludesExtraProps(): void
+    public function testCastIncludessupplementalProps(): void
     {
         $dto = UserDto::newFromArray(DtoCastTest::getStandardInput());
 

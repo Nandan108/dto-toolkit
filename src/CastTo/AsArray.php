@@ -16,9 +16,9 @@ use Nandan108\DtoToolkit\Internal\Exporter;
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class AsArray extends CastBase
 {
-    public function __construct(array $extraProps = [], bool $recursive = false)
+    public function __construct(array $supplementalProps = [], bool $recursive = false)
     {
-        parent::__construct([$extraProps, $recursive]);
+        parent::__construct([$supplementalProps, $recursive]);
     }
 
     #[\Override]
@@ -32,14 +32,14 @@ final class AsArray extends CastBase
             );
         }
 
-        /** @var array $extraProps */
+        /** @var array $supplementalProps */
         /** @var bool $recursive */
-        [$extraProps, $recursive] = $args;
+        [$supplementalProps, $recursive] = $args;
 
         return Exporter::export(
             source: $value,
             as: 'array',
-            extraProps: $extraProps,
+            supplementalProps: $supplementalProps,
             recursive: $recursive,
         );
     }

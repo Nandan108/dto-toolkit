@@ -135,4 +135,23 @@ class MapTo implements PhaseAwareInterface
 
         return $setters;
     }
+
+    /**
+     * Get the map of outbound names per property.
+     * Setters are not included.
+     *
+     * @param list<string> $propNames the property names to get outbound names for
+     */
+    public static function getOutboundNamesMap(BaseDto $dto, array $propNames): array
+    {
+        $mappers = self::getMappers($dto, $propNames);
+        $outboundNamesMap = [];
+        foreach ($propNames as $propName) {
+            if (array_key_exists($propName, $mappers)) {
+                $outboundNamesMap[$propName] = $mappers[$propName]->outboundName;
+            }
+        }
+
+        return $outboundNamesMap;
+    }
 }

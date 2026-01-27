@@ -2,7 +2,7 @@
 
 ## Product Backlog Items
 
-### TODO before v.1.0
+### Upcoming
 - **[064]** Add framework-specific ValidationException mappers in adapters
   - Add a "ProcessingErrorMapperInterface" for adapter overrides
   - Core DTOT will throw a generic ValidationException on validation failure
@@ -23,7 +23,7 @@
   - When enabled, caster closures push/pop debug context during execution
   - On casting failure, TransformExceptions can include full chain trace
   - Example message: "PropName: Caster1->Caster2->FailNextTo(PerItem(Caster3 -> Caster4))"
-- **[048]** *Add debug mode setting. When enabled, add casting stack tracking (push/pop) to enable logging full context when failing within a chain.*
+- **[048]** Add debug mode setting. When enabled, add casting stack tracking (push/pop) to enable logging full context when failing within a chain.
 - **[050]** Add `#[LogCast($debugOnly = true)]` to also allow logging non-failing chains.
 
 ### Post v1.0
@@ -102,6 +102,7 @@
 - [077] Add `#[Assert\CompareTo($op, $scalar)]`, `#[Assert\CompareToExtract($op, $rightPath, $leftPath = null)]`
 - [084] Add `#[CastTo\Age("seconds"|"days"|"years" $in = years, IsoDateTimeString $relativeTo = null): float]`
 - [028] Add nested DTO support, `CastTo\Dto($dtoClassName)`, `CastTo\Entity($cassName)`, support recursive normalization and validation
+- [087] Add `#[DefaultOutboundEntity(class, constructMode, groups)]`
 
 ---
 

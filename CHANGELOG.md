@@ -4,6 +4,35 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [1.1.0] - 2026-01-27
+
+### Added
+
+- `ConstructMode` enum to control outbound entity construction:
+  default constructor, array-based constructor, or named-arguments constructor.
+- Support for constructor-based entity instantiation in outbound export
+  (DTO/array → entity).
+- `#[DefaultOutboundEntity]` now supports explicit construction mode selection.
+- Automatic `#[MapTo]` name remapping when exporting via constructor arguments
+  (array or named-args modes).
+
+### Changed
+
+- Outbound export pipeline refactored into explicit **normalize → prepare → hydrate**
+  phases, clarifying control flow and constructor hydration semantics.
+- `preOutput()` is now always executed for entity exports, including entities
+  fully hydrated via constructor.
+- Resolution of `#[DefaultOutboundEntity]` attributes has been moved into the
+  attribute class itself via `DefaultOutboundEntity::resolveForDto()`,
+  improving separation of concerns and reducing `BaseDto` coupling.
+
+### Breaking (minor)
+
+- `exportToEntity()` / `Exporter::export()` now use the `$supplementalProps`
+  parameter (renamed from `$extraProps`) to better reflect additive,
+  non-overriding semantics.
+- `#[DefaultOutboundEntity]` second argument is `construct`, and `groups` is now in third position.
+
 ## [1.0.0] - 2026-01-23
 
 ### Added
@@ -63,7 +92,7 @@ All notable changes to this project will be documented in this file.
 
 * Trait `ExportsToEntity` renamed to `ExportsOutbound`.
   * `ExportsOutbound::toEntity()` renamed to `exportToEntity()`
-  * `ExportsOutbound::exportToEntity()` now uses `$extraProps` instead of `$context`
+  * `ExportsOutbound::exportToEntity()` now uses `$supplementalProps` instead of `$context`
 * `CreatesFromArrayInterface` removed in favor of `CreatesFromArrayOrEntityInterface`.
 * Custom processing nodes must migrate from `ProcessingNodeBase` statics to `ProcessingContext` APIs.
 * `BaseDto::getErrorList()` signature changed; callers must use `setErrorList()`.

@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace Nandan108\DtoToolkit\Tests\Unit;
 
 use Nandan108\DtoToolkit\Attribute\DefaultOutboundEntity;
+use Nandan108\DtoToolkit\Attribute\MapFrom;
 use Nandan108\DtoToolkit\Attribute\MapTo;
 use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Contracts\PreparesEntityInterface;
 use Nandan108\DtoToolkit\Contracts\ProcessesInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Core\FullDto;
+use Nandan108\DtoToolkit\Enum\ConstructMode;
 use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
 use Nandan108\DtoToolkit\Internal\Exporter;
 use Nandan108\DtoToolkit\Support\ContainerBridge;
@@ -143,7 +145,7 @@ final class ExportsOutboundTest extends TestCase
         // un-mark email as 'filled'
         $dto->unfill(['email']);
 
-        $entity = $dto->exportToEntity(entity: $entity, extraProps: ['id' => $id = 4]);
+        $entity = $dto->exportToEntity(entity: $entity, supplementalProps: ['id' => $id = 4]);
 
         $this->assertSame($trimmedName, $entity->name);
         $this->assertSame($intAge, $entity->age);
@@ -169,7 +171,7 @@ final class ExportsOutboundTest extends TestCase
             $dto->exportToEntity();
             $this->fail('Expected InvalidConfigException was not thrown');
         } catch (InvalidConfigException $e) {
-            $this->assertStringContainsString("Entity class 'NonExistentFooClass' does not exist", $e->getMessage());
+            $this->assertStringContainsString('Class "NonExistentFooClass" not found', $e->getMessage());
         }
 
         // test when param is given, overrides DefaultOutboundEntity
@@ -177,7 +179,7 @@ final class ExportsOutboundTest extends TestCase
             $dto->exportToEntity(entity: 'NonExistentBarClass');
             $this->fail('Expected InvalidConfigException was not thrown');
         } catch (InvalidConfigException $e) {
-            $this->assertStringContainsString("Entity class 'NonExistentBarClass' does not exist", $e->getMessage());
+            $this->assertStringContainsString('Class "NonExistentBarClass" not found', $e->getMessage());
         }
     }
 
@@ -197,7 +199,7 @@ final class ExportsOutboundTest extends TestCase
     public function testThrowsExceptionIfGroupsDeclaredWithoutGroupsInterface(): void
     {
         $dto = new
-        #[DefaultOutboundEntity(EntityClassToInstanciateFromName::class, 'scoped')]
+        #[DefaultOutboundEntity(EntityClassToInstanciateFromName::class, groups: 'scoped')]
         class extends BaseDto {
             /** @use ExportsOutboundTyped<EntityClassToInstanciateFromName> */
             use ExportsOutboundTyped;
@@ -206,7 +208,7 @@ final class ExportsOutboundTest extends TestCase
         $this->expectException(InvalidConfigException::class);
         $this->expectExceptionMessage('declares scoping groups');
 
-        $dto->getDefaultOutboundEntityClass();
+        DefaultOutboundEntity::resolveForDto($dto);
     }
 
     public function testExportToEntityFromArrayWithoutTargetThrows(): void
@@ -336,6 +338,56 @@ final class ExportsOutboundTest extends TestCase
         $this->assertSame([1, 2, 3], $entity->public_profile->interests->categories);
         $this->assertSame('US', $entity->address->ctry_code);
     }
+
+    public function testDefaultOutboundClass(): void
+    {
+        $dtoClass = new
+        #[DefaultOutboundEntity(ImmutableAddressVoPropPromoConstructor::class, ConstructMode::NamedArgs, ['NamedArgs'])]
+        #[DefaultOutboundEntity(ImmutableAddressVoArrayConstructor::class, ConstructMode::Array)]
+        class extends FullDto {
+            use ExportsOutbound;
+            public ?string $street = null;
+
+            #[MapFrom('locality_zip[0]')]
+            public ?string $locality = null;
+
+            #[MapFrom('locality_zip[1]')]
+            public ?string $zip = null;
+
+            public ?string $state = null;
+            #[CastTo\Uppercase(), CastTo\Trimmed]
+            #[MapTo('ctryCode')]
+            public ?string $ctry_code = null;
+
+            #[MapTo(null)]
+            public ?string $ignored_prop = null;
+        };
+
+        $dto = $dtoClass::newFromArrayLoose([
+            'street'        => '123 Main St',
+            'locality_zip'  => ['Springfield', '99999'],
+            'state'         => 'NA',
+            'ctry_code'     => ' us ',
+            'ignored_prop'  => 'should be ignored',
+        ]);
+
+        $immutableAddressVo1 = $dto->exportToEntity();
+        $this->assertInstanceOf(ImmutableAddressVoArrayConstructor::class, $immutableAddressVo1);
+        $this->assertSame('123 Main St', $immutableAddressVo1->street);
+        $this->assertSame('Springfield', $immutableAddressVo1->locality);
+        $this->assertSame('99999', $immutableAddressVo1->zip);
+        $this->assertSame('NA', $immutableAddressVo1->state);
+        $this->assertSame('US', $immutableAddressVo1->ctryCode);
+
+        $immutableAddressVo2 = $dto->withGroups(['NamedArgs'])->exportToEntity();
+        $this->assertInstanceOf(ImmutableAddressVoPropPromoConstructor::class, $immutableAddressVo2);
+        $this->assertSame('123 Main St', $immutableAddressVo2->street);
+        $this->assertSame('Springfield', $immutableAddressVo2->locality);
+        $this->assertSame('99999', $immutableAddressVo2->zip);
+        $this->assertSame('NA', $immutableAddressVo2->state);
+        $this->assertSame('US', $immutableAddressVo2->ctryCode);
+
+    }
 }
 
 /**
@@ -453,4 +505,38 @@ final class RecursiveAddressDto extends FullDto
     public string $zip = '';
     public string $state = '';
     public string $ctry_code = '';
+}
+
+/** @psalm-suppress PossiblyUnusedProperty */
+final class ImmutableAddressVoArrayConstructor
+{
+    public readonly ?string $street;
+    public readonly ?string $locality;
+    public readonly ?string $zip;
+    public readonly ?string $state;
+    public readonly ?string $ctryCode;
+
+    /** @psalm-suppress PossiblyUnusedMethod */
+    public function __construct(array $props)
+    {
+        $this->street = $props['street'] ?? null;
+        $this->locality = $props['locality'] ?? null;
+        $this->zip = $props['zip'] ?? null;
+        $this->state = $props['state'] ?? null;
+        $this->ctryCode = $props['ctryCode'] ?? null;
+    }
+}
+
+/** @psalm-suppress PossiblyUnusedProperty */
+final class ImmutableAddressVoPropPromoConstructor
+{
+    /** @psalm-suppress PossiblyUnusedMethod */
+    public function __construct(
+        public ?string $ctryCode, // note: ctryCode is first to test param order independence
+        public ?string $street,
+        public ?string $locality,
+        public ?string $zip,
+        public ?string $state,
+    ) {
+    }
 }

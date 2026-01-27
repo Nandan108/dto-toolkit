@@ -24,10 +24,10 @@ trait ExportsOutboundTyped
      *
      * If you use psalm, place a docblock above `use ExportsOutbound`: /** @use ExportsOutbound\<YourEntityClass\> *\/
      *
-     * @param object|class-string|null $entity     The entity to fill. If null, a new instance will be created.
-     * @param array                    $extraProps Additional data to set on the entity. This can be used to set
-     *                                             relations or other properties that are not part of the DTO.
-     * @param bool                     $recursive  whether to recursively convert nested DTOs to entities
+     * @param object|class-string|null $entity            The entity to fill. If null, a new instance will be created.
+     * @param array                    $supplementalProps Additional data to set on the entity. This can be used to set
+     *                                                    relations or other properties that are not part of the DTO.
+     * @param bool                     $recursive         whether to recursively convert nested DTOs to entities
      *
      * @psalm-suppress InvalidReturnType
      *
@@ -39,7 +39,7 @@ trait ExportsOutboundTyped
      */
     public function exportToEntity(
         string | object | null $entity = null,
-        array $extraProps = [],
+        array $supplementalProps = [],
         ?ProcessingErrorList $errorList = null,
         ?ErrorMode $errorMode = null,
         bool $recursive = false,
@@ -49,7 +49,7 @@ trait ExportsOutboundTyped
             as: 'entity',
             entity: $entity,
             errorList: $errorList,
-            extraProps: $extraProps,
+            supplementalProps: $supplementalProps,
             errorMode: $errorMode,
             recursive: $recursive,
         );
