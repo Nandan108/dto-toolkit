@@ -6,6 +6,7 @@ namespace Nandan108\DtoToolkit\Assert;
 
 use Nandan108\DtoToolkit\Assert\Support\SequenceMatcher;
 use Nandan108\DtoToolkit\Core\ValidatorBase;
+use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
 use Nandan108\DtoToolkit\Exception\Process\GuardException;
 
 /**
@@ -26,26 +27,31 @@ final class Contains extends ValidatorBase
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
-    public function __construct(string | iterable $needle, string | int | null $at = null)
+    public function __construct(string | iterable $needle, string | int | null $at = null, bool $caseSensitive = true)
     {
         if (\is_int($at) && $at < 0 && \is_iterable($needle) && !\is_countable($needle)) {
-            throw new \Nandan108\DtoToolkit\Exception\Config\InvalidConfigException(
+            throw new InvalidConfigException(
                 "Contains validator: negative '\$at' requires a countable iterable.",
             );
         }
 
-        parent::__construct([$needle, $at]);
+        parent::__construct([$needle, $at, $caseSensitive]);
     }
 
     #[\Override]
     public function validate(mixed $value, array $args = []): void
     {
-        [$needle, $at] = $args;
+        [$needle, $at, $caseSensitive] = $args;
         $this->assertValidPosition($at);
 
         if (\is_string($value)) {
             if (!\is_string($needle)) {
                 $this->throwTypeMismatch($value);
+            }
+
+            if (!$caseSensitive) {
+                $value = $this->toLower($value);
+                $needle = $this->toLower($needle);
             }
 
             if (!$this->containsString($value, $needle, $at)) {
@@ -58,6 +64,10 @@ final class Contains extends ValidatorBase
         if (\is_iterable($value)) {
             if (!\is_iterable($needle)) {
                 $this->throwTypeMismatch($value);
+            }
+
+            if (!$caseSensitive) {
+                throw new InvalidConfigException('Contains validator: caseSensitive=false requires a string needle.');
             }
 
             if (!$this->isRewindableIterable($value) || !$this->isRewindableIterable($needle)) {
@@ -75,6 +85,14 @@ final class Contains extends ValidatorBase
         }
 
         $this->throwTypeMismatch($value);
+    }
+
+    private function toLower(string $value): string
+    {
+        // TODO: Remove this trick when bumping PHP requirement to 8.3+
+        $stringToLower = \function_exists('mb_strtolower') ? '\mb_strtolower' : '\strtolower';
+
+        return $stringToLower($value);
     }
 
     private function throwTypeMismatch(mixed $value): never

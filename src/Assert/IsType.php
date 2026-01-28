@@ -19,7 +19,9 @@ final class IsType extends ValidatorBase
     /**
      * @psalm-suppress PossiblyUnusedMethod
      *
-     * @template TType = 'bool'|'boolean'|'int'|'integer'|'long'|'float'|'double'|'real'|'numeric'|'string'|'class-string'|'scalar'|'array'|'iterable'|'countable'|'callable'|'object'|'resource'|'null'
+     * @template TType = 'bool'|'boolean'|'int'|'integer'|'long'|'float'|'double'
+     *                   |'real'|'numeric'|'string'|'class-string'|'scalar'|'array'|'iterable'
+     *                   |'countable'|'callable'|'object'|'resource'|'null'
      *
      * @param TType|list<TType> $type
      */
@@ -60,13 +62,13 @@ final class IsType extends ValidatorBase
             }
         }
 
-        parent::__construct(constructorArgs: ['types' => $types]);
+        parent::__construct([$types]);
     }
 
     #[\Override]
     public function validate(mixed $value, array $args = []): void
     {
-        $types = $this->constructorArgs['types'];
+        $types = $args[0];
 
         foreach ($types as $type) {
             if ($this->matchesType($value, $type)) {

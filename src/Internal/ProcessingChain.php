@@ -30,6 +30,7 @@ final class ProcessingChain implements ProcessingNodeInterface
      *
      * @param ?\ArrayIterator<int, ProcessingNodeProducerInterface>     $queue
      * @param int                                                       $count              The number of elements (sub-nodes) to include in this chain node
+     *                                                                                      Negative values mean "all remaining"
      * @param string                                                    $className          Debugging info: name of the class that's creating this chain
      * @param ?\Closure(ProcessingNodeInterface[], ?\Closure): \Closure $buildCasterClosure A \Closure that builds the final casting chain from consumed nodes.
      *                                                                                      Defaults to [$this, 'composeFromNodes'] unless overridden (e.g. by chain modifiers).
@@ -44,6 +45,7 @@ final class ProcessingChain implements ProcessingNodeInterface
         ?\Closure $buildCasterClosure = null,
     ) {
         $queue ??= new \ArrayIterator();
+
         for ($i = $count; 0 !== $i && $queue->valid(); --$i) {
             // Recursively consume the next logical chain
             /** @var ProcessingNodeProducerInterface */
@@ -51,6 +53,7 @@ final class ProcessingChain implements ProcessingNodeInterface
             $queue->next();
             $this->childNodes[] = $current->getProcessingNode($dto, $queue);
         }
+
         if ($i > 0) {
             $getClassName = function (ProcessingNodeInterface $node): string {
                 if ($node instanceof ProcessingChain) {

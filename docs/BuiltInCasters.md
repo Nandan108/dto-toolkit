@@ -409,9 +409,36 @@ Throws a `CastingException` if the input cannot be cast to a string.
 
 ---
 
+### CastTo\Coalesce
+
+**Arguments:** `array|\Traversable $ignore = [null], mixed $fallback = (none)`
+
+Returns the first element in the input array/iterable that is not in `$ignore`.
+If none is found, returns `$fallback` when provided; otherwise throws a `CastingException`.
+
+---
+
 ### CastTo\Str
 
 Casts the value to a string using `(string)` coercion.
+
+---
+
+### CastTo\Pad
+
+**Arguments:** `int $length, string $char = ' ', int $padType = STR_PAD_RIGHT`
+
+Pads a string to the given length, matching `str_pad()` semantics.
+Throws a `CastingException` if the input is not stringable.
+
+---
+
+### CastTo\CardScheme
+
+**Arguments:** `string|array|null $schemes = null`
+
+Detects the card scheme for the input and returns the scheme name.
+If `$schemes` is provided, only those schemes are considered.
 
 ---
 

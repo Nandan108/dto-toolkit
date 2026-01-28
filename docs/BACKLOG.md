@@ -9,16 +9,8 @@
   - Allow adapters (e.g., dtot-adapter-laravel, dtot-adapter-symfony) to map or wrap ValidationExceptions into framework-native exceptions
   - This enables seamless integration with Laravel and Symfony's validation error handling mechanisms
   - Keep validation logic and error reporting fully pluggable and framework-agnostic
-
-### Preferable before v1.0 (negotiable)
-- **[084]** `#[CastTo\Pad($length, $char = ' ', 'right'|'left', $end = 'left')]`
-- **[085]** `#[Assert\Json(array<'object'|'array'|'number'|'string'|'bool'|'null'> $allowedTypes = [])]`
-- **[086]** Bump min PHP version to 8.3 (and get typed constants!)
-  - Move some static props to typed constants: `(Assert|CastTo)::$methodPrefix`, `GuardException::$template_prefix`,`GuardException::$error_code`, `ProcessingException::$defaultErrorCode.`
 - **[056]** Support multi-step casting by making withGroups(inboundCast: ...) take a sequence of group(s)
   Then apply each step in sequence. Same with outboundCast.
-- **[046]** Add modifier `#[SkipIfMatch(array $values, $return=null)]`, allows short-circuitting following caster(s) by returning \$return if input is found in \$values or input in $values.
-- **[071]** Add `#[CastTo\Coalesce(array, $ignore = [null])]` - takes an array and return first element not in $ignore list.
 - **[062]** Add support for getCaster() debug mode
   - When enabled, caster closures push/pop debug context during execution
   - On casting failure, TransformExceptions can include full chain trace
@@ -26,14 +18,14 @@
 - **[048]** Add debug mode setting. When enabled, add casting stack tracking (push/pop) to enable logging full context when failing within a chain.
 - **[050]** Add `#[LogCast($debugOnly = true)]` to also allow logging non-failing chains.
 
-### Post v1.0
-- **[080]** Port domain-specific asserts from Symfony (post v1.0)
-  - Ip, StartsWith, Bic, CardScheme, Currency, Luhn, Iban, Isbn, Issn
+### For later
 - **[083]** Consider a modifier-based mechanism for dynamically overriding node arguments via extraction (DynamicArg or ExtractToArg).
 - **[044]** Add support for DTO transforms (`\$dto->toDto($otherDtoClass)`) [See details](#PBI-044)
 - **[082]** Introduce new processor node type more similar to modifiers: rather than having a single cast() or validate() method, they'd have a makeValidator()/makeCaster() method, that can return an optimized Closure, which might be different depending on $constructorArgs.
 - **[034]** Add support for logging failed casts in FailTo/FailNextTo. `CastTo::$castSoftFailureLogger = function (CastingException $e, $returnedVal)`
 - **[058]** Add a doc about FullDto and making one's own slimmed-down version if not all features are needed
+- **[086]** Bump min PHP version to 8.3 (and get typed constants!)
+  - Move some static props to typed constants: `(Assert|CastTo)::$methodPrefix`, `GuardException::$template_prefix`,`GuardException::$error_code`, `ProcessingException::$defaultErrorCode.`
 
 ---
 
@@ -103,6 +95,11 @@
 - [084] Add `#[CastTo\Age("seconds"|"days"|"years" $in = years, IsoDateTimeString $relativeTo = null): float]`
 - [028] Add nested DTO support, `CastTo\Dto($dtoClassName)`, `CastTo\Entity($cassName)`, support recursive normalization and validation
 - [087] Add `#[DefaultOutboundEntity(class, constructMode, groups)]`
+- [084] `#[CastTo\Pad($length, $char = ' ', 'right'|'left' $side = 'left')]` (match str_pad() where possible)
+- [085] `#[Assert\Json(array<'object'|'array'|'number'|'string'|'bool'|'null'> $allowedTypes = [])]` Validates that $value is a json object. If `$allowedTypes` provided, further checks that $value's type is one of those types. Checks can be done via string checks (e.g. array/object/string checks: $value[0] === '['/'{'/'"')
+- [071] Add `#[CastTo\Coalesce($ignore = [null])]` - takes an array $value and return first element not in $ignore list. throws if $value not an array or iterator.
+- [080] Port domain-specific asserts from Symfony (post v1.0): Ip, Bic, CardScheme, Currency, Luhn, Iban, Isbn, Issn
+- [046] Add modifier `#[Mod\SkipIfMatch(array $matchValues, $count, $return, $strict, $negate)]`, allows short-circuitting following caster(s) by returning `$return` if input matches an element of `$matchValues`.
 
 ---
 

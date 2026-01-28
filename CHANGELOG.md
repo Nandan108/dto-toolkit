@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [1.2.0] - 2026-01-28
+
+### Added
+
+- New validators: `Assert\Json`, `Assert\Ip`, `Assert\Bic`, `Assert\CardScheme`,
+  `Assert\Currency`, `Assert\Luhn`, `Assert\Iban`, `Assert\Isbn`, `Assert\Issn`.
+- New casters: `CastTo\Coalesce`, `CastTo\Pad`, `CastTo\CardScheme`.
+- New chain modifier: `#[Mod\SkipIfMatch]` to short‑circuit subsequent nodes when
+  the current value matches configured values.
+
+### Changed
+
+- `Assert\Contains` now supports case-insensitive string matching.
+- Third‑party notice added to LICENSE for Symfony CardScheme list provenance.
+
 ## [1.1.0] - 2026-01-27
 
 ### Added

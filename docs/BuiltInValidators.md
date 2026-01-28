@@ -160,6 +160,78 @@ public ?string $slug;
 
 ---
 
+### Assert\Json
+
+**Arguments:** `array $allowedTypes = []`
+
+Validates that the value is a JSON string. If `$allowedTypes` is provided, it must be one of: `object`, `array`, `number`, `string`, `bool`, `null`.
+
+---
+
+### Assert\Ip
+
+**Arguments:** `string|array $version = Ip::ALL`
+
+Validates IPv4/IPv6 addresses with optional private/reserved range restrictions.
+
+---
+
+### Assert\Bic
+
+**Arguments:** *none*
+
+Validates a BIC (SWIFT) code.
+
+---
+
+### Assert\CardScheme
+
+**Arguments:** `string|array $schemes`
+
+Validates that a card number matches the given scheme(s).
+
+---
+
+### Assert\Currency
+
+**Arguments:** *none*
+
+Validates a 3-letter ISO 4217 currency code.
+
+---
+
+### Assert\Luhn
+
+**Arguments:** *none*
+
+Validates a string of digits with the Luhn checksum algorithm.
+
+---
+
+### Assert\Iban
+
+**Arguments:** `?string $countryCode = null`
+
+Validates an IBAN and, optionally, enforces a specific country code.
+
+---
+
+### Assert\Isbn
+
+**Arguments:** `?string $type = null` (`Isbn::ISBN_10` or `Isbn::ISBN_13`)
+
+Validates ISBN-10 or ISBN-13 values.
+
+---
+
+### Assert\Issn
+
+**Arguments:** *none*
+
+Validates ISSN values.
+
+---
+
 ### Assert\DateFormat
 
 **Arguments:** `string $format`
@@ -320,10 +392,10 @@ public array $letters;
 
 ### Assert\Contains
 
-**Arguments:** `string|array|iterable $needle, null|"start"|"end"|int $at`
+**Arguments:** `string|array|iterable $needle, null|"start"|"end"|int $at, bool $caseSensitive = true`
 
 Checks whether the **value** contains the needle as a contiguous subsequence.
-The value and needle must both be strings or both be iterables.
+The value and needle must both be strings or both be iterables. When `$caseSensitive = false`, the needle must be a string.
 When `$at` is:
 - `null`: match anywhere
 - `"start"` / `"end"`: anchored match

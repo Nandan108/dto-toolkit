@@ -107,6 +107,46 @@ final class BuiltInValidatorClassesTest extends TestCase
             'date format valid'                       => [V\DateFormat::class, ['Y-m-d'], '2025-01-02'],
             'email invalid'                           => [V\Email::class, [], 'not-an-email', 'processing.guard.email.invalid'],
             'email valid'                             => [V\Email::class, [], 'test@example.com'],
+            'json invalid'                            => [V\Json::class, [[]], '{bad', 'processing.guard.json.invalid'],
+            'json valid'                              => [V\Json::class, [[]], '{"a":1}'],
+            'json type mismatch'                      => [V\Json::class, [['object']], '"str"', 'processing.guard.json.type_not_allowed'],
+            'ip v4 valid'                             => [V\Ip::class, [V\Ip::V4], '127.0.0.1'],
+            'ip v6 invalid'                           => [V\Ip::class, [V\Ip::V6], '127.0.0.1', 'processing.guard.ip.invalid'],
+            'ip invalid version config'               => [V\Ip::class, ['nope'], '127.0.0.1', "Ip validator: unknown version 'nope'.", InvalidConfigException::class],
+            'ip empty versions config'                => [V\Ip::class, [[]], '127.0.0.1', 'Ip validator requires at least one version.', InvalidConfigException::class],
+            'bic valid'                               => [V\Bic::class, [], 'DEUTDEFF'],
+            'bic invalid'                             => [V\Bic::class, [], 'INVALID', 'processing.guard.bic.invalid'],
+            'card scheme visa valid'                  => [V\CardScheme::class, ['visa'], '4111111111111111'],
+            'card scheme invalid'                     => [V\CardScheme::class, ['visa'], '1234', 'processing.guard.card_scheme.invalid'],
+            'card scheme empty config'                => [V\CardScheme::class, [[]], '4111111111111111', 'CardScheme validator requires at least one scheme.', InvalidConfigException::class],
+            'card scheme non string config'           => [V\CardScheme::class, [[new \stdClass()]], '4111111111111111', 'CardScheme validator expects scheme names as strings.', InvalidConfigException::class],
+            'card scheme unknown config'              => [V\CardScheme::class, ['nope'], '4111111111111111', "CardScheme validator: unknown scheme 'nope'.", InvalidConfigException::class],
+            'currency valid'                          => [V\Currency::class, [], 'USD'],
+            'currency invalid'                        => [V\Currency::class, [], 'US', 'processing.guard.currency.invalid'],
+            'luhn valid'                              => [V\Luhn::class, [], '79927398713'],
+            'luhn invalid'                            => [V\Luhn::class, [], '79927398714', 'processing.guard.luhn.invalid'],
+            'iban valid'                              => [V\Iban::class, [], 'GB82WEST12345698765432'],
+            'iban invalid'                            => [V\Iban::class, [], 'GB82WEST12345698765433', 'processing.guard.iban.invalid'],
+            'iban invalid country code config'        => [V\Iban::class, ['G1'], 'GB82WEST12345698765432', 'Iban validator: country code must be a 2-letter ISO code.', InvalidConfigException::class],
+            'iban invalid length'                     => [V\Iban::class, [], 'GB82WEST123', 'processing.guard.iban.invalid'],
+            'iban invalid format'                     => [V\Iban::class, [], 'GB82WEST12345698$%432', 'processing.guard.iban.invalid'],
+            'iban country mismatch'                   => [V\Iban::class, ['DE'], 'GB82WEST12345698765432', 'processing.guard.iban.invalid'],
+            'isbn valid'                              => [V\Isbn::class, [], '0-306-40615-2'],
+            'isbn invalid'                            => [V\Isbn::class, [], '0-306-40615-3', 'processing.guard.isbn.invalid'],
+            'isbn invalid length'                     => [V\Isbn::class, [], '123', 'processing.guard.isbn.invalid'],
+            'isbn invalid type config'                => [V\Isbn::class, ['isbn42'], '0-306-40615-2', 'Isbn validator: type must be isbn10, isbn13, or null.', InvalidConfigException::class],
+            'isbn10 valid'                            => [V\Isbn::class, [V\Isbn::ISBN_10], '0-306-40615-2'],
+            'isbn10 valid x'                          => [V\Isbn::class, [V\Isbn::ISBN_10], '0-8044-2957-X'],
+            'isbn13 valid'                            => [V\Isbn::class, [V\Isbn::ISBN_13], '9780306406157'],
+            'issn valid'                              => [V\Issn::class, [], '0378-5955'],
+            'issn valid check digit x'                => [V\Issn::class, [], '0000-006X'],
+            'issn valid check digit zero'             => [V\Issn::class, [], '0000-0000'],
+            'issn invalid'                            => [V\Issn::class, [], '0378-5956', 'processing.guard.issn.invalid'],
+            'issn invalid format'                     => [V\Issn::class, [], '12345-67A', 'processing.guard.issn.invalid'],
+            'luhn non-digit invalid'                  => [V\Luhn::class, [], '----', 'processing.guard.luhn.invalid'],
+            'json invalid type config'                => [V\Json::class, [['invalid']], '{}', "Json validator: unknown JSON type 'invalid'.", InvalidConfigException::class],
+            'json valid bool type'                    => [V\Json::class, [['bool']], 'false'],
+            'json valid null type'                    => [V\Json::class, [['null']], 'null'],
             'enum backed value invalid enum'          => [V\EnumBackedValue::class, [\stdClass::class], 'draft', 'EnumBackedValue validator expects a BackedEnum class, got stdClass.', InvalidConfigException::class],
             'enum backed value invalid instance'      => [V\EnumBackedValue::class, [DummyStatus::class], DummyStatus::Draft, 'must be a backing value of '.DummyStatus::class],
             'enum backed value invalid value'         => [V\EnumBackedValue::class, [DummyStatus::class], 'nope', 'must be a backing value of '.DummyStatus::class],
@@ -204,6 +244,8 @@ final class BuiltInValidatorClassesTest extends TestCase
             'contained in empty needle'               => [V\ContainedIn::class, [[1, 2, 3], null], []],
             'contained in iterator valid'             => [V\ContainedIn::class, [new \ArrayIterator([1, 2, 3]), null], new \ArrayIterator([2, 3])],
             'contains string valid'                   => [V\Contains::class, ['foo', null], 'barfoo'],
+            'contains string case insensitive'        => [V\Contains::class, ['Foo', null, false], 'barfoo'],
+            'contains iterable case insensitive'      => [V\Contains::class, [[1, 2], null, false], [1, 2], 'Contains validator: caseSensitive=false requires a string needle.', InvalidConfigException::class],
             'contains string start invalid'           => [V\Contains::class, ['foo', 'start'], 'barfoo', 'processing.guard.contains.not_contained'],
             'contains string end valid'               => [V\Contains::class, ['foo', 'end'], 'barfoo'],
             'contains string at index'                => [V\Contains::class, ['foo', 3], 'barfoo'],
@@ -260,6 +302,47 @@ final class BuiltInValidatorClassesTest extends TestCase
             'length range mismatch'                   => [V\Length::class, ['min' => 5, 'max' => 1], 'four', 'processing.guard.string.length_not_in_range'],
             'in json encode failure'                  => [V\In::class, [self::resourceList()], 'nope', 'processing.guard.in.not_allowed'],
         ];
+    }
+
+    public function testJsonPolyfillValidation(): void
+    {
+        $method = new \ReflectionMethod(V\Json::class, 'polyfillJsonValidate');
+        /** @psalm-suppress UnusedMethodCall */
+        $method->setAccessible(true);
+
+        self::assertTrue($method->invoke(null, '{"a":1}'));
+        self::assertFalse($method->invoke(null, '{bad'));
+    }
+
+    public function testJsonDetectType(): void
+    {
+        $method = new \ReflectionMethod(V\Json::class, 'detectType');
+        /** @psalm-suppress UnusedMethodCall */
+        $method->setAccessible(true);
+
+        self::assertNull($method->invoke(null, ''));
+        self::assertSame('bool', $method->invoke(null, 'true'));
+        self::assertSame('null', $method->invoke(null, 'null'));
+        self::assertSame('number', $method->invoke(null, '-1'));
+    }
+
+    public function testIpFlagsForVersion(): void
+    {
+        $method = new \ReflectionMethod(V\Ip::class, 'flagsForVersion');
+        /** @psalm-suppress UnusedMethodCall */
+        $method->setAccessible(true);
+
+        $flags = $method->invoke(null, V\Ip::V4_NO_PRIV);
+        self::assertSame(FILTER_FLAG_IPV4 | FILTER_FLAG_NO_PRIV_RANGE, $flags);
+
+        $flags = $method->invoke(null, V\Ip::V6_NO_RES);
+        self::assertSame(FILTER_FLAG_IPV6 | FILTER_FLAG_NO_RES_RANGE, $flags);
+
+        $flags = $method->invoke(null, V\Ip::ALL_NO_PRIV);
+        self::assertSame(FILTER_FLAG_NO_PRIV_RANGE, $flags);
+
+        $flags = $method->invoke(null, V\Ip::ALL_NO_RES);
+        self::assertSame(FILTER_FLAG_NO_RES_RANGE, $flags);
     }
 
     private static function resourceList(): array
