@@ -33,8 +33,8 @@ class DateTime extends CastBase implements CasterInterface, BootsOnDtoInterface
         // if $pattern is an enum, use its value
         if ($format instanceof \BackedEnum) {
             $msg = 'Only string-backed enums are allowed for pattern, got %s::%s with non-string value.';
-            is_string($format->value)
-                or throw new InvalidArgumentException(sprintf($msg, $format::class, $format->name));
+            \is_string($format->value)
+                || throw new InvalidArgumentException(sprintf($msg, $format::class, $format->name));
 
             $format = $format->value;
         }

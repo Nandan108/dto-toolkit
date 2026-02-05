@@ -21,7 +21,7 @@ final class GlobalContextStorage implements ContextStorageInterface
     #[\Override]
     public function popFrame(): void
     {
-        $this->frames or throw new ContextException('Out-of-context call: no ProcessingFrame to pop.');
+        $this->frames || throw new ContextException('Out-of-context call: no ProcessingFrame to pop.');
 
         array_shift($this->frames);
     }
@@ -35,7 +35,7 @@ final class GlobalContextStorage implements ContextStorageInterface
     #[\Override]
     public function currentFrame(): ProcessingFrame
     {
-        $this->frames or throw new ContextException('Out-of-context call: no current ProcessingFrame.');
+        $this->frames || throw new ContextException('Out-of-context call: no current ProcessingFrame.');
 
         return $this->frames[0];
     }

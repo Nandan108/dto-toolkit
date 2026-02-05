@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [Unreleased]
+
+### Changed
+
+- Invalid interface errors for casters and validators now throw `InvalidConfigException` instead of `TransformException::invalidInterface()`.
+- `#[Mod\Any]` now requires at least two strategies; default `$count` is `2`.
+
+### Docs
+
+- Replace `CastingException` references with `TransformException` in casting/caster docs and update debugging guidance.
+
 ## [1.2.0] - 2026-01-28
 
 ### Added

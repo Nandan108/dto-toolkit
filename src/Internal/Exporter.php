@@ -110,7 +110,7 @@ final class Exporter
     ): OutboundProps {
         if ($source instanceof BaseDto) {
 
-            $errorList and $source->setErrorList($errorList);
+            $errorList && $source->setErrorList($errorList);
 
             $normalizedProps = ProcessingContext::wrapProcessing(
                 dto: $source,
@@ -225,7 +225,8 @@ final class Exporter
         // If we dont't have an entity yet, check for DefaultOutboundEntity attribute on source DTO
         if (!$entity && $outboundProps->sourceWasDto) {
             /** @var BaseDto $source */
-            if ($outboundEntity = DefaultOutboundEntity::resolveForDto($source)) {
+            $outboundEntity = DefaultOutboundEntity::resolveForDto($source);
+            if ($outboundEntity) {
                 $entity = $outboundEntity['class'];
                 $constructMode = $outboundEntity['construct'];
             }

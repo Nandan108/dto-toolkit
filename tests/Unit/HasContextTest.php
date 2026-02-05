@@ -22,7 +22,7 @@ final class HasContextTest extends TestCase
 
     public function testSetContextAndGetContext(): void
     {
-        $this->object or throw new \Exception('Object not initialized');
+        $this->object || $this->fail('Object not initialized');
 
         // set a value 'foo' => 'bar' in the context
         $this->object->contextSet('foo', 'bar');
@@ -46,7 +46,7 @@ final class HasContextTest extends TestCase
 
     public function testWithContextAndGetContextMap(): void
     {
-        $this->object or throw new \Exception('Object not initialized');
+        $this->object || $this->fail('Object not initialized');
 
         $data = [
             'a' => 1,

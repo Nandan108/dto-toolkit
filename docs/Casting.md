@@ -210,7 +210,7 @@ class MyDto extends BaseDto {
    - If required args missing: attempt container resolution (adapter-defined)
 2. Method on the DTO class
 3. Delegate to `CastTo::$customCasterResolver->resolve(...)` (if defined)
-4. Throw `CastingException`
+4. Throw `TransformException`
 
 ---
 
@@ -262,7 +262,7 @@ These paths are opt-in and fully compatible with the core memoization logic.
 
 ### 🧰 Tools for Debugging
 
-- Use `CastTo::_getCasterMetadata()` to inspect resolved and cached caster instances
-- Use `CastTo::_clearCasterMetadata()` to reset all cached instances
+- Use `CastTo::_getNodeMetadata()` to inspect resolved and cached node instances
+- Use `CastTo::_clearNodeMetadata()` to reset all cached instances
 
-*A debug mode is planned, where CastingExceptions will provide full chain context information to the catcher when thrown from within a chain.*
+*A debug mode is planned, where ProcessingExceptions will provide full chain context information to the catcher when thrown from within a chain.*

@@ -80,7 +80,7 @@ final class CastingChainTest extends TestCase
         $dto->fill(['prices' => '---  X 6.196/  0.99/X2.00001/XX 3.5  /XX4.57   --']);
         try {
             $dto->processInbound();
-            $this->fail('Expected CastingException not thrown');
+            $this->fail('Expected TransformException not thrown');
         } catch (ProcessingException $e) {
             $this->assertSame('processing.modifier.per_item.expected_array', $e->getMessageTemplate());
             $this->assertSame('prices', $e->getPropertyPath());
@@ -144,7 +144,7 @@ final class CastingChainTest extends TestCase
         $dto->fill(['prices' => '---  X 6.196/  0.99/X2.00001/XX 3.5  /XX4.57   --']);
         try {
             $dto->processInbound();
-            $this->fail('Expected CastingException not thrown');
+            $this->fail('Expected TransformException not thrown');
         } catch (InvalidConfigException $e) {
             $msg = $e->getMessage();
             $this->assertStringStartsWith('#[PerItem] expected 3 child nodes, but found only 2: [Trimmed, FailNextTo]', $msg);
@@ -163,7 +163,7 @@ final class CastingChainTest extends TestCase
         $dto->fill(['prices' => '---  X 6.196/  0.99/X2.00001/XX 3.5  /XX4.57   --']);
         try {
             $dto->processInbound();
-            $this->fail('Expected CastingException not thrown');
+            $this->fail('Expected TransformException not thrown');
         } catch (InvalidConfigException $e) {
             $msg = $e->getMessage();
             $this->assertStringStartsWith('#[PerItem] expected 3 child nodes, but found none', $msg);

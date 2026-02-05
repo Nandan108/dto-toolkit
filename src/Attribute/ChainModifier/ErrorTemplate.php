@@ -32,11 +32,11 @@ class ErrorTemplate extends ChainModifierBase
         }
         /** @psalm-suppress TypeDoesNotContainType, DocblockTypeContradiction */
         if (\is_string($override)) {
-            '' === $override and throw new InvalidConfigException('ErrorTemplate override string cannot be empty');
+            '' === $override && throw new InvalidConfigException('ErrorTemplate override string cannot be empty');
         } else {
             foreach ($override as $key => $value) {
-                '' === $key and throw new InvalidConfigException('ErrorTemplate override keys cannot be empty strings');
-                '' === $value and throw new InvalidConfigException('ErrorTemplate override values cannot be empty strings');
+                '' === $key && throw new InvalidConfigException('ErrorTemplate override keys cannot be empty strings');
+                '' === $value && throw new InvalidConfigException('ErrorTemplate override values cannot be empty strings');
             }
         }
     }

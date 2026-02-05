@@ -395,12 +395,12 @@ Process\ProcessingExceptionInterface
 
 DTOT supports **four runtime error-collection modes** via the `ErrorMode` enum:
 
-| Error Mode             | Behavior                                                                                                                                                            |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **FailFast**           | Default. Exceptions are thrown immediately and processing stops.                                                                                                    |
-| **CollectFailToInput** | Exceptions are recorded, but the original input value is preserved.                                                                                                 |
-| **CollectFailToNull**  | Exceptions are recorded, and the property value is set to `null`.                                                                                                   |
-| **CollectNone**        | Exceptions are recorded, and the property is omitted entirely:<br>- inbound: property is marked "unfilled"<br>- outbound: property does not appear in output arrays |
+| Error Mode             | Behavior                                                                                                                                         |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **FailFast**           | Default. Exceptions are thrown immediately and processing stops.                                                                                 |
+| **CollectFailToInput** | Exceptions are recorded, but the original input value is preserved.                                                                              |
+| **CollectFailToNull**  | Exceptions are recorded, and the property value is set to `null`.                                                                                |
+| **CollectNone**        | Exceptions are recorded, and the property is omitted entirely:<br>- inbound: property is marked "unfilled"<br>- outbound: output omits property |
 
 The default mode can be configured:
 

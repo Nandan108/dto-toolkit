@@ -14,7 +14,6 @@ use Nandan108\DtoToolkit\Core\ProcessingContext;
 use Nandan108\DtoToolkit\Core\ProcessingFrame;
 use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
 use Nandan108\DtoToolkit\Exception\Config\NodeProducerResolutionException;
-use Nandan108\DtoToolkit\Exception\Process\TransformException;
 use Nandan108\DtoToolkit\Internal\ProcessingNodeBase;
 use Nandan108\DtoToolkit\Internal\ProcessingNodeMeta;
 use PHPUnit\Framework\TestCase;
@@ -46,9 +45,9 @@ final class CasterInterfaceTest extends TestCase
         try {
             $attr->getProcessingNode($dto);
             $this->fail('Expected exception not thrown');
-        } catch (TransformException $e) {
-            $this->assertSame('processing.transform.invalid_interface', $e->getMessageTemplate());
-            $this->assertSame($className, $e->getMessageParameters()['className'] ?? null);
+        } catch (InvalidConfigException $e) {
+            $expected = "Class {$className} does not implement the required interface Nandan108\DtoToolkit\Contracts\CasterInterface";
+            $this->assertSame($expected, $e->getMessage());
         } finally {
             ProcessingContext::popFrame();
         }

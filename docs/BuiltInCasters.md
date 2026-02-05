@@ -17,7 +17,7 @@ They are typically applied when:
 Each caster:
 - Accepts and processes a **single value**
 - Either **transforms** or **sanitizes** the value
-- Throws a `CastingException` if the input is invalid or can't be transformed
+- Throws a `TransformException` if the input is invalid or can't be transformed
 
 These attributes can be freely combined and chained to compose complex transformations.
 
@@ -31,7 +31,7 @@ These attributes can be freely combined and chained to compose complex transform
 ### Case converters
 
 **Arguments:** _none_
-All throw a `CastingException` if the input is not stringable.
+All throw a `TransformException` if the input is not stringable.
 
 #### Standard lower/upper case
 
@@ -55,7 +55,7 @@ Words in input value may be separated by non-letter characters ***or*** a change
 **Arguments:** *none*
 
 Encodes a string into Base64 format.
-Throws a `CastingException` if the input is not stringable.
+Throws a `TransformException` if the input is not stringable.
 
 ---
 
@@ -65,7 +65,7 @@ Throws a `CastingException` if the input is not stringable.
 
 Decodes a Base64-encoded string.
 If `$strict` is true, decoding will fail on invalid characters.
-Throws a `CastingException` if the input is not a valid Base64 string or if decoding fails.
+Throws a `TransformException` if the input is not a valid Base64 string or if decoding fails.
 
 ---
 
@@ -73,14 +73,14 @@ Throws a `CastingException` if the input is not a valid Base64 string or if deco
 
 Casts truthy/falsy values to boolean.
 For string inputs, uses `filter_var($value, FILTER_VALIDATE_BOOLEAN)`.
-Throws a `CastingException` on invalid input.
+Throws a `TransformException` on invalid input.
 
 ---
 
 ### CastTo\Capitalized
 
 Capitalizes the first letter of a string.
-Throws a `CastingException` if the input is not stringable.
+Throws a `TransformException` if the input is not stringable.
 
 ---
 
@@ -92,7 +92,7 @@ Throws a `CastingException` if the input is not stringable.
 
 Parses a datetime string into a `\DateTimeImmutable` instance.
 Optionally coerces the result to a given timezone.
-Throws a `CastingException` if parsing fails.
+Throws a `TransformException` if parsing fails.
 
 ---
 
@@ -109,7 +109,7 @@ Throws a `CastingException` if parsing fails.
 
 Parses a locale-dependent date/time string using PHP's `IntlDateFormatter`.
 Supports fallback resolution for locale and timezone.
-Throws a `CastingException` on invalid input.
+Throws a `TransformException` on invalid input.
 
 ---
 
@@ -119,7 +119,7 @@ Throws a `CastingException` on invalid input.
 - `string $format = 'Y-m-d H:i:s'`
 
 Converts a `DateTimeInterface` object to a formatted string.
-Throws a `CastingException` if the input is not a `DateTimeInterface`.
+Throws a `TransformException` if the input is not a `DateTimeInterface`.
 
 ---
 
@@ -213,7 +213,7 @@ Years are computed as 365 days.
 
 Casts a scalar value to a PHP backed enum.
 Throws an `InvalidArgumentException` if `$enumClass` is invalid.
-Throws a `CastingException` if the value does not match any enum case.
+Throws a `TransformException` if the value does not match any enum case.
 
 ---
 
@@ -230,7 +230,7 @@ Examples:
 - `'1 234,56'` with `','` ➔ `1234.56`
 - `'-1_000.50'` ➔ `-1000.5`
 
-Throws a `CastingException` if the input is not stringable or cannot be interpreted as numeric.
+Throws a `TransformException` if the input is not stringable or cannot be interpreted as numeric.
 
 ---
 
@@ -239,7 +239,7 @@ Throws a `CastingException` if the input is not stringable or cannot be interpre
 **Arguments:** *none*
 
 Parses a JSON string into a native PHP array or object.
-Throws a `CastingException` if the input is not stringable or not valid JSON.
+Throws a `TransformException` if the input is not stringable or not valid JSON.
 
 ---
 
@@ -264,7 +264,7 @@ Casts the value to an integer using a strategy: `Ceil`, `Floor`, `Round`, or `Tr
 **Arguments:** `string $separator = ','`
 
 Converts an array of strings into a comma-separated string.
-Throws a `CastingException` if the input is not an array.
+Throws a `TransformException` if the input is not an array.
 
 ---
 
@@ -273,7 +273,7 @@ Throws a `CastingException` if the input is not an array.
 **Arguments:** `int $flags = 0, int $depth = 512`
 
 Converts the value to a JSON string using `json_encode()`.
-Throws a `CastingException` on failure.
+Throws a `TransformException` on failure.
 
 ---
 
@@ -283,7 +283,7 @@ Throws a `CastingException` on failure.
 
 Extracts a specific key or subfield from a JSON string or any array, or nested array structure. Object traversal isn't supported yet.
 The `$path` can use dot-notation for nested fields (e.g. `"user.name"`).
-Throws a `CastingException` if the input is not an array or a valid JSON string, or the path does not exist.
+Throws a `TransformException` if the input is not an array or a valid JSON string, or the path does not exist.
 
 ---
 
@@ -321,7 +321,7 @@ Throws if input is not a valid date/time object.
 - `?string $locale = null` ([see resolution](#parameter-resolution))
 
 Formats a float as a locale-aware number string.
-Throws a `CastingException` if the input is not numeric.
+Throws a `TransformException` if the input is not numeric.
 
 ---
 
@@ -333,7 +333,7 @@ Throws a `CastingException` if the input is not numeric.
 - `string $thousandsSeparator = ''`
 
 Formats a numeric value into a string with configurable decimal and thousands separators.
-Throws a `CastingException` if the input is not numeric.
+Throws a `TransformException` if the input is not numeric.
 
 ---
 
@@ -350,7 +350,7 @@ Replaces a given value (or any of several) with `null`.
 **Arguments:** `string $pattern, string $replacement`
 
 Performs a regex search and replace on the string value.
-Throws a `CastingException` if the regex operation fails or if input is not stringable.
+Throws a `TransformException` if the regex operation fails or if input is not stringable.
 
 ---
 
@@ -360,7 +360,7 @@ Throws a `CastingException` if the regex operation fails or if input is not stri
 
 Splits a string using a regular expression.
 Returns an array of substrings.
-Throws a `CastingException` if input is not stringable or if the regex fails.
+Throws a `TransformException` if input is not stringable or if the regex fails.
 
 ---
 
@@ -386,7 +386,7 @@ If the input matches `$when`, replaces it with `$then`.
 **Arguments:** `int $precision = 0`
 
 Rounds a float to the nearest value at the given precision.
-Throws a `CastingException` on invalid input.
+Throws a `TransformException` on invalid input.
 
 ---
 
@@ -396,7 +396,7 @@ Throws a `CastingException` on invalid input.
 
 Converts a string into a URL-friendly slug.
 Relies on the Intl extension to strip diacritics.
-Throws a `CastingException` if input is not stringable or if Intl is unavailable.
+Throws a `TransformException` if input is not stringable or if Intl is unavailable.
 
 ---
 
@@ -405,7 +405,7 @@ Throws a `CastingException` if input is not stringable or if Intl is unavailable
 **Arguments:** `string $separator = ','`
 
 Splits a CSV string into an array.
-Throws a `CastingException` if the input cannot be cast to a string.
+Throws a `TransformException` if the input cannot be cast to a string.
 
 ---
 
@@ -414,7 +414,7 @@ Throws a `CastingException` if the input cannot be cast to a string.
 **Arguments:** `array|\Traversable $ignore = [null], mixed $fallback = (none)`
 
 Returns the first element in the input array/iterable that is not in `$ignore`.
-If none is found, returns `$fallback` when provided; otherwise throws a `CastingException`.
+If none is found, returns `$fallback` when provided; otherwise throws a `TransformException`.
 
 ---
 
@@ -429,7 +429,7 @@ Casts the value to a string using `(string)` coercion.
 **Arguments:** `int $length, string $char = ' ', int $padType = STR_PAD_RIGHT`
 
 Pads a string to the given length, matching `str_pad()` semantics.
-Throws a `CastingException` if the input is not stringable.
+Throws a `TransformException` if the input is not stringable.
 
 ---
 
@@ -447,7 +447,7 @@ If `$schemes` is provided, only those schemes are considered.
 **Arguments:** `string $characters = " \n\r\t\v\x00", string $where = 'both'`
 
 Trims whitespace (or specified characters) from the string.
-Throws a `CastingException` if the input is not stringable.
+Throws a `TransformException` if the input is not stringable.
 
 ---
 

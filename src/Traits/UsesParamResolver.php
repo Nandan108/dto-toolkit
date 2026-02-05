@@ -39,7 +39,7 @@ trait UsesParamResolver
         $config = $resolverConfigs[$paramName] ?? null;
 
         // Config should be set up in the bootOnDto() method. If it's not, something went wrong - throw an exception.
-        $config or throw new InvalidConfigException("Parameter '$paramName' has not been configured by configureParamResolver().");
+        $config || throw new InvalidConfigException("Parameter '$paramName' has not been configured by configureParamResolver().");
 
         return $config;
     }
@@ -54,8 +54,6 @@ trait UsesParamResolver
      */
     protected function resolveParamProvider(ParamResolverConfig $config, ?string $paramValueOrProviderClass, BaseDto $dto): \Closure
     {
-        // $config = $this->getParamResolverConfig($paramName);
-
         /** @var \Closure|null $provider */
         /** @psalm-suppress UnsupportedPropertyReferenceUsage,PossiblyNullArrayOffset */
         $provider = &$config->providers[$paramValueOrProviderClass] ?? null;
@@ -81,7 +79,7 @@ trait UsesParamResolver
         // A value was provided
         if (null !== $paramValueOrProviderClass) {
             // 1. Declared DTO source ? Return a provider that calls $dto->get$paramName()
-            if (preg_match('/^<dto(:([a-zA-Z0-9_]+)(?::(.*))?)?$/', $paramValueOrProviderClass, $matches)) {
+            if (preg_match('/^<dto(:(\w+)(?::(.*))?)?$/', $paramValueOrProviderClass, $matches)) {
                 $paramGetter = $matches[2] ?? $defaultParamGetter;
                 $extraParam = $attemptJsonDecode($matches[3] ?? null);
 
@@ -184,7 +182,7 @@ trait UsesParamResolver
             }
 
             // this syntax is used to allow full coverage without the incovenience of having to test the sad path separately
-            isset($source) or throw new InvalidConfigException("No value or provider given, unable to resolve $paramName for ".static::class);
+            isset($source) || throw new InvalidConfigException("No value or provider given, unable to resolve $paramName for ".static::class);
 
             // if checkValid is set, check the value and throw if invalid
             if ($config->checkValid && !($config->checkValid)($paramValue, $paramName)) {

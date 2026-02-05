@@ -63,20 +63,13 @@ CastTo::$onCastResolved = function ($casterMeta, $isCacheHit) {
 
 ## ❌ Diagnosing Failures
 
-If a caster cannot be resolved, you’ll get a `CastingException` like:
-
-```
-CastingException: Caster 'unknownCaster' could not be resolved.
-```
+On failure to resolve a caster or validator, various exceptions may be thrown:
+- `NodeProducerResolutionException`
+- `InvalidConfigException`
+- DI container (in a framework context)
 
 This usually means:
-- A typo in the `#[CastTo('xxx')]` value
-- A missing `castToXxx()` method
-- A class that doesn’t implement `CasterInterface`
----
-
-## 🧼 Summary
-
-- Use `_getNodeMetadata()` to inspect or test resolution
-- Use `CastingException` for resolution failure handling
-- Collision works out of the box for better exception handling in CLI or test runs
+- Typo in the `#[CastTo('xxx')]` value
+- Missing `castToXxx()` method
+- Invalid class name
+- Class that doesn’t implement `CasterInterface` or `ValidatorInterface`

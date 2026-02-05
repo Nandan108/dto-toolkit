@@ -36,7 +36,7 @@ trait UsesDiacriticSanitizer
         $result = $transliterator->transliterate($value);
 
         // Transliteration failure is very unlikely to happen, but if it does, we throw an exception
-        false !== $result or throw TransformException::reason(
+        false !== $result || throw TransformException::reason(
             methodOrClass: static::class,
             value: $value,
             // Failed to transliterate string with Intl extension

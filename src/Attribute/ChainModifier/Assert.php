@@ -32,7 +32,7 @@ class Assert extends ChainModifierBase
         public readonly int $count = 1,
     ) {
         /** @psalm-suppress DocblockTypeContradiction */
-        $this->count > 0 or throw new InvalidArgumentException('AssertAll: $count must be greater than or equal to 2.');
+        $this->count > 0 || throw new InvalidArgumentException('Assert: $count must be greater than or equal to 1.');
     }
 
     /**

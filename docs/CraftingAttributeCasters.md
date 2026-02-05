@@ -5,7 +5,7 @@ This guide explains how to create your own `Cast\To*` casters in DTO Toolkit. Yo
 - Create a minimal caster class
 - Use `BootsOnDtoInterface` for context-sensitive setup
 - Handle flexible parameters with `UsesParamResolver`
-- Validate input and throw proper `CastingException`s
+- Validate input and throw proper `TransformException`s
 
 > ⚠️ Caster instances are memoized per set of `$constructorArgs` — not per DTO.
 > This means you **cannot safely use instance properties to hold mutable state**.
@@ -154,20 +154,20 @@ class MyCaster extends CastBase implements CasterInterface, BootsOnDtoInterface
 
 ---
 
-## 📊 Resolution Priority (for valueOrProvider)
+## 📊 UsesParamResolver Resolution Priority (for valueOrProvider)
 
-| Example for `$locale` argument               | Resolved from                                                  |
+| Example for `$xyz` argument               | Resolved from                                                  |
 |--------------------|-----------------------------------------------------------------|
 | `Provider::class`  | `Provider::getXyz($value, $prop, $dto)`                   |
 | `'<dto'`           | `$dto->getXyz($value, $prop)`                                          |
 | `'<dto:aMethod'`   | `$dto->aMethod($value, $prop)`                                         |
 | `'<dto:aMethod:{"foo":[1,2]}'`<br>*json-formatted extra parameter* | `$dto->aMethod($value, $prop, ['foo' => [1, 2]])`                                         |
-| `'<context'`       | `$dto->getContext($paramName)`                                 |
+| `'<context'`       | `$dto->getContext('xyz')`                                 |
 | `'<context:key'`       | `$dto->getContext('key')`                                 |
 | `'<context:key=val'`   | `$dto->getContext('key') === 'val'` (returns a bool)                    |
 | `'<context:key=/regexp/i'`   | `preg_match('/regexp/i', $dto->getContext('key'))` (returns a bool)                    |
 | `'fr_CH'` (string) | Used directly if value is deemed valid by that particular resolver (timezone, locale or other) |
-| `null`                 | Fallback order:<br>1. `$dto->getContext($paramName)` (if context key exists)<br>2. `$dto->{"get$ParamName"}` (if method exists)<br>3. resolver's `fallback($value, $dto)`   |
+| `null`                 | Fallback order:<br>1. `$dto->getContext($paramName)` (if context key exists)<br>2. `$dto->{"get$ParamName"}()` (if method exists)<br>3. resolver's `fallback($value, $dto)`   |
 
 ---
 

@@ -31,9 +31,9 @@ use Nandan108\DtoToolkit\Internal\ProcessingChain;
 class Any extends ChainModifierBase
 {
     public function __construct(
-        public readonly int $count = 1,
+        public readonly int $count = 2,
     ) {
-        $this->count > 1 or throw new InvalidArgumentException('Any: $count must be greater than or equal to 1.');
+        $this->count >= 2 || throw new InvalidArgumentException('Any: $count must be greater or equal to 2.');
     }
 
     /**

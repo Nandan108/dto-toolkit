@@ -22,7 +22,7 @@
 - **[083]** Consider a modifier-based mechanism for dynamically overriding node arguments via extraction (DynamicArg or ExtractToArg).
 - **[044]** Add support for DTO transforms (`\$dto->toDto($otherDtoClass)`) [See details](#PBI-044)
 - **[082]** Introduce new processor node type more similar to modifiers: rather than having a single cast() or validate() method, they'd have a makeValidator()/makeCaster() method, that can return an optimized Closure, which might be different depending on $constructorArgs.
-- **[034]** Add support for logging failed casts in FailTo/FailNextTo. `CastTo::$castSoftFailureLogger = function (CastingException $e, $returnedVal)`
+- **[034]** Add support for logging failed casts in FailTo/FailNextTo. `CastTo::$castSoftFailureLogger = function (TransformException $e, $returnedVal)`
 - **[058]** Add a doc about FullDto and making one's own slimmed-down version if not all features are needed
 - **[086]** Bump min PHP version to 8.3 (and get typed constants!)
   - Move some static props to typed constants: `(Assert|CastTo)::$methodPrefix`, `GuardException::$template_prefix`,`GuardException::$error_code`, `ProcessingException::$defaultErrorCode.`

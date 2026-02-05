@@ -181,8 +181,7 @@ class ProcessingException extends \RuntimeException implements DtoToolkitExcepti
     }
 
     /**
-     * Extracted from old CastingException::castingFailure()
-     * but now returns a string for the `debug` parameter.
+     * Serializes $operand and returns a string for the `debug` parameter.
      */
     protected static function prepareOperandForDebug(mixed $operand): string
     {

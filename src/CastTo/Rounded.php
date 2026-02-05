@@ -12,7 +12,7 @@ use Nandan108\DtoToolkit\Exception\Process\TransformException;
  *
  * In case of casting failure, where $value can't be converted to bool:
  * - if $nullable = true, will return null.
- * - if $nullable = false, will throw a CastingException.
+ * - if $nullable = false, will throw a TransformException.
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class Rounded extends CastBase

@@ -7,7 +7,6 @@ namespace Nandan108\DtoToolkit;
 use Nandan108\DtoToolkit\Contracts\CasterInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
-use Nandan108\DtoToolkit\Exception\Process\TransformException;
 use Nandan108\DtoToolkit\Internal\ProcessingNodeBase;
 
 /**
@@ -50,12 +49,6 @@ class CastTo extends ProcessingNodeBase
     protected function makeClosureFromDtoMethod(BaseDto $dto, string $method, array $args): \Closure
     {
         return fn (mixed $value): mixed => $dto->{$method}($value, ...$args);
-    }
-
-    #[\Override]
-    protected function interfaceError(string $class): \Throwable
-    {
-        return TransformException::invalidInterface($class);
     }
 
     #[\Override]

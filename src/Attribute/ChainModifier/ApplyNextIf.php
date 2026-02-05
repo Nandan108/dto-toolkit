@@ -10,8 +10,10 @@ use Nandan108\DtoToolkit\Internal\ProcessingChain;
 use Nandan108\DtoToolkit\Traits\UsesParamResolver;
 
 /**
- * The ApplyNextIf chain modifier is used to skip the next $count chain elements.
+ * The ApplyNextIf chain modifier is used to apply the next $count chain elements conditionally.
  * By default, $count is -1, which means it will wrap as many chain elements as possible.
+ *
+ * $condition is resolved at processing time, via the UsesParamResolver trait.
  *
  * @psalm-api
  */

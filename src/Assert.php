@@ -59,12 +59,6 @@ class Assert extends ProcessingNodeBase
     }
 
     #[\Override]
-    protected function interfaceError(string $class): \Throwable
-    {
-        return new InvalidConfigException("Class '{$class}' does not implement the ValidatorInterface.");
-    }
-
-    #[\Override]
     public function resolveWithContainer(string $className): object
     {
         throw new InvalidConfigException("Validator {$className} requires constructor args, but none were provided and no container is available.");

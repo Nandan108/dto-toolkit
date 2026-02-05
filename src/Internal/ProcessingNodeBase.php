@@ -220,7 +220,7 @@ abstract class ProcessingNodeBase implements PhaseAwareInterface, ProcessingNode
         $callable = $instance ? null : $resolved;
 
         if (!$callable) {
-            $instance or throw NodeProducerResolutionException::for($this->methodOrClass);
+            $instance || throw NodeProducerResolutionException::for($this->methodOrClass);
             $callable = $this->makeClosureFromInstance($instance, $this->args);
         }
 
@@ -247,7 +247,7 @@ abstract class ProcessingNodeBase implements PhaseAwareInterface, ProcessingNode
     {
         $interface = $this->getInterface();
         if (!is_subclass_of($className, $interface)) {
-            throw $this->interfaceError($className);
+            throw new InvalidConfigException("Class {$className} does not implement the required interface ".$this->getInterface());
         }
 
         if (null !== $this->constructorArgs) {
@@ -304,7 +304,7 @@ abstract class ProcessingNodeBase implements PhaseAwareInterface, ProcessingNode
             foreach (array_filter($attrInstancesByProp) as $propName => $attrInstances) {
                 /** @psalm-suppress RedundantCondition */
                 is_array($attrInstances) or ($msg = 'Attribute class '.get_class($attrInstances).
-                    ' must be declared with #[Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)].' and throw new InvalidConfigException($msg));
+                    ' must be declared with #[Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)].' && throw new InvalidConfigException($msg));
 
                 /** @var array<int, ProcessingNodeProducerInterface> $attrInstances */
                 $iterator = new \ArrayIterator($attrInstances);
@@ -385,8 +385,6 @@ abstract class ProcessingNodeBase implements PhaseAwareInterface, ProcessingNode
 
     abstract protected function makeClosureFromDtoMethod(BaseDto $dto, string $method, array $args): \Closure;
 
-    abstract protected function interfaceError(string $class): \Throwable;
-
     abstract public function resolveWithContainer(string $className): object;
 
     protected function ensureStringable(
@@ -420,6 +418,6 @@ abstract class ProcessingNodeBase implements PhaseAwareInterface, ProcessingNode
     {
         $loaded = extension_loaded($extensionName);
         // compact syntax allows full test coverage even when extension is present (failing case impossible to cover)
-        $loaded or throw new MissingDependencyException($extensionName, static::class);
+        $loaded || throw new MissingDependencyException($extensionName, static::class);
     }
 }

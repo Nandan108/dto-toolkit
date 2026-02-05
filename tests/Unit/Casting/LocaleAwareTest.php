@@ -106,7 +106,7 @@ final class LocaleAwareTest extends TestCase
 
             $dto->unfill()->loadArray(['number_fr' => 'not-a-number']);
 
-            $this->fail('Expected CastingException');
+            $this->fail('Expected TransformException');
         } catch (TransformException $e) {
             $this->assertSame('processing.transform.expected', $e->getMessageTemplate());
             $this->assertSame('number_fr', $e->getPropertyPath());
@@ -116,7 +116,7 @@ final class LocaleAwareTest extends TestCase
 
             $dto->unfill()->loadArray(['amount_chf' => 'not numeric']);
 
-            $this->fail('Expected CastingException');
+            $this->fail('Expected TransformException');
         } catch (TransformException $e) {
             $this->assertSame('processing.transform.expected', $e->getMessageTemplate());
             $this->assertSame('amount_chf', $e->getPropertyPath());
@@ -145,7 +145,7 @@ final class LocaleAwareTest extends TestCase
             $dto->locale = 'bad locale string';
 
             $dto->unfill()->loadArray(['number' => 'not-a-number']);
-            $this->fail('Expected CastingException');
+            $this->fail('Expected TransformException');
         } catch (TransformException $e) {
             $this->assertSame('processing.transform.expected', $e->getMessageTemplate());
             $this->assertSame('number', $e->getPropertyPath());
@@ -209,7 +209,7 @@ final class LocaleAwareTest extends TestCase
         try {
 
             $dto->unfill()->contextSet('locale', 'bad-locale')->loadArray(['amount' => 1234.56]);
-            $this->fail('Expected CastingException');
+            $this->fail('Expected TransformException');
         } catch (InvalidConfigException $e) {
             $this->assertStringContainsString('returned an invalid value "bad-locale"', $e->getMessage());
         }

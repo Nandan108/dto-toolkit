@@ -26,10 +26,13 @@ final class ValidateErrorTest extends TestCase
 
     public function testNonImplementingClassThrows(): void
     {
-        $this->expectException(InvalidConfigException::class);
-        $this->expectExceptionMessage("Class 'stdClass' does not implement the ValidatorInterface.");
-
-        NonImplementingValidatorDto::newFromArray(['name' => 'anything']);
+        try {
+            NonImplementingValidatorDto::newFromArray(['name' => 'anything']);
+            $this->fail('Expected exception not thrown');
+        } catch (InvalidConfigException $e) {
+            $expected = "Class stdClass does not implement the required interface Nandan108\DtoToolkit\Contracts\ValidatorInterface";
+            $this->assertSame($expected, $e->getMessage());
+        }
     }
 
     public function testValidatorNeedingContainerThrows(): void
