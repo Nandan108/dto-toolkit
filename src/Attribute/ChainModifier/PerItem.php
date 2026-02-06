@@ -36,7 +36,7 @@ class PerItem extends ChainModifierBase
             $queue,
             $dto,
             $this->count,
-            'PerItem',
+            'Mod\PerItem',
             buildCasterClosure: function (array $chainElements, ?callable $upstreamChain): \Closure {
                 $subchain = ProcessingChain::composeFromNodes($chainElements);
 
@@ -48,6 +48,7 @@ class PerItem extends ChainModifierBase
                     if (null !== $upstreamChain) {
                         $value = $upstreamChain($value);
                     }
+                    $nodeNamePushed = ProcessingContext::pushPropPathNode('Mod\PerItem');
 
                     // If the value is not an array, we throw!
                     if (!is_array($value)) {
@@ -59,13 +60,17 @@ class PerItem extends ChainModifierBase
                         );
                     }
                     $result = [];
-                    foreach ($value as $k => $v) {
-                        ProcessingContext::pushPropPath($k);
-                        try {
-                            $result[$k] = $subchain($v);
-                        } finally {
-                            ProcessingContext::popPropPath();
+                    try {
+                        foreach ($value as $k => $v) {
+                            ProcessingContext::pushPropPath($k);
+                            try {
+                                $result[$k] = $subchain($v);
+                            } finally {
+                                ProcessingContext::popPropPath();
+                            }
                         }
+                    } finally {
+                        $nodeNamePushed && ProcessingContext::popPropPath();
                     }
 
                     return $result;

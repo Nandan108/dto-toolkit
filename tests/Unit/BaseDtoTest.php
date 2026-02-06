@@ -13,27 +13,36 @@ final class BaseDtoTest extends TestCase
     public function testCanAccessPublicStaticFunc(): void
     {
         try {
-            $dto = BaseDtoTestDtoWithProtectedStaticFunc::new();
+            $dto = BaseDtoTestDtoWithUnaccessibleStaticFuncs::new();
             /** @psalm-suppress InaccessibleMethod */
-            BaseDtoTestDtoWithProtectedStaticFunc::protectedMakeSpecialObject($dto, new \stdClass());
+            BaseDtoTestDtoWithUnaccessibleStaticFuncs::protectedMakeSpecialObject($dto, new \stdClass());
             $this->fail('Expected exception not thrown');
         } catch (\Exception $e) {
             $this->assertInstanceOf(\Exception::class, $e);
-            $this->assertSame('Protected method '.BaseDtoTestDtoWithProtectedStaticFunc::class.'::protectedMakeSpecialObject() is not reachable from calling context.', $e->getMessage());
+            $this->assertSame('Protected method '.BaseDtoTestDtoWithUnaccessibleStaticFuncs::class.'::protectedMakeSpecialObject() is not reachable from calling context.', $e->getMessage());
+        }
+
+        try {
+            /** @psalm-suppress InaccessibleMethod */
+            BaseDtoTestDtoWithUnaccessibleStaticFuncs::somePrivateFunc();
+            $this->fail('Expected exception still not thrown');
+        } catch (\Exception $e) {
+            $this->assertInstanceOf(\Exception::class, $e);
+            $this->assertSame('Private method '.BaseDtoTestDtoWithUnaccessibleStaticFuncs::class.'::somePrivateFunc() is not reachable from calling context.', $e->getMessage());
         }
     }
 
     public function testCannotAccessProtectedStaticFunc(): void
     {
-        $dto = BaseDtoTestDtoWithProtectedStaticFunc::makeSpecialObject((object) ['foo' => 'bar']);
-        $this->assertInstanceOf(BaseDtoTestDtoWithProtectedStaticFunc::class, $dto);
+        $dto = BaseDtoTestDtoWithUnaccessibleStaticFuncs::makeSpecialObject((object) ['foo' => 'bar']);
+        $this->assertInstanceOf(BaseDtoTestDtoWithUnaccessibleStaticFuncs::class, $dto);
         $this->assertSame(['foo' => 'bar'], $dto->toArray());
     }
 
     public function testCanUseMagicFunc(): void
     {
-        $dto = BaseDtoTestDtoWithProtectedStaticFunc::newFromSpecialObject((object) ['foo' => 'bar']);
-        $this->assertInstanceOf(BaseDtoTestDtoWithProtectedStaticFunc::class, $dto);
+        $dto = BaseDtoTestDtoWithUnaccessibleStaticFuncs::newFromSpecialObject((object) ['foo' => 'bar']);
+        $this->assertInstanceOf(BaseDtoTestDtoWithUnaccessibleStaticFuncs::class, $dto);
         $this->assertSame(['foo' => 'bar'], $dto->toArray());
     }
 
@@ -42,11 +51,11 @@ final class BaseDtoTest extends TestCase
         // test static call on non-existent from* method
         try {
             /** @psalm-suppress UndefinedMagicMethod */
-            BaseDtoTestDtoWithProtectedStaticFunc::newFromNonExistentMethod((object) ['foo' => 'bar']);
+            BaseDtoTestDtoWithUnaccessibleStaticFuncs::newFromNonExistentMethod((object) ['foo' => 'bar']);
             $this->fail('Expected exception not thrown');
         } catch (\Exception $e) {
             $this->assertInstanceOf(\Exception::class, $e);
-            $this->assertSame('Method '.BaseDtoTestDtoWithProtectedStaticFunc::class.'::loadNonExistentMethod() does not exist.', $e->getMessage());
+            $this->assertSame('Method '.BaseDtoTestDtoWithUnaccessibleStaticFuncs::class.'::loadNonExistentMethod() does not exist.', $e->getMessage());
         }
     }
 
@@ -114,7 +123,7 @@ final class BaseDtoTest extends TestCase
 /**
  * @method static static newFromSpecialObject(object $specialObj)
  */
-final class BaseDtoTestDtoWithProtectedStaticFunc extends BaseDto
+final class BaseDtoTestDtoWithUnaccessibleStaticFuncs extends BaseDto
 {
     // not accessible directly -- caught by __callStatic(), which throws
     protected static function protectedMakeSpecialObject(?self $dto, object $specialObj): static
@@ -126,6 +135,11 @@ final class BaseDtoTestDtoWithProtectedStaticFunc extends BaseDto
         $dto->fill($vars);
 
         return $dto;
+    }
+
+    /** @psalm-suppress UnusedParam */
+    private static function somePrivateFunc(): void
+    {
     }
 
     // accessible directly

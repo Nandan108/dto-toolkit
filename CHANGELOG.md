@@ -4,16 +4,20 @@ All notable changes to this project will be documented in this file.
 
 ---
 
-## [Unreleased]
+## [1.3.0]
 
 ### Changed
 
-- Invalid interface errors for casters and validators now throw `InvalidConfigException` instead of `TransformException::invalidInterface()`.
+- Invalid interface errors for casters and validators now throw `InvalidConfigException`
+  instead of `TransformException::invalidInterface()`.
 - `#[Mod\Any]` now requires at least two strategies; default `$count` is `2`.
+- Processing errors can optionally include a processing node / chain trace in their property paths.
+  Trace inclusion is enabled by default in dev mode and configurable via `ProcessingContext`.
+- `BaseDto::clearAllCaches()` now clears both DTO metadata and processing-node metadata caches.
 
-### Docs
+### Fixed
 
-- Replace `CastingException` references with `TransformException` in casting/caster docs and update debugging guidance.
+- Docs: Replace `CastingException` references with `TransformException` in casting/caster docs and update debugging guidance.
 
 ## [1.2.0] - 2026-01-28
 

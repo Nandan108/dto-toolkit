@@ -7,6 +7,7 @@ namespace Nandan108\DtoToolkit\Attribute\ChainModifier;
 use Nandan108\DtoToolkit\Contracts\ProcessingNodeInterface;
 use Nandan108\DtoToolkit\Contracts\ProcessingNodeProducerInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
+use Nandan108\DtoToolkit\Core\ProcessingContext;
 use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
 use Nandan108\DtoToolkit\Internal\ProcessingChain;
 
@@ -51,7 +52,7 @@ class Assert extends ChainModifierBase
          * @return \Closure A closure that applies the composed caster on each element of the passed array value
          */
         $builder = function (array $chainElements, ?\Closure $upstreamChain): \Closure {
-            // get the closure for each node wrapped by AssertAll
+            // get the closure for each node wrapped by Assert
             $closures = [];
             foreach ($chainElements as $node) {
                 $closures[] = $node->getBuiltClosure(null);
@@ -59,8 +60,19 @@ class Assert extends ChainModifierBase
 
             return function (mixed $value) use ($closures, $upstreamChain): mixed {
                 $upstreamValue = $upstreamChain ? $upstreamChain($value) : $value;
-                foreach ($closures as $closure) {
-                    $closure($upstreamValue);
+
+                $nodeNamePushed = ProcessingContext::pushPropPathNode('Mod\Assert');
+                try {
+                    foreach ($closures as $k => $closure) {
+                        ProcessingContext::pushPropPath($k);
+                        try {
+                            $closure($upstreamValue);
+                        } finally {
+                            ProcessingContext::popPropPath();
+                        }
+                    }
+                } finally {
+                    $nodeNamePushed && ProcessingContext::popPropPath();
                 }
 
                 return $upstreamValue;
@@ -71,7 +83,7 @@ class Assert extends ChainModifierBase
             queue: $queue,
             dto: $dto,
             count: $this->count,
-            className: "AssertAll(count:$this->count)",
+            className: "Mod\Assert(count:$this->count)",
             buildCasterClosure: $builder,
         );
     }

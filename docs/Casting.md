@@ -265,4 +265,4 @@ These paths are opt-in and fully compatible with the core memoization logic.
 - Use `CastTo::_getNodeMetadata()` to inspect resolved and cached node instances
 - Use `CastTo::_clearNodeMetadata()` to reset all cached instances
 
-*A debug mode is planned, where ProcessingExceptions will provide full chain context information to the catcher when thrown from within a chain.*
+When processing traces are enabled (default in dev mode), `ProcessingException` property paths include the chain/node context in braces, e.g. `price{CastTo\Trimmed->Mod\PerItem}[0]{CastTo\Rounded}`. Use `ProcessingContext::setIncludeProcessingTraceInErrors(false)` to omit the trace.

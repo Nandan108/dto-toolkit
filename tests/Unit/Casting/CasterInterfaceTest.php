@@ -69,8 +69,10 @@ final class CasterInterfaceTest extends TestCase
 
         $attr = new CastTo(get_class($casterClass), args: [], constructorArgs: ['X']);
         $dto = new class extends BaseDto {};
-        $caster = $attr->getProcessingNode($dto);
-        $this->assertSame('Xfoo', $caster('foo'));
+        ProcessingContext::wrapProcessing($dto, function ($frame) use ($attr) {
+            $caster = $attr->getProcessingNode($frame->dto);
+            $this->assertSame('Xfoo', $caster('foo'));
+        });
     }
 
     public function testInstantiatesWithNoConstructorArgs(): void
@@ -85,8 +87,10 @@ final class CasterInterfaceTest extends TestCase
 
         $attr = new CastTo(get_class($casterClass));
         $dto = new class extends BaseDto {};
-        $caster = $attr->getProcessingNode($dto);
-        $this->assertSame('FOO', $caster('foo'));
+        ProcessingContext::wrapProcessing($dto, function ($frame) use ($attr) {
+            $caster = $attr->getProcessingNode($frame->dto);
+            $this->assertSame('FOO', $caster('foo'));
+        });
     }
 
     public function testUsesContainerResolverWhenConstructorArgsRequired(): void
@@ -118,8 +122,10 @@ final class CasterInterfaceTest extends TestCase
 
         $attr = new $castToSublass($casterClass);
         $dto = new class extends BaseDto {};
-        $caster = $attr->getProcessingNode($dto);
-        $this->assertSame('\SomeNameSpace\MyClass:42', $caster('42'));
+        ProcessingContext::wrapProcessing($dto, function ($frame) use ($attr) {
+            $caster = $attr->getProcessingNode($frame->dto);
+            $this->assertSame('\SomeNameSpace\MyClass:42', $caster('42'));
+        });
     }
 
     public function testThrowsIfConstructorArgsAreNeededAndNoResolverAvailable(): void
@@ -164,13 +170,16 @@ final class CasterInterfaceTest extends TestCase
         $attr2 = new CastTo($casterClass, args: ['a']);
         $attr3 = new CastTo($casterClass, args: ['b']);
 
-        $caster1 = $attr1->getProcessingNode($dto);
-        $caster2 = $attr2->getProcessingNode($dto);
-        $caster3 = $attr3->getProcessingNode($dto);
+        ProcessingContext::wrapProcessing($dto, function ($frame) use ($attr1, $attr2, $attr3) {
+            $caster1 = $attr1->getProcessingNode($frame->dto);
+            $caster2 = $attr2->getProcessingNode($frame->dto);
+            $caster3 = $attr3->getProcessingNode($frame->dto);
 
-        $this->assertSame('1:foo', $caster1('foo'));
-        $this->assertSame('2:bar', $caster2('bar')); // reuses closure
-        $this->assertSame('3:baz', $caster3('baz')); // new closure, new args
+            $this->assertSame('1:foo', $caster1('foo'));
+            $this->assertSame('2:bar', $caster2('bar')); // reuses closure
+            $this->assertSame('3:baz', $caster3('baz')); // new closure, new args
+        });
+
     }
 
     public function testFallsBackToCustomCasterResolverIfClassDoesNotExist(): void
@@ -199,12 +208,14 @@ final class CasterInterfaceTest extends TestCase
             }
         };
 
-        $casterClosure = $attr->getProcessingNode($dto);
-        $castResult = $casterClosure('val');
-        $this->assertSame(
-            "executing $className(...[\"bar\"])->cast(...[\"val\",[\"foo\",\"baz\"]])",
-            $castResult,
-        );
+        ProcessingContext::wrapProcessing($dto, function ($frame) use ($attr, $className) {
+            $casterClosure = $attr->getProcessingNode($frame->dto);
+            $castResult = $casterClosure('val');
+            $this->assertSame(
+                "executing $className(...[\"bar\"])->cast(...[\"val\",[\"foo\",\"baz\"]])",
+                $castResult,
+            );
+        });
 
         // Test a custom CasterResolver returning a CasterInterface
         ProcessingNodeBase::$customNodeResolver = new class implements NodeResolverInterface {
@@ -242,15 +253,18 @@ final class CasterInterfaceTest extends TestCase
         // FakeClass:["bar"]
         /** @psalm-suppress PossiblyFalseOperand */
         $fakeClassCacheKey = $className.':'.json_encode($fakeClassCtorArgs);
-        $this->assertArrayHasKey($fakeClassCacheKey, $getMeta());
+        $meta = $getMeta();
+        $this->assertArrayHasKey($fakeClassCacheKey, $meta);
         $attr::_clearNodeMetadata();
         $this->assertArrayNotHasKey($className, $getMeta());
 
-        $casterClosure = $attr->getProcessingNode($dto);
-        $this->assertSame(
-            "->cast() executing $className(...[\"bar\"])->cast(...[\"val\",[\"foo\",\"baz\"]])",
-            $casterClosure('val'),
-        );
+        ProcessingContext::wrapProcessing($dto, function ($frame) use ($attr, $className) {
+            $casterClosure = $attr->getProcessingNode($frame->dto);
+            $this->assertSame(
+                "->cast() executing $className(...[\"bar\"])->cast(...[\"val\",[\"foo\",\"baz\"]])",
+                $casterClosure('val'),
+            );
+        });
 
         $allCasters = $getMeta();
         $casterMeta = $allCasters[$fakeClassCacheKey];

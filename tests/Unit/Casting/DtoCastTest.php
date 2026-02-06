@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
-use Nandan108\DtoToolkit\Assert\DtoHasNoErrors;
+use Nandan108\DtoToolkit\Assert;
 use Nandan108\DtoToolkit\Attribute\ChainModifier as Mod;
 use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Contracts\CreatesFromArrayOrEntityInterface;
@@ -101,7 +101,7 @@ final class DtoCastTest extends TestCase
     /** @psalm-suppress PossiblyUnusedMethod */
     public function testDtoHasNoErrorsAcceptsCleanDto(): void
     {
-        $validator = new DtoHasNoErrors();
+        $validator = new Assert\DtoHasNoErrors();
         $dto = new class extends BaseDto {
         };
 
@@ -112,7 +112,7 @@ final class DtoCastTest extends TestCase
     /** @psalm-suppress PossiblyUnusedMethod */
     public function testDtoHasNoErrorsRejectsNonDto(): void
     {
-        $validator = new DtoHasNoErrors();
+        $validator = new Assert\DtoHasNoErrors();
         $dto = new class extends BaseDto {
         };
         $frame = new ProcessingFrame($dto, $dto->getErrorList(), $dto->getErrorMode());
@@ -203,8 +203,8 @@ final class DtoCastTest extends TestCase
             $this->assertSame('processing.guard.inner_dto.errors', $ex->getMessageTemplate());
             $this->assertSame(1, $ex->errorList->count());
             $this->assertSame(
-                $ex->errorList->all()[0]->getPropertyPath(),
-                'public_profile->birthdate',
+                expected: 'public_profile{CastTo\Dto}->birthdate{CastTo\DateTime}',
+                actual: $ex->errorList->all()[0]->getPropertyPath(),
             );
         }
     }
@@ -296,7 +296,7 @@ final class UserDto extends FullDto
     public int $id = 0;
     public string $username = '';
 
-    #[CastTo\Dto(PublicProfileDto::class), DtoHasNoErrors]
+    #[CastTo\Dto(PublicProfileDto::class), Assert\DtoHasNoErrors]
     public PublicProfileDto | array | null $public_profile = null;
 
     #[CastTo\Dto(AddressDto::class)]

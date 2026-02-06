@@ -50,6 +50,36 @@ CastTo::$onCastResolved = function ($casterMeta, $isCacheHit) {
 
 ---
 
+## 🧭 Processing Trace In Errors
+
+When processing traces are disabled (by default in production),
+`ProcessingException::getPropertyPath()` includes only the structural location
+(properties and indices), with no processing-node information. For example:
+```
+prices[1]
+```
+
+When enabled, property paths include the processing chain / node path in braces,
+for example:
+```
+prices{CastTo\Trimmed->CastTo\Split->Mod\PerItem}[1]{CastTo\Rounded->Assert\Range}
+```
+
+By default, trace inclusion follows dev mode (`ProcessingContext::isDevMode()`),
+which is inferred from `APP_ENV`, `DEBUG`, and CLI usage. You can override this
+behavior explicitly:
+
+
+```php
+// Disable traces (e.g. in production)
+ProcessingContext::setIncludeProcessingTraceInErrors(false);
+
+// Re-enable traces
+ProcessingContext::setIncludeProcessingTraceInErrors(true);
+```
+
+---
+
 ## 🐞 Step Debugging with Xdebug
 
 - Place a breakpoint inside `CastTo::getCaster()`

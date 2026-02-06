@@ -12,6 +12,7 @@ use Nandan108\DtoToolkit\Contracts\ProcessesInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Core\CastBase;
 use Nandan108\DtoToolkit\Core\FullDto;
+use Nandan108\DtoToolkit\Core\ProcessingContext;
 use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
 use Nandan108\DtoToolkit\Support\ContainerBridge;
 use Nandan108\DtoToolkit\Traits\ProcessesFromAttributes;
@@ -169,7 +170,9 @@ final class InjectIntoCastBaseTest extends TestCase
 
         $attr = new CastTo(get_class($casterClass), args: [], constructorArgs: ['X']);
         $dto = new class extends BaseDto {};
-        $caster = $attr->getProcessingNode($dto);
-        $this->assertSame('Xfoo', $caster('foo'));
+        ProcessingContext::wrapProcessing($dto, function ($frame) use ($attr) {
+            $caster = $attr->getProcessingNode($frame->dto);
+            $this->assertSame('Xfoo', $caster('foo'));
+        });
     }
 }

@@ -15,6 +15,7 @@ use Nandan108\DtoToolkit\Contracts\ProcessingNodeInterface;
 use Nandan108\DtoToolkit\Contracts\ProcessingNodeProducerInterface;
 use Nandan108\DtoToolkit\Contracts\ValidatorInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
+use Nandan108\DtoToolkit\Core\ProcessingContext;
 use Nandan108\DtoToolkit\Enum\Phase;
 use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
 use Nandan108\DtoToolkit\Exception\Config\MissingDependencyException;
@@ -67,88 +68,45 @@ abstract class ProcessingNodeBase implements PhaseAwareInterface, ProcessingNode
     #[\Override]
     public function getProcessingNode(BaseDto $dto, ?\ArrayIterator $queue = null): ProcessingNodeMeta
     {
-        $isDev = 'dev' === getenv('APP_ENV')
-            || '1' === getenv('DEBUG')
-            || 'cli' === php_sapi_name() && 'prod' !== getenv('APP_ENV');
-
         /** @psalm-suppress UnsupportedPropertyReferenceUsage */
         $cache = &static::$globalMemoized;
         $args = $this->args;
         $this->methodOrClass ??= $this::class;
-        $normalize = function (mixed $value) use (&$normalize): mixed {
-            if (\is_array($value)) {
-                $normalized = [];
-                foreach ($value as $key => $item) {
-                    $normalized[$key] = $normalize($item);
-                }
-
-                return $normalized;
-            }
-
-            if ($value instanceof \BackedEnum) {
-                return ['__enum__' => $value::class, 'value' => $value->value];
-            }
-
-            if ($value instanceof \UnitEnum) {
-                return ['__enum__' => $value::class, 'name' => $value->name];
-            }
-
-            if ($value instanceof \DateTimeInterface) {
-                return ['__datetime__' => $value::class, 'value' => $value->format(\DateTimeInterface::ATOM)];
-            }
-
-            if (\is_object($value)) {
-                return ['__object__' => $value::class, 'id' => spl_object_id($value)];
-            }
-
-            if (\is_resource($value)) {
-                return ['__resource__' => get_resource_type($value)];
-            }
-
-            return $value;
-        };
-
-        /** @psalm-suppress RiskyTruthyFalsyComparison */
-        $serialize = fn (mixed $args): string => json_encode($normalize($args)) ?: '[]';
 
         /** @psalm-suppress RiskyTruthyFalsyComparison, PossiblyNullArgument */
-        $getMemoizeKey = function (string $keyType, BaseDto $dto) use ($isDev, $serialize): string {
+        $getMemoizeKey = function (string $keyType, BaseDto $dto): string {
             $key = match ($keyType) {
-                'class'      => ($this->methodOrClass ?? '').':'.$serialize($this->constructorArgs),
+                'class'      => ($this->methodOrClass ?? '').':'.$this->serializeCacheKey($this->constructorArgs),
                 'dto-method' => get_class($dto).'::'.static::$methodPrefix.ucfirst($this->methodOrClass),
             };
 
-            return $isDev ? $key : hash('xxh3', $key);
+            return ProcessingContext::isDevMode() ? $key : hash('xxh3', $key);
         };
 
         // Check if we have a memoized callable for the given method
         foreach (['class', 'dto-method'] as $keyType) {
             $memoKey = $getMemoizeKey($keyType, $dto);
-            $meta = $cache[$memoKey]['nodes'][$serialize($args)] ?? null;
+            $meta = $cache[$memoKey]['nodes'][$this->serializeCacheKey($args)] ?? null;
             if ($meta) {
                 return $meta;
             }
         }
 
-        /**
-         * @param string                               $keyType      The type of key to use for memoization
-         * @param \Closure(object $instance): \Closure $makeCallable A closure that makes the callable to memoize
-         * @param string                               $object       The object or class name for debugging
-         * @param string                               $method       The method name for debugging
-         * @param object|class-string|null             $instance     The instance backing the callable (if any)
+        $memoize = /**
+         * @param ?class-string            $className The Class name for debugging
+         * @param ?truthy-string           $method    The method name for debugging
+         * @param object|class-string|null $instance  The instance backing the callable (if any)
          */
-        $memoize = function (
-            ?string $object = null,
+        function (
+            ?string $className = null,
             ?string $method = null,
             object | string | null $instance = null,
-        ) use (&$cache, $serialize, $args, $dto, $getMemoizeKey): ProcessingNodeMeta {
-            /** @psalm-suppress RiskyTruthyFalsyComparison // class-string should never be empty... but whatever! */
+        ) use (&$cache, $args, $dto, $getMemoizeKey): ProcessingNodeMeta {
             $keyType = $instance ? 'class' : 'dto-method';
             $memoKey = $getMemoizeKey($keyType, $dto);
 
             if (null === $instance) {
-                // A DTO method? Use it.
-                /** @var string $method */
+                /** @var truthy-string $method A DTO method? Use it! */
                 $callable = $this->makeClosureFromDtoMethod($dto, $method, $args);
             } else {
                 // A class name was provided? Resolve and use it.
@@ -177,13 +135,16 @@ abstract class ProcessingNodeBase implements PhaseAwareInterface, ProcessingNode
                 $callable = $this->makeClosureFromInstance($instance, $args);
             }
 
-            $object ??= $this->methodOrClass;
+            $className ??= $this->methodOrClass ?? '<unknown>';
+            // strip namespace except for last step and class name for better readability in debug
+            /** @var truthy-string $className */
+            $className = implode('\\', array_slice(explode('\\', $className), -2));
 
             /** @psalm-suppress PossiblyNullArgument */
-            $cache[$memoKey]['nodes'][$serialize($args)] = $meta = new ProcessingNodeMeta(
+            $cache[$memoKey]['nodes'][$this->serializeCacheKey($args)] = $meta = new ProcessingNodeMeta(
                 callable: $callable,
                 instance: $instance,
-                sourceClass: $object,
+                sourceClass: $className,
                 sourceMethod: $method,
             );
 
@@ -198,13 +159,14 @@ abstract class ProcessingNodeBase implements PhaseAwareInterface, ProcessingNode
 
         // A class name was provided? Resolve and use it.
         if (class_exists($this->methodOrClass)) {
-            return $memoize(instance: $this->methodOrClass, object: $this->methodOrClass);
+            return $memoize(instance: $this->methodOrClass, className: $this->methodOrClass);
         }
 
         // A DTO method? Use it.
         $methodName = static::$methodPrefix.ucfirst($this->methodOrClass);
         if (method_exists($dto, method: $methodName)) {
-            return $memoize(object: $dto::class, method: $methodName);
+            /** @var truthy-string $methodName */
+            return $memoize(className: $dto::class, method: $methodName);
         }
 
         if (!static::$customNodeResolver) {
@@ -224,18 +186,43 @@ abstract class ProcessingNodeBase implements PhaseAwareInterface, ProcessingNode
             $callable = $this->makeClosureFromInstance($instance, $this->args);
         }
 
-        $memoKey = $this->methodOrClass.':'.$serialize($this->constructorArgs);
+        $memoKey = $this->methodOrClass.':'.$this->serializeCacheKey($this->constructorArgs);
         /** @psalm-suppress UnsupportedPropertyReferenceUsage */
         $cache = &static::$globalMemoized;
         $cache[$memoKey]['instance'] ??= $instance;
-        $cache[$memoKey]['nodes'][$serialize($this->args)] = $meta = new ProcessingNodeMeta(
+        $cache[$memoKey]['nodes'][$this->serializeCacheKey($this->args)] = $meta = new ProcessingNodeMeta(
             callable: $callable,
             instance: $cache[$memoKey]['instance'] ?? $instance,
             sourceClass: static::$customNodeResolver::class,
-            sourceMethod: $this->methodOrClass,
+            sourceMethod: $this->methodOrClass ?: null,
         );
 
         return $meta;
+    }
+
+    protected function serializeCacheKey(mixed $value, bool $recursed = false): mixed
+    {
+        if (\is_array($value)) {
+            $normalized = [];
+            foreach ($value as $key => $item) {
+                $normalized[$key] = $this->serializeCacheKey($item, true);
+            }
+        } else {
+            $normalized = match (true) {
+                $value instanceof \BackedEnum        => ['__enum__' => $value::class, 'value' => $value->value],
+                $value instanceof \UnitEnum          => ['__enum__' => $value::class, 'name' => $value->name],
+                $value instanceof \DateTimeInterface => ['__datetime__' => $value::class, 'value' => $value->format(\DateTimeInterface::ATOM)],
+                \is_object($value)                   => ['__object__' => $value::class, 'id' => spl_object_id($value)],
+                \is_resource($value)                 => ['__resource__' => get_resource_type($value)],
+                default                              => null, // scalar: use as is
+            };
+            if (null === $normalized && $recursed) {
+                return $value;
+            }
+        }
+
+        /** @psalm-suppress RiskyTruthyFalsyComparison */
+        return json_encode($normalized ?? $value) ?: '[]';
     }
 
     /**
@@ -303,8 +290,11 @@ abstract class ProcessingNodeBase implements PhaseAwareInterface, ProcessingNode
              */
             foreach (array_filter($attrInstancesByProp) as $propName => $attrInstances) {
                 /** @psalm-suppress RedundantCondition */
-                is_array($attrInstances) or ($msg = 'Attribute class '.get_class($attrInstances).
-                    ' must be declared with #[Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)].' && throw new InvalidConfigException($msg));
+                if (!\is_array($attrInstances)) {
+                    $msg = 'Attribute class '.get_class($attrInstances).
+                        ' must be declared with #[Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)].';
+                    throw new InvalidConfigException($msg);
+                }
 
                 /** @var array<int, ProcessingNodeProducerInterface> $attrInstances */
                 $iterator = new \ArrayIterator($attrInstances);

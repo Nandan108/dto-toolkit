@@ -29,11 +29,26 @@ final class ProcessingFrame
     public function propPath(): ?string
     {
         $segmentPath = '';
+        $nodePath = [];
+        $getNodePath = function () use (&$nodePath): string {
+            $path = implode('->', $nodePath);
+            $nodePath = [];
+
+            // wrap processing node path in curly braces to distinguish from property path segments
+            return $path ? '{'.$path.'}' : '';
+        };
+
         foreach ($this->propPathSegments as $segment) {
-            $segmentPath .= is_int($segment) ? "[$segment]" : ".$segment";
+            if (\is_int($segment)) {
+                $segmentPath .= $getNodePath()."[$segment]";
+            } elseif ('#' === $segment[0]) {
+                $nodePath[] = substr($segment, 1);
+            } else {
+                $segmentPath .= $getNodePath().".$segment";
+            }
         }
 
-        return ltrim($segmentPath, '.') ?: null;
+        return ltrim($segmentPath.$getNodePath(), '.') ?: null;
     }
 
     /**

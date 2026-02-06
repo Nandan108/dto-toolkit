@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
+use Nandan108\DtoToolkit\Assert;
 use Nandan108\DtoToolkit\Attribute\ChainModifier as Mod;
 use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\CastTo\RegexReplace;
@@ -44,22 +45,37 @@ final class CastingChainTest extends TestCase
             use ProcessesFromAttributes;
             #[CastTo\Trimmed('-')] // trim dashes
             #[CastTo\Split('/')] // split into an array
-            #[Mod\PerItem(3)] // Apply next 3 casters on the value's array elements instead of whole value
-            #[CastTo\Trimmed('X ')] // trim whitespace
-            #[CastTo\Rounded(2)] // round to 2 decimals
-            #[RegexReplace('/^/', '$')] // add prefix (implicit cast to string)
+            // Apply next 4 casters on the value's array elements instead of whole value
+            #[Mod\PerItem(4),
+                CastTo\Trimmed('X '),
+                CastTo\Rounded(2),
+                Assert\Range(2, 7),
+                RegexReplace('/^/', '$'),
+            ]
             #[CastTo\Join(', ')] // (default separator is ',')
             public string | array | null $prices = null; // default value provided for the example
         };
 
         /** @psalm-suppress UnusedMethodCall */
-        $dto->fill(['prices' => '---  X 6.196/  0.99/X2.00001/XX 3.5  /XX4.57   --'])
+        $dto->fill(['prices' => '---  X 6.196/  1.996/X2.00001/XX 3.5  /XX4.57   --'])
             ->processInbound();
 
         $this->assertSame(
-            '$6.2, $0.99, $2, $3.5, $4.57',
+            '$6.2, $2, $2, $3.5, $4.57',
             $dto->prices,
         );
+
+        try {
+            $dto->fill(['prices' => '--- 7.001 / X 7.196/  0.99--'])
+                ->processInbound();
+            $this->fail('Expected exception not thrown');
+        } catch (ProcessingException $e) {
+            $this->assertSame('processing.guard.number.above_max', $e->getMessageTemplate());
+            $this->assertSame(
+                expected: 'prices{CastTo\Trimmed->CastTo\Split->Mod\PerItem}[1]{CastTo\Trimmed->CastTo\Rounded->Assert\Range}',
+                actual: $e->getPropertyPath(),
+            );
+        }
     }
 
     public function testFailsIfPerItemIsAppliedOnANonArrayValue(): void
@@ -83,7 +99,7 @@ final class CastingChainTest extends TestCase
             $this->fail('Expected TransformException not thrown');
         } catch (ProcessingException $e) {
             $this->assertSame('processing.modifier.per_item.expected_array', $e->getMessageTemplate());
-            $this->assertSame('prices', $e->getPropertyPath());
+            $this->assertSame('prices{CastTo\Trimmed->Mod\PerItem}', $e->getPropertyPath());
         }
     }
 
@@ -147,7 +163,7 @@ final class CastingChainTest extends TestCase
             $this->fail('Expected TransformException not thrown');
         } catch (InvalidConfigException $e) {
             $msg = $e->getMessage();
-            $this->assertStringStartsWith('#[PerItem] expected 3 child nodes, but found only 2: [Trimmed, FailNextTo]', $msg);
+            $this->assertStringStartsWith('#[Mod\PerItem] expected 3 child nodes, but found only 2: [Trimmed, FailNextTo]', $msg);
         }
 
         /** @psalm-suppress ExtensionRequirementViolation */
@@ -166,7 +182,7 @@ final class CastingChainTest extends TestCase
             $this->fail('Expected TransformException not thrown');
         } catch (InvalidConfigException $e) {
             $msg = $e->getMessage();
-            $this->assertStringStartsWith('#[PerItem] expected 3 child nodes, but found none', $msg);
+            $this->assertStringStartsWith('#[Mod\PerItem] expected 3 child nodes, but found none', $msg);
         }
     }
 }

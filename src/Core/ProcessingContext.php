@@ -11,6 +11,35 @@ use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
 
 final class ProcessingContext
 {
+    private static ?bool $devMode = null;
+    private static ?bool $includeProcessingTraceInErrors = null;
+
+    public static function setDevMode(bool $devMode): void
+    {
+        self::$devMode = $devMode;
+    }
+
+    public static function isDevMode(): bool
+    {
+        if (null === self::$devMode) {
+            self::$devMode = 'dev' === getenv('APP_ENV')
+                || '1' === getenv('DEBUG')
+                || 'cli' === php_sapi_name() && 'prod' !== getenv('APP_ENV');
+        }
+
+        return self::$devMode;
+    }
+
+    public static function includeProcessingTraceInErrors(): bool
+    {
+        return self::$includeProcessingTraceInErrors ?? self::isDevMode();
+    }
+
+    public static function setIncludeProcessingTraceInErrors(?bool $include): void
+    {
+        self::$includeProcessingTraceInErrors = $include;
+    }
+
     private static ?ContextStorageInterface $storage = null;
 
     /**
@@ -77,7 +106,7 @@ final class ProcessingContext
     }
 
     /**
-     * Push a property path segment onto the current frame.
+     * Push a property name onto the current frame's property path stack.
      *
      * @param int|non-empty-string $segment
      */
@@ -87,13 +116,41 @@ final class ProcessingContext
     }
 
     /**
+     * Push a node name onto the current frame's property path stack.
+     *
+     * Node names (prefixed with #) are used to track processing nodes in the
+     * property path without affecting the actual path segments.
+     *
+     * No-op when processing traces are disabled (e.g. in production).
+     *
+     * @param non-empty-string $name
+     *
+     * @return bool true if the node was pushed, false if processing traces
+     *              are disabled and the node was not added to the path
+     */
+    public static function pushPropPathNode(string $name): bool
+    {
+        if (ProcessingContext::includeProcessingTraceInErrors()) {
+            self::current()->propPathSegments[] = "#$name";
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
      * Pop the last property path segment from the current frame.
      *
      * @psalm-suppress PossiblyUnusedReturnValue
      */
     public static function popPropPath(): int | string | null
     {
-        return array_pop(self::current()->propPathSegments);
+        do {
+            $segment = array_pop(self::current()->propPathSegments);
+        } while (\is_string($segment) && '#' === $segment[0]); // skip node names
+
+        return $segment;
     }
 
     /**

@@ -51,9 +51,10 @@ final class AssertModifierTest extends TestCase
         $dto = new class extends FullDto {
             public array $calls = [];
 
-            #[Mod\Assert(2)]
-            #[CastTo('first')]
-            #[CastTo\Boolean]
+            #[Mod\Assert(2),
+                CastTo('first'),
+                CastTo\Boolean
+            ]
             public mixed $value = null;
 
             /** @psalm-suppress PossiblyUnusedMethod */
@@ -72,7 +73,8 @@ final class AssertModifierTest extends TestCase
             $this->fail('Expected ProcessingException was not thrown');
         } catch (ProcessingException $e) {
             $this->assertSame('processing.transform.boolean.unable_to_cast', $e->getMessageTemplate());
-            $this->assertSame('value', $e->getPropertyPath());
+
+            $this->assertSame('value{Mod\Assert}[1]{CastTo\Boolean}', $e->getPropertyPath());
             $this->assertSame(['first:not-a-bool'], $dto->calls);
         }
     }

@@ -7,6 +7,7 @@ namespace Nandan108\DtoToolkit\Attribute\ChainModifier;
 use Nandan108\DtoToolkit\Contracts\ProcessingNodeInterface;
 use Nandan108\DtoToolkit\Contracts\ProcessingNodeProducerInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
+use Nandan108\DtoToolkit\Core\ProcessingContext;
 use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
 use Nandan108\DtoToolkit\Exception\Process\ProcessingException;
 use Nandan108\DtoToolkit\Internal\ProcessingChain;
@@ -54,19 +55,28 @@ class Any extends ChainModifierBase
         $builder = function (array $chainElements, ?\Closure $upstreamChain): \Closure {
             // get the closure for each node wrapped by Collect
             $closures = array_map(fn (ProcessingNodeInterface $node): \Closure => // foo!
-                $node->getBuiltClosure($upstreamChain), $chainElements);
+                $node->getBuiltClosure(null), $chainElements);
 
-            return function (mixed $value) use ($closures): mixed {
+            return function (mixed $value) use ($closures, $upstreamChain): mixed {
                 $failures = [];
-                foreach ($closures as $closure) {
+
+                $upstreamValue = $upstreamChain ? $upstreamChain($value) : $value;
+                $nodeNamePushed = ProcessingContext::pushPropPathNode('Mod\Any');
+
+                foreach ($closures as $k => $subchain) {
+                    ProcessingContext::pushPropPath($k);
                     try {
                         // Try to apply the closure to the value
-                        return $closure($value);
+                        return $subchain($upstreamValue);
                     } catch (ProcessingException $e) {
                         // If it fails, continue to the next closure
                         $failures[] = $e;
+                    } finally {
+                        ProcessingContext::popPropPath();
                     }
                 }
+
+                $nodeNamePushed && ProcessingContext::popPropPath();
 
                 // If all closures fail, throw!
                 throw ProcessingException::reason(
@@ -88,7 +98,7 @@ class Any extends ChainModifierBase
             queue: $queue,
             dto: $dto,
             count: $this->count,
-            className: "Any(count:$this->count)",
+            className: "Mod\Any(count:$this->count)",
             buildCasterClosure: $builder,
         );
     }

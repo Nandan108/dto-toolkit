@@ -36,11 +36,11 @@ class Collect extends ChainModifierBase
             $keys = $this->keys = $countOrKeys;
             foreach ($keys as $key) {
                 /** @psalm-suppress DocblockTypeContradiction */
-                \is_string($key) or $throw('The keys must be strings');
+                \is_string($key) || $throw('The keys must be strings');
             }
-            \count($keys) === \count(array_unique($keys)) or $throw('The keys must be unique');
+            \count($keys) === \count(array_unique($keys)) || $throw('The keys must be unique');
         } else {
-            $countOrKeys >= 1 or $throw('If a count is given, it must be greater than 0');
+            $countOrKeys >= 1 || $throw('If a count is given, it must be greater than 0');
             /** @psalm-suppress InvalidPropertyAssignmentValue */
             $this->keys = range(0, $countOrKeys - 1);
         }
@@ -67,23 +67,28 @@ class Collect extends ChainModifierBase
             $queue,
             $dto,
             \count($this->keys),
-            'Collect',
+            'Mod\Collect',
             buildCasterClosure: function (array $chainElements, ?callable $upstreamChain): \Closure {
                 // get the closure for each node wrapped by Collect
                 $closures = array_map(fn ($node): callable => $node->getBuiltClosure($upstreamChain), $chainElements);
 
                 return function (mixed $value) use ($closures): array {
                     $result = [];
+                    $nodeNamePushed = ProcessingContext::pushPropPathNode('Mod\Collect');
 
-                    foreach ($closures as $i => $closure) {
-                        ProcessingContext::pushPropPath($this->keys[$i]);
+                    try {
+                        foreach ($closures as $i => $closure) {
+                            ProcessingContext::pushPropPath($this->keys[$i]);
 
-                        try {
-                            /** @psalm-var mixed */
-                            $result[$this->keys[$i]] = $closure($value);
-                        } finally {
-                            ProcessingContext::popPropPath();
+                            try {
+                                /** @psalm-var mixed */
+                                $result[$this->keys[$i]] = $closure($value);
+                            } finally {
+                                ProcessingContext::popPropPath();
+                            }
                         }
+                    } finally {
+                        $nodeNamePushed && ProcessingContext::popPropPath();
                     }
 
                     return $result;

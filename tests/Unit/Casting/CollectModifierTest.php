@@ -6,7 +6,9 @@ namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
 use Nandan108\DtoToolkit\Attribute\ChainModifier as Mod;
 use Nandan108\DtoToolkit\CastTo;
+use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Core\FullDto;
+use Nandan108\DtoToolkit\Core\ProcessingContext;
 use Nandan108\DtoToolkit\Exception\Process\ProcessingException;
 use Nandan108\DtoToolkit\Exception\Process\TransformException;
 use Nandan108\DtoToolkit\Tests\Traits\CanTestCasterClassesAndMethods;
@@ -70,7 +72,7 @@ final class CollectModifierTest extends TestCase
             $this->fail('Expected TransformException not thrown');
         } catch (ProcessingException $e) {
             $this->assertSame('processing.modifier.per_item.expected_array', $e->getMessageTemplate());
-            $this->assertSame('identifier.camel', $e->getPropertyPath());
+            $this->assertSame('identifier{Mod\Collect}.camel{Mod\PerItem}', $e->getPropertyPath());
         }
     }
 
@@ -79,24 +81,58 @@ final class CollectModifierTest extends TestCase
         // Test the Collect modifier
         $dto = new class extends FullDto {
             // Using an array argument
-            #[Mod\Collect(['kebab', 'bool']),
+            #[Mod\Collect(['to-kebab', 'to-bool']),
                 CastTo\KebabCase,
                 Mod\Wrap(2),
                 /* - */ CastTo\Split(' '),
                 /* - */ Mod\PerItem,
-                /* - */ CastTo\Boolean
+                /* --- */ CastTo\Boolean
             ] // fails: PerItem cannot be used on a string
             public string | array | null $identifier = null;
         };
 
-        $dto->fill(['identifier' => 'true false yes no wrong']);
+        $dto->fill(['identifier' => 'true false yes no not-a-bool']);
 
         try {
             $dto->processInbound();
             $this->fail('Expected TransformException not thrown');
         } catch (TransformException $e) {
             $this->assertSame('processing.transform.boolean.unable_to_cast', $e->getMessageTemplate());
-            $this->assertSame('identifier.bool[4]', $e->getPropertyPath());
+            $debugInfo = $e->getDebugInfo();
+            $this->assertSame('"not-a-bool"', $debugInfo['value']);
+            $this->assertSame('not-a-bool', $debugInfo['orig_value']);
+            $this->assertSame('identifier{Mod\Collect}.to-bool{CastTo\Split->Mod\PerItem}[4]{CastTo\Boolean}', $e->getPropertyPath());
         }
+
+        BaseDto::clearAllCaches();
+        ProcessingContext::setIncludeProcessingTraceInErrors(false);
+
+        // Test the Collect modifier
+        $dto = new class extends FullDto {
+            // Using an array argument
+            #[Mod\Collect(['to-kebab', 'to-bool']),
+                CastTo\KebabCase,
+                Mod\Wrap(2),
+                /* - */ CastTo\Split(' '), // yields ["true", "false", "yes", "no", "not-a-bool"]
+                /* - */ Mod\PerItem, CastTo\Boolean, // yields [true, false, true, false, fails]
+            ] // fails: PerItem cannot be used on a string
+            public string | array | null $identifier = null;
+        };
+
+        $dto->fill(['identifier' => 'true false yes no not-a-bool']);
+        try {
+            $dto->processInbound();
+            $this->fail('Expected TransformException not thrown');
+        } catch (TransformException $e) {
+            $this->assertSame('processing.transform.boolean.unable_to_cast', $e->getMessageTemplate());
+            $debugInfo = $e->getDebugInfo();
+            $this->assertSame('"not-a-bool"', $debugInfo['value']);
+            $this->assertSame('not-a-bool', $debugInfo['orig_value']);
+
+            // when includeProcessingTraceInErrors (defaults to dev mode) is off, processing nodes are excluded
+            // from the property path in error messages, leaving only the segments and indices
+            $this->assertSame('identifier.to-bool[4]', $e->getPropertyPath());
+        }
+        ProcessingContext::setIncludeProcessingTraceInErrors(null); // reset to default
     }
 }

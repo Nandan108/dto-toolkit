@@ -260,6 +260,7 @@ $dto = UserDto::newWithGroups('partner')->loadArray($payload); // override defau
 ```
 
 ---
+
 <a id='prop-groups'></a>
 
 ## 7.2 Property-Level Groups: `#[PropGroups([...])]`
@@ -464,14 +465,11 @@ Adapters may convert collected errors into their native structures, e.g.:
 
 ---
 
-# 12. Debugging
+# 12. Debugging Tools
 
-Tools (current and planned):
-
-- chain dumping
-- node metadata inspection
+- processing-trace property paths (node/chain provenance; enabled by default in dev mode) in ProcessingExceptions
 - structured exception debugging with context
-- debug mode surfacing phase/group/node provenance
+- node metadata inspection
 
 ---
 

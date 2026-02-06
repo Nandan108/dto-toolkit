@@ -7,8 +7,11 @@ namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 use Nandan108\DtoToolkit\Attribute\Outbound;
 use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Contracts\ProcessesInterface;
-// use Nandan108\DtoToolkit\Traits\CanCastBasicValues;
 use Nandan108\DtoToolkit\Core\BaseDto;
+use Nandan108\DtoToolkit\Core\CastBaseNoArgs;
+use Nandan108\DtoToolkit\Core\FullDto;
+use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
+use Nandan108\DtoToolkit\Exception\Config\NodeProducerResolutionException;
 use Nandan108\DtoToolkit\Traits\ProcessesFromAttributes;
 use PHPUnit\Framework\TestCase;
 
@@ -101,8 +104,32 @@ final class ProcessesFromAttributesTest extends TestCase
 
         $cast = new CastTo('FakeClassOrMethod');
 
-        $this->expectException(\Nandan108\DtoToolkit\Exception\Config\NodeProducerResolutionException::class);
+        $this->expectException(NodeProducerResolutionException::class);
 
         $cast->getProcessingNode($dto);
+    }
+
+    public function testNonRepeatableCasterThrowsInvalidConfigException(): void
+    {
+        $dto = new class extends FullDto {
+            #[NonRepeatableCaster]
+            public string $name = '';
+        };
+
+        $this->expectException(InvalidConfigException::class);
+        $this->expectExceptionMessage('must be declared with #[Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)].');
+
+        /** @psalm-suppress UnusedMethodCall */
+        $dto->processInbound();
+    }
+}
+
+#[\Attribute(\Attribute::TARGET_PROPERTY)]
+final class NonRepeatableCaster extends CastBaseNoArgs
+{
+    #[\Override]
+    public function cast(mixed $value, array $args): string
+    {
+        return $value;
     }
 }

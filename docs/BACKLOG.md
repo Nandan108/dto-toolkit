@@ -9,13 +9,9 @@
   - Allow adapters (e.g., dtot-adapter-laravel, dtot-adapter-symfony) to map or wrap ValidationExceptions into framework-native exceptions
   - This enables seamless integration with Laravel and Symfony's validation error handling mechanisms
   - Keep validation logic and error reporting fully pluggable and framework-agnostic
+- **[088]** Tooling-Oriented Docs for LLM
 - **[056]** Support multi-step casting by making withGroups(inboundCast: ...) take a sequence of group(s)
   Then apply each step in sequence. Same with outboundCast.
-- **[062]** Add support for getCaster() debug mode
-  - When enabled, caster closures push/pop debug context during execution
-  - On casting failure, TransformExceptions can include full chain trace
-  - Example message: "PropName: Caster1->Caster2->FailNextTo(PerItem(Caster3 -> Caster4))"
-- **[048]** Add debug mode setting. When enabled, add casting stack tracking (push/pop) to enable logging full context when failing within a chain.
 - **[050]** Add `#[LogCast($debugOnly = true)]` to also allow logging non-failing chains.
 
 ### For later
@@ -100,6 +96,7 @@
 - [071] Add `#[CastTo\Coalesce($ignore = [null])]` - takes an array $value and return first element not in $ignore list. throws if $value not an array or iterator.
 - [080] Port domain-specific asserts from Symfony (post v1.0): Ip, Bic, CardScheme, Currency, Luhn, Iban, Isbn, Issn
 - [046] Add modifier `#[Mod\SkipIfMatch(array $matchValues, $count, $return, $strict, $negate)]`, allows short-circuitting following caster(s) by returning `$return` if input matches an element of `$matchValues`.
+- [062]+[048] Add support for processing node traces in `ProcessingException::getPropertyPath()`, enabled by default in dev mode
 
 ---
 

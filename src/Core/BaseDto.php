@@ -18,6 +18,7 @@ use Nandan108\DtoToolkit\Enum\ErrorMode;
 use Nandan108\DtoToolkit\Enum\Phase;
 use Nandan108\DtoToolkit\Enum\PresencePolicy;
 use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
+use Nandan108\DtoToolkit\Internal\ProcessingNodeBase;
 use Nandan108\DtoToolkit\Support\ContainerBridge;
 
 /**
@@ -60,6 +61,12 @@ abstract class BaseDto
      * @psalm-var array<class-string, DtoPropMetaCache>
      */
     private static array $_dtoMetaCache = [];
+
+    public static function clearAllCaches(): void
+    {
+        self::$_dtoMetaCache = [];
+        ProcessingNodeBase::_clearNodeMetadata();
+    }
 
     public static function setDefaultErrorMode(ErrorMode $mode): void
     {
@@ -554,7 +561,11 @@ abstract class BaseDto
             throw new InvalidConfigException("Method $className::{$method}() does not exist.");
         }
         $methodRef = $classRef->getMethod($method);
-        $visibility = $methodRef->isPublic() ? 'public' : ($methodRef->isProtected() ? 'protected' : 'private');
+        $visibility = match (true) {
+            $methodRef->isPublic()    => 'public',
+            $methodRef->isProtected() => 'protected',
+            default                   => 'private',
+        };
         if (!$visible || $methodRef->isPrivate()) {
             throw new InvalidConfigException(ucfirst($visibility)." method $className::{$method}() is not reachable from calling context.");
         }

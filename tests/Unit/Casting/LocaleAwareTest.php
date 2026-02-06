@@ -109,7 +109,7 @@ final class LocaleAwareTest extends TestCase
             $this->fail('Expected TransformException');
         } catch (TransformException $e) {
             $this->assertSame('processing.transform.expected', $e->getMessageTemplate());
-            $this->assertSame('number_fr', $e->getPropertyPath());
+            $this->assertSame('number_fr{CastTo\Floating}', $e->getPropertyPath());
         }
 
         try {
@@ -119,7 +119,7 @@ final class LocaleAwareTest extends TestCase
             $this->fail('Expected TransformException');
         } catch (TransformException $e) {
             $this->assertSame('processing.transform.expected', $e->getMessageTemplate());
-            $this->assertSame('amount_chf', $e->getPropertyPath());
+            $this->assertSame('amount_chf{CastTo\LocalizedCurrency}', $e->getPropertyPath());
         }
     }
 
@@ -148,7 +148,7 @@ final class LocaleAwareTest extends TestCase
             $this->fail('Expected TransformException');
         } catch (TransformException $e) {
             $this->assertSame('processing.transform.expected', $e->getMessageTemplate());
-            $this->assertSame('number', $e->getPropertyPath());
+            $this->assertSame('number{CastTo\LocalizedNumber}', $e->getPropertyPath());
         }
     }
 

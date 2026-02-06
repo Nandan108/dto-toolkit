@@ -57,4 +57,25 @@ final class ProcessingContextTest extends TestCase
             },
         );
     }
+
+    public function testSetDevModeAndIncludeProcessingTraceInErrors(): void
+    {
+        // By default, includeProcessingTraceInErrors should be the same as isDevMode (which is true in this test environment)
+        $this->assertTrue(ProcessingContext::isDevMode());
+        $this->assertTrue(ProcessingContext::includeProcessingTraceInErrors());
+
+        // Setting dev mode to false should also set includeProcessingTraceInErrors to false by default
+        ProcessingContext::setDevMode(false);
+        $this->assertFalse(ProcessingContext::isDevMode());
+        $this->assertFalse(ProcessingContext::includeProcessingTraceInErrors());
+
+        // Setting includeProcessingTraceInErrors explicitly should override the default behavior
+        ProcessingContext::setIncludeProcessingTraceInErrors(true);
+        $this->assertTrue(ProcessingContext::includeProcessingTraceInErrors());
+
+        // Setting dev mode back to true should not change includeProcessingTraceInErrors since it was explicitly set
+        ProcessingContext::setDevMode(true);
+        $this->assertTrue(ProcessingContext::isDevMode());
+        $this->assertTrue(ProcessingContext::includeProcessingTraceInErrors());
+    }
 }
