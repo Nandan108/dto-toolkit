@@ -65,18 +65,23 @@ for example:
 prices{CastTo\Trimmed->CastTo\Split->Mod\PerItem}[1]{CastTo\Rounded->Assert\Range}
 ```
 
-By default, trace inclusion follows dev mode (`ProcessingContext::isDevMode()`),
-which is inferred from `APP_ENV`, `DEBUG`, and CLI usage. You can override this
-behavior explicitly:
+Regardless of trace mode, `ProcessingException::getThrowerNodeName()` returns the name of the node that threw (or rethrew) the exception.This is useful in production mode where `getPropertyPath()` intentionally omits chain provenance.
+
+By default, trace inclusion follows dev mode (`ProcessingContext::isDevMode()`), which is inferred from `APP_ENV`, `DEBUG`, and CLI usage. You can override this behavior explicitly:
 
 
 ```php
-// Disable traces (e.g. in production)
+// Disable traces
 ProcessingContext::setIncludeProcessingTraceInErrors(false);
-
-// Re-enable traces
-ProcessingContext::setIncludeProcessingTraceInErrors(true);
 ```
+Please note:
+- This setting is global, and in normal operation should only be set once, at boot time.
+- This setting can only be changed while no processing is taking place.
+- Processing chains are JIT compiled and cached, therefore to ensure coherent and
+  consistent behavior, changing this setting will clear all caches (`BaseDto::clearAllCaches()` will be called)
+- The above rules apply to both setIncludeProcessingTraceInErrors() and setDevMode()
+
+This setting is normally meant to be used only once, at boot time, if at all.
 
 ---
 

@@ -89,8 +89,9 @@ These provide a convenient, framework-free entry point with all standard functio
 ## 🏃 Runtime & Concurrency
 
 - Multi-threaded runtimes (`pthreads` / `parallel`) are not supported by the core and are not planned to be.
-- DTO Toolkit no longer relies on global static state for execution context. Context storage is abstracted behind `ContextStorageInterface`, allowing adapters to provide execution-local storage (e.g. for fibers or other concurrent runtimes).
-- While fiber- or event-loop–based runtimes (Swoole, RoadRunner, ReactPHP, etc.) are not officially supported yet, the core execution model is designed to make such support possible in adapters.
+- Execution context storage is abstracted behind `ContextStorageInterface`, allowing adapters to provide execution-local storage (e.g. for fibers/coroutines/tasks).
+- Fiber/event-loop runtimes (Swoole, RoadRunner, ReactPHP, etc.) are **not officially supported yet**.
+- Adapter hooks exist, but full concurrent-runtime support still requires synchronization guarantees around cache warm-up paths, which are not implemented yet.
 
 ---
 

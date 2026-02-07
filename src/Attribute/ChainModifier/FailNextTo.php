@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nandan108\DtoToolkit\Attribute\ChainModifier;
 
 use Nandan108\DtoToolkit\Core\BaseDto;
+use Nandan108\DtoToolkit\Core\ProcessingContext;
 use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
 use Nandan108\DtoToolkit\Exception\Process\ProcessingException;
 use Nandan108\DtoToolkit\Internal\ProcessingChain;
@@ -34,25 +35,24 @@ class FailNextTo extends FailTo
         $handler = $this->resolveHandler($dto);
 
         return new ProcessingChain(
-            $queue,
-            $dto,
-            $this->count,
-            className: 'FailNextTo',
+            queue: $queue,
+            dto: $dto,
+            count: $this->count,
+            nodeName: 'Mod\FailNextTo',
             buildCasterClosure: function (array $chainElements, ?callable $upstreamChain) use ($handler, $dto): \Closure {
                 $subchain = ProcessingChain::composeFromNodes($chainElements);
 
                 return function (mixed $value) use ($upstreamChain, $subchain, $handler, $dto): mixed {
                     // get the value from upstream (exceptions thrown there are not the concern of this modifier)
-                    if (null !== $upstreamChain) {
-                        /** @psalm-var mixed */
-                        $value = $upstreamChain($value);
-                    }
+                    $upstreamChain && $value = $upstreamChain($value);
 
                     // Wrap downstream subchain execution in a try-catch block
                     try {
                         // catch-and-handle exceptions from the next caster
                         return $subchain($value);
                     } catch (ProcessingException $e) {
+                        ProcessingContext::pushPropPathNode('Mod\FailNextTo');
+
                         return $handler($value, $this->fallback, $e, $dto);
                     }
                 };

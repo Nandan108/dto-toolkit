@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
 use Nandan108\DtoToolkit\Assert as V;
+use Nandan108\DtoToolkit\Attribute\ChainModifier as Mod;
 use Nandan108\DtoToolkit\Attribute\ChainModifier\FailNextTo;
 use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Core\FullDto;
 use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException as ConfigInvalidArgumentException;
+use Nandan108\DtoToolkit\Exception\Process\ProcessingException;
 use PHPUnit\Framework\TestCase;
 
 final class FailNextToTest extends TestCase
@@ -94,6 +96,28 @@ final class FailNextToTest extends TestCase
 
         $dto->fill(['name' => '   '])->processInbound();
         $this->assertSame('fallback', $dto->name);
+    }
+
+    public function testCaughtSubchainFailureKeepsCascadeTraceForLaterFailures(): void
+    {
+        $dto = new class extends FullDto {
+            #[FailNextTo('fallback', count: 2),
+                CastTo\Trimmed,
+                CastTo\Boolean]
+            #[Mod\FailIf('<context:mustFail')]
+            public mixed $value = null;
+        };
+
+        $dto->contextSet('mustFail', true);
+
+        try {
+            $dto->fill(['value' => 'not-bool'])->processInbound();
+            $this->fail('Expected exception not thrown');
+        } catch (ProcessingException $e) {
+            $this->assertSame('processing.modifier.fail_if.condition_failed', $e->getMessageTemplate());
+            $this->assertSame('fallback', $e->getDebugInfo('orig_value'));
+            $this->assertSame('value{CastTo\\Trimmed->CastTo\\Boolean->Mod\\FailNextTo->Mod\\FailIf}', $e->getPropertyPath());
+        }
     }
 }
 

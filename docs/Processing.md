@@ -435,6 +435,14 @@ Adapters may convert collected errors into their native structures, e.g.:
 - Symfony → `ConstraintViolationListInterface`
 - Laravel → `MessageBag`
 
+## Failure Origin Metadata
+
+`ProcessingException::getPropertyPath()` reports where a failure happened in the DTO structure, and (when enabled) can include processing-chain provenance.
+
+Additionally, `ProcessingException::getThrowerNodeName()` exposes the processing node name that threw the exception. This metadata is auto-enriched during node execution if the exception did not already set a thrower explicitly. Custom caster/validator producers may override this name by implementing `ProvidesProcessingNodeNameInterface`.
+
+For convenience, both `CastBase` and `ValidatorBase` already implement this interface. Subclasses can customize the node name either by setting `protected static ?string $nodeName = '...'`, or by overriding `getProcessingNodeName()`.
+
 ## Failure behavior by `ErrorMode` and phase
 
 | Error Mode         | Inbound phase             | Outbound phase            |

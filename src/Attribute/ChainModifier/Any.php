@@ -58,38 +58,40 @@ class Any extends ChainModifierBase
                 $node->getBuiltClosure(null), $chainElements);
 
             return function (mixed $value) use ($closures, $upstreamChain): mixed {
-                $failures = [];
+                $upstreamChain && $value = $upstreamChain($value);
 
-                $upstreamValue = $upstreamChain ? $upstreamChain($value) : $value;
-                $nodeNamePushed = ProcessingContext::pushPropPathNode('Mod\Any');
+                try {
+                    ProcessingContext::pushPropPathNode('Mod\Any');
 
-                foreach ($closures as $k => $subchain) {
-                    ProcessingContext::pushPropPath($k);
-                    try {
-                        // Try to apply the closure to the value
-                        return $subchain($upstreamValue);
-                    } catch (ProcessingException $e) {
-                        // If it fails, continue to the next closure
-                        $failures[] = $e;
-                    } finally {
-                        ProcessingContext::popPropPath();
+                    $failures = [];
+                    foreach ($closures as $k => $subchain) {
+                        ProcessingContext::pushPropPath($k);
+                        try {
+                            // Try to apply the closure to the value
+                            return $subchain($value);
+                        } catch (ProcessingException $e) {
+                            // If it fails, continue to the next closure
+                            $failures[] = $e;
+                        } finally {
+                            ProcessingContext::popPropPath();
+                        }
                     }
+
+                    // If all closures fail, throw!
+                    throw ProcessingException::reason(
+                        methodOrClass: self::class,
+                        value: $value,
+                        template_suffix: 'modifier.first_success.all_failed',
+                        parameters: [
+                            'strategy_count' => count($closures),
+                        ],
+                        errorCode: 'modifier.first_success.all_failed',
+                        // messageOverride: "All  nodes wrapped by Any have failed.",
+                        debugExtras: ['failures' => $failures],
+                    );
+                } finally {
+                    ProcessingContext::popPropPathNode();
                 }
-
-                $nodeNamePushed && ProcessingContext::popPropPath();
-
-                // If all closures fail, throw!
-                throw ProcessingException::reason(
-                    methodOrClass: self::class,
-                    value: $value,
-                    template_suffix: 'modifier.first_success.all_failed',
-                    parameters: [
-                        'strategy_count' => count($closures),
-                    ],
-                    errorCode: 'modifier.first_success.all_failed',
-                    // messageOverride: "All  nodes wrapped by Any have failed.",
-                    debugExtras: ['failures' => $failures],
-                );
             };
         };
 
@@ -98,7 +100,7 @@ class Any extends ChainModifierBase
             queue: $queue,
             dto: $dto,
             count: $this->count,
-            className: "Mod\Any(count:$this->count)",
+            nodeName: "Mod\Any(count:$this->count)",
             buildCasterClosure: $builder,
         );
     }

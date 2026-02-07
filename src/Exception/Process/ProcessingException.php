@@ -30,6 +30,7 @@ class ProcessingException extends \RuntimeException implements DtoToolkitExcepti
     protected array $debug = [];
     protected string | int | null $errorCode = null;
     protected ?string $propertyPath = null;
+    protected ?string $throwerNodeName = null;
 
     /**
      * @param non-empty-string $template_suffix
@@ -175,9 +176,31 @@ class ProcessingException extends \RuntimeException implements DtoToolkitExcepti
         return $this->propertyPath;
     }
 
-    public function getDebugInfo(): array
+    public function getThrowerNodeName(): ?string
     {
-        return $this->debug;
+        return $this->throwerNodeName;
+    }
+
+    public function setThrowerNodeNameIfMissing(string $throwerNodeName): void
+    {
+        if (null === $this->throwerNodeName) {
+            $this->throwerNodeName = $throwerNodeName;
+        }
+    }
+
+    /**
+     * Get debug info for the exception. This can contain any information that might be useful for
+     * debugging but should not contain sensitive information or internal implementation details.
+     *
+     * @param mixed $key
+     */
+    public function getDebugInfo(?string $key = null): mixed
+    {
+        if (null === $key) {
+            return $this->debug;
+        }
+
+        return $this->debug[$key] ?? [];
     }
 
     /**

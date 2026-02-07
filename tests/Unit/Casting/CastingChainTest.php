@@ -163,7 +163,7 @@ final class CastingChainTest extends TestCase
             $this->fail('Expected TransformException not thrown');
         } catch (InvalidConfigException $e) {
             $msg = $e->getMessage();
-            $this->assertStringStartsWith('#[Mod\PerItem] expected 3 child nodes, but found only 2: [Trimmed, FailNextTo]', $msg);
+            $this->assertStringStartsWith('#[Mod\PerItem] expected 3 child nodes, but found only 2: [CastTo\Trimmed, Mod\FailNextTo]', $msg);
         }
 
         /** @psalm-suppress ExtensionRequirementViolation */

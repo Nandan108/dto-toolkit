@@ -10,8 +10,13 @@
   - This enables seamless integration with Laravel and Symfony's validation error handling mechanisms
   - Keep validation logic and error reporting fully pluggable and framework-agnostic
 - **[088]** Tooling-Oriented Docs for LLM
-- **[056]** Support multi-step casting by making withGroups(inboundCast: ...) take a sequence of group(s)
-  Then apply each step in sequence. Same with outboundCast.
+- **[089]** Runtime Synchronization Adapter for Concurrent Cache Warming
+  - Add an optional synchronization interface (separate from `ContextStorageInterface`) to coordinate cache warm-up across fibers/coroutines/tasks.
+  - Use a single synchronization policy for both DTO metadata cache warming (`BaseDto`) and processing-node/closure-map cache warming (`ProcessingNodeBase`).
+  - Provide a conservative default strategy in core (non-blocking/fail-fast), and let adapters provide wait/lock semantics when runtime primitives are available.
+  - Guard externally-invoked warm-up paths (container resolution, `Injectable::inject()`, `Bootable::boot()`, custom resolvers) against duplicate concurrent warm-up of the same cache key.
+  - Keep DTOT runtime-agnostic: no hard dependency on a specific async runtime; synchronization remains adapter-provided.
+- **[056]** Support multi-step casting by making withGroups(inboundCast: ...) take a sequence of group(s), then apply each step in sequence. Same with outboundCast.
 - **[050]** Add `#[LogCast($debugOnly = true)]` to also allow logging non-failing chains.
 
 ### For later

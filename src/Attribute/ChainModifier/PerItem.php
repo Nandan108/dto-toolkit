@@ -48,7 +48,7 @@ class PerItem extends ChainModifierBase
                     if (null !== $upstreamChain) {
                         $value = $upstreamChain($value);
                     }
-                    $nodeNamePushed = ProcessingContext::pushPropPathNode('Mod\PerItem');
+                    ProcessingContext::pushPropPathNode('Mod\PerItem');
 
                     // If the value is not an array, we throw!
                     if (!is_array($value)) {
@@ -70,7 +70,7 @@ class PerItem extends ChainModifierBase
                             }
                         }
                     } finally {
-                        $nodeNamePushed && ProcessingContext::popPropPath();
+                        ProcessingContext::popPropPathNode();
                     }
 
                     return $result;

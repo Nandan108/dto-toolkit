@@ -17,6 +17,9 @@ class SkipNextIf extends ApplyNextIf
 {
     use UsesParamResolver;
 
+    /** @var non-empty-string */
+    protected static string $name = 'Mod\SkipNextIf';
+
     public function __construct(
         public string $condition,
         public int $count = 1,

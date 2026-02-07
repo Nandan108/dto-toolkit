@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nandan108\DtoToolkit\Attribute\ChainModifier;
 
 use Nandan108\DtoToolkit\Core\BaseDto;
+use Nandan108\DtoToolkit\Core\ProcessingContext;
 use Nandan108\DtoToolkit\Exception\Process\ProcessingException;
 use Nandan108\DtoToolkit\Internal\ProcessingChain;
 use Nandan108\DtoToolkit\Traits\UsesParamResolver;
@@ -39,13 +40,19 @@ class FailIf extends ChainModifierBase
             queue: $queue,
             dto: $dto,
             count: 0,
-            className: 'FailIf',
+            nodeName: 'Mod\FailIf',
             buildCasterClosure: function (array $chainElements, ?callable $upstreamChain): \Closure {
                 return function (mixed $value) use ($upstreamChain): mixed {
                     /** @var bool */
                     $condition = $this->resolveParam('condition', $value, $this->condition);
 
+                    if ($upstreamChain) {
+                        $value = $upstreamChain($value);
+                    }
+
                     if ($condition xor $this->negate) {
+                        ProcessingContext::pushPropPathNode('Mod\FailIf');
+
                         throw ProcessingException::reason(
                             methodOrClass: static::class,
                             value: $value,
@@ -57,8 +64,8 @@ class FailIf extends ChainModifierBase
                         );
                     }
 
-                    // apply casting
-                    return null === $upstreamChain ? $value : $upstreamChain($value);
+                    // apply casting if condition not met
+                    return $value;
                 };
             },
         );

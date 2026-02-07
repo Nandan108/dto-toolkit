@@ -7,19 +7,23 @@ namespace Nandan108\DtoToolkit\Core;
 use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Contracts\CasterInterface;
 use Nandan108\DtoToolkit\Contracts\Injectable;
+use Nandan108\DtoToolkit\Contracts\ProvidesProcessingNodeNameInterface;
 use Nandan108\DtoToolkit\Exception\Process\ProcessingException;
 use Nandan108\DtoToolkit\Exception\Process\TransformException;
+use Nandan108\DtoToolkit\Internal\ProcessingNodeBase;
 use Nandan108\DtoToolkit\Traits\IsInjectable;
 
 /**
  * Base class for all Caster classes.
  */
-abstract class CastBase extends CastTo implements CasterInterface, Injectable
+abstract class CastBase extends CastTo implements CasterInterface, Injectable, ProvidesProcessingNodeNameInterface
 {
     use IsInjectable;
 
     /** @var class-string<ProcessingException> */
     protected string $exceptionType = TransformException::class;
+    /** @var ?truthy-string */
+    protected static ?string $nodeName = null;
 
     /**
      * Constructs an instance of a Caster class.
@@ -35,6 +39,12 @@ abstract class CastBase extends CastTo implements CasterInterface, Injectable
             args: $args,
             constructorArgs: $constructorArgs,
         );
+    }
+
+    #[\Override]
+    public function getProcessingNodeName(): string
+    {
+        return static::$nodeName ?: ProcessingNodeBase::getNodeNameFromClass(static::class);
     }
 
     /**

@@ -6,6 +6,7 @@ namespace Nandan108\DtoToolkit\Internal;
 
 use Nandan108\DtoToolkit\Contracts\ProcessingNodeInterface;
 use Nandan108\DtoToolkit\Core\ProcessingContext;
+use Nandan108\DtoToolkit\Exception\Process\ProcessingException;
 
 /**
  * Represents metadata for a single processing node (cast/validate/etc.) used in a chain.
@@ -17,26 +18,39 @@ final class ProcessingNodeMeta implements ProcessingNodeInterface
     /**
      * @param \Closure       $callable     The transformation/validation closure to be invoked for this node
      * @param ?object        $instance     The object instance behind the closure (if any), used for debugging or context
-     * @param truthy-string  $sourceClass  The 2-step short class name where this node originated, for debugging purposes (e.g. "CastTo\Int")
+     * @param truthy-string  $nodeName     The short class name where this node originated, for debugging purposes (e.g. "CastTo\Int")
      * @param ?truthy-string $sourceMethod Optional method name or other debug info about the source of this node
      */
     public function __construct(
         \Closure $callable,
         public readonly ?object $instance,
-        public readonly string $sourceClass,
+        public readonly string $nodeName,
         public readonly ?string $sourceMethod = null,
     ) {
-        // In dev mode, we push the source class/method info onto the context stack for better error messages and debugging.
-        if (ProcessingContext::includeProcessingTraceInErrors()) {
-            $nodeName = $this->sourceClass.($this->sourceMethod ? "::{$this->sourceMethod}" : '');
-            $this->callable = function (mixed $value) use ($callable, $nodeName): mixed {
-                ProcessingContext::pushPropPathNode($nodeName);
+        $nodeName = $this->nodeName.($this->sourceMethod ? "::{$this->sourceMethod}" : '');
+        $includeTrace = ProcessingContext::includeProcessingTraceInErrors();
 
+        // Centralized exception enrichment:
+        // - in trace mode, annotate path with node markers
+        // - always ensure ProcessingException carries thrower node name
+        $this->callable = function (mixed $value) use ($callable, $nodeName, $includeTrace): mixed {
+            if ($includeTrace) {
+                ProcessingContext::pushPropPathNode($nodeName);
+            }
+
+            try {
                 return ($callable)($value);
-            };
-        } else {
-            $this->callable = $callable;
-        }
+            } catch (ProcessingException $e) {
+                $e->setThrowerNodeNameIfMissing($nodeName);
+                throw $e;
+            }
+        };
+    }
+
+    #[\Override]
+    public function getName(): string
+    {
+        return $this->nodeName.($this->sourceMethod ? "::{$this->sourceMethod}" : '');
     }
 
     #[\Override]

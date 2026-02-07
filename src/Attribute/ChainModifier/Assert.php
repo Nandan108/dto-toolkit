@@ -61,7 +61,7 @@ class Assert extends ChainModifierBase
             return function (mixed $value) use ($closures, $upstreamChain): mixed {
                 $upstreamValue = $upstreamChain ? $upstreamChain($value) : $value;
 
-                $nodeNamePushed = ProcessingContext::pushPropPathNode('Mod\Assert');
+                ProcessingContext::pushPropPathNode('Mod\Assert');
                 try {
                     foreach ($closures as $k => $closure) {
                         ProcessingContext::pushPropPath($k);
@@ -72,7 +72,7 @@ class Assert extends ChainModifierBase
                         }
                     }
                 } finally {
-                    $nodeNamePushed && ProcessingContext::popPropPath();
+                    ProcessingContext::popPropPathNode();
                 }
 
                 return $upstreamValue;
@@ -83,7 +83,7 @@ class Assert extends ChainModifierBase
             queue: $queue,
             dto: $dto,
             count: $this->count,
-            className: "Mod\Assert(count:$this->count)",
+            nodeName: "Mod\Assert(count:$this->count)",
             buildCasterClosure: $builder,
         );
     }

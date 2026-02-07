@@ -74,7 +74,7 @@ class Collect extends ChainModifierBase
 
                 return function (mixed $value) use ($closures): array {
                     $result = [];
-                    $nodeNamePushed = ProcessingContext::pushPropPathNode('Mod\Collect');
+                    ProcessingContext::pushPropPathNode('Mod\Collect');
 
                     try {
                         foreach ($closures as $i => $closure) {
@@ -88,7 +88,7 @@ class Collect extends ChainModifierBase
                             }
                         }
                     } finally {
-                        $nodeNamePushed && ProcessingContext::popPropPath();
+                        ProcessingContext::popPropPathNode();
                     }
 
                     return $result;

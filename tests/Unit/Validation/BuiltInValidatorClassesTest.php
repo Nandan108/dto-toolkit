@@ -326,6 +326,7 @@ final class BuiltInValidatorClassesTest extends TestCase
         self::assertSame('number', $method->invoke(null, '-1'));
     }
 
+    /** @psalm-suppress MixedAssignment */
     public function testIpFlagsForVersion(): void
     {
         $method = new \ReflectionMethod(V\Ip::class, 'flagsForVersion');

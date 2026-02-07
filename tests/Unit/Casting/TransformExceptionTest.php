@@ -41,6 +41,7 @@ final class TransformExceptionTest extends TestCase
         ProcessingContext::popFrame();
     }
 
+    /** @psalm-suppress MixedAssignment, MixedArrayAccess */
     public function testExpectedBuildsCorrectTemplateAndParameters(): void
     {
         $ex = TransformException::expected(
@@ -64,6 +65,7 @@ final class TransformExceptionTest extends TestCase
         $this->assertSame('App\\CastTo\\NumericCaster', $params['methodOrClass']);
     }
 
+    /** @psalm-suppress MixedAssignment, MixedArrayAccess */
     public function testReasonBuildsCorrectTemplateAndParameters(): void
     {
         $ex = TransformException::reason(
@@ -85,6 +87,7 @@ final class TransformExceptionTest extends TestCase
         $this->assertSame('string', $debug['type']);
     }
 
+    /** @psalm-suppress MixedAssignment, MixedArrayAccess */
     public function testOperandDebugForObjects(): void
     {
         $obj = new \stdClass();
@@ -102,6 +105,7 @@ final class TransformExceptionTest extends TestCase
         $this->assertStringContainsString('foo', $debug['value']);
     }
 
+    /** @psalm-suppress MixedAssignment, MixedArrayAccess */
     public function testOperandDebugForJsonSerializable(): void
     {
         $jsonObj = new JsonLike(['x' => 'y']);
@@ -118,6 +122,7 @@ final class TransformExceptionTest extends TestCase
         $this->assertStringContainsString('"x":"y"', $debug['value']);
     }
 
+    /** @psalm-suppress MixedAssignment, MixedArrayAccess */
     public function testOperandDebugForStringableObject(): void
     {
         $stringable = new StringableClass();
@@ -134,6 +139,7 @@ final class TransformExceptionTest extends TestCase
         $this->assertStringContainsString('stringified!', $debug['value']);
     }
 
+    /** @psalm-suppress MixedAssignment, MixedArrayAccess */
     public function testOperandDebugForResource(): void
     {
         $resource = fopen('php://temp', 'r');
@@ -152,6 +158,7 @@ final class TransformExceptionTest extends TestCase
         $this->assertSame('[unrepresentable]', $debug['value']);
     }
 
+    /** @psalm-suppress MixedAssignment, MixedArrayAccess */
     public function testDebugTruncation(): void
     {
         $long = str_repeat('A', 200);
@@ -183,6 +190,7 @@ final class TransformExceptionTest extends TestCase
  */
 final class StringableClass
 {
+    /** @psalm-suppress MixedAssignment, MixedArrayAccess */
     public function __toString(): string
     {
         return 'stringified!';
@@ -191,11 +199,13 @@ final class StringableClass
 
 final class JsonLike implements \JsonSerializable
 {
+    /** @psalm-suppress MixedAssignment, MixedArrayAccess */
     public function __construct(public mixed $value)
     {
     }
 
     #[\Override]
+    /** @psalm-suppress MixedAssignment, MixedArrayAccess */
     public function jsonSerialize(): mixed
     {
         return $this->value;

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nandan108\DtoToolkit\Attribute\ChainModifier;
 
 use Nandan108\DtoToolkit\Core\BaseDto;
+use Nandan108\DtoToolkit\Core\ProcessingContext;
 use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
 use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
 use Nandan108\DtoToolkit\Exception\Process\ProcessingException;
@@ -21,6 +22,10 @@ class FailTo extends ChainModifierBase
 {
     protected \Closure | array | null $_handler = null;
 
+    /**
+     * The FailTo attribute is used to catch and handle exceptions
+     * thrown by any caster declared earlier in the chain.
+     */
     public function __construct(
         public readonly mixed $fallback = null,
         public readonly string | array | null $handler = null,
@@ -36,7 +41,7 @@ class FailTo extends ChainModifierBase
             queue: $queue,
             dto: $dto,
             count: 0,
-            className: 'FailTo',
+            nodeName: 'Mod\FailTo',
             buildCasterClosure: function (array $chainElements, ?callable $upstreamChain) use ($handler, $dto): \Closure {
                 if (null === $upstreamChain) {
                     // If there is no upstream chain, we can't catch exceptions
@@ -50,6 +55,8 @@ class FailTo extends ChainModifierBase
                         // execute upstream chain and return value
                         return $upstreamChain($value);
                     } catch (ProcessingException $e) {
+                        ProcessingContext::pushPropPathNode('Mod\FailTo');
+
                         return $handler($value, $this->fallback, $e, $dto);
                     }
                 };

@@ -78,7 +78,7 @@ final class AnyModifierTest extends TestCase
         } catch (ProcessingException $e) {
             $this->assertStringContainsString('processing.modifier.first_success.all_failed', $e->getMessage());
             $this->assertSame(2, $e->getMessageParameters()['strategy_count']);
-
+            $this->assertSame('num{Mod\\Any}', $e->getPropertyPath());
         }
     }
 

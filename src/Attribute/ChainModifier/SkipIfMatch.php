@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nandan108\DtoToolkit\Attribute\ChainModifier;
 
 use Nandan108\DtoToolkit\Core\BaseDto;
+use Nandan108\DtoToolkit\Core\ProcessingContext;
 use Nandan108\DtoToolkit\Internal\ProcessingChain;
 
 /**
@@ -52,7 +53,7 @@ final class SkipIfMatch extends ChainModifierBase
             queue: $queue,
             dto: $dto,
             count: $this->count,
-            className: 'SkipIfMatch',
+            nodeName: 'Mod\SkipIfMatch',
             buildCasterClosure: function (array $chainElements, ?\Closure $upstreamChain): \Closure {
                 $subchain = ProcessingChain::composeFromNodes($chainElements);
 
@@ -69,7 +70,13 @@ final class SkipIfMatch extends ChainModifierBase
                             : $this->return;
                     }
 
-                    return $subchain($value);
+                    try {
+                        ProcessingContext::pushPropPathNode('Mod\SkipIfMatch');
+
+                        return $subchain($value);
+                    } finally {
+                        ProcessingContext::popPropPathNode();
+                    }
                 };
             },
         );

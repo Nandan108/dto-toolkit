@@ -10,6 +10,8 @@ use Nandan108\DtoToolkit\Contracts\ValidatorInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
 use Nandan108\DtoToolkit\Exception\Config\NodeProducerResolutionException;
+use Nandan108\DtoToolkit\Exception\Process\GuardException;
+use Nandan108\DtoToolkit\Internal\ProcessingNodeBase;
 use Nandan108\DtoToolkit\Traits\CreatesFromArrayOrEntity;
 use Nandan108\DtoToolkit\Traits\ProcessesFromAttributes;
 use PHPUnit\Framework\TestCase;
@@ -43,6 +45,35 @@ final class ValidateErrorTest extends TestCase
         );
 
         NeedsContainerValidatorDto::newFromArray(['name' => 'z']);
+    }
+
+    public function testDtoMethodValidatorErrorIncludesContextInfo(): void
+    {
+        $dto = new class extends BaseDto implements ProcessesInterface {
+            use CreatesFromArrayOrEntity;
+            use ProcessesFromAttributes;
+
+            #[Assert('foo')]
+            public int $num = 0;
+
+            public function assertFoo(mixed $value): void
+            {
+                throw GuardException::failed('assertFoo.failed');
+            }
+        };
+
+        try {
+
+            $dto->loadArray(['num' => 42]);
+            $this->fail('Expected exception not thrown');
+        } catch (GuardException $e) {
+            $msg = $e->getMessage();
+            $this->assertStringContainsString('assertFoo.failed', $msg);
+            $dtoNodeName = ProcessingNodeBase::getNodeNameFromClass($dto::class);
+            $propertyPath = $e->getPropertyPath();
+            $this->assertSame('num{'.$dtoNodeName.'::assertFoo}', $propertyPath);
+        }
+
     }
 }
 

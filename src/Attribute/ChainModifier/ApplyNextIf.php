@@ -6,6 +6,7 @@ namespace Nandan108\DtoToolkit\Attribute\ChainModifier;
 
 use Nandan108\DtoToolkit\Contracts\ProcessingNodeInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
+use Nandan108\DtoToolkit\Core\ProcessingContext;
 use Nandan108\DtoToolkit\Internal\ProcessingChain;
 use Nandan108\DtoToolkit\Traits\UsesParamResolver;
 
@@ -22,11 +23,16 @@ class ApplyNextIf extends ChainModifierBase
 {
     use UsesParamResolver;
 
+    /** @var non-empty-string */
+    protected static string $name = 'Mod\ApplyNextIf';
+
     public function __construct(
         public string $condition,
         public int $count = 1,
         public bool $negate = false,
     ) {
+        /** @psalm-suppress DocblockTypeContradiction */
+        $this->count || throw new \InvalidArgumentException(static::$name.': $count cannot be zero.');
     }
 
     #[\Override]
@@ -42,7 +48,7 @@ class ApplyNextIf extends ChainModifierBase
             $queue,
             $dto,
             $this->count,
-            className: 'ApplyNextIf',
+            nodeName: static::$name,
             /** @param array<array-key, ProcessingNodeInterface> $chainElements */
             buildCasterClosure: function (array $chainElements, ?callable $upstreamChain): \Closure {
                 $subchain = ProcessingChain::composeFromNodes($chainElements);
@@ -58,9 +64,16 @@ class ApplyNextIf extends ChainModifierBase
                     }
 
                     // apply or skip the subchain based on condition ^ negate
-                    return ($condition xor $this->negate)
-                        ? $subchain($value)
-                        : $value;
+                    if ($condition xor $this->negate) {
+                        ProcessingContext::pushPropPathNode(static::$name);
+                        try {
+                            return $subchain($value);
+                        } finally {
+                            ProcessingContext::popPropPathNode();
+                        }
+                    }
+
+                    return $value;
                 };
             },
         );

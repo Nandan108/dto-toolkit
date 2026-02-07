@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
 use Nandan108\DtoToolkit\Assert as V;
-use Nandan108\DtoToolkit\Attribute\ChainModifier\FailTo;
+use Nandan108\DtoToolkit\Attribute\ChainModifier as Mod;
 use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Core\FullDto;
+use Nandan108\DtoToolkit\Core\ProcessingContext;
 use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException as ConfigInvalidArgumentException;
 use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
+use Nandan108\DtoToolkit\Exception\Process\ProcessingException;
 use PHPUnit\Framework\TestCase;
 
 final class FailToTest extends TestCase
@@ -19,7 +21,7 @@ final class FailToTest extends TestCase
     {
         $dto = new class extends FullDto {
             #[CastTo\Str]
-            #[FailTo('fallback')]
+            #[Mod\FailTo('fallback')]
             public mixed $value = null;
         };
 
@@ -33,12 +35,12 @@ final class FailToTest extends TestCase
         $dto = new class extends FullDto {
             public array $context = [];
             #[CastTo\Str]
-            #[FailTo(fallback: 'fallback', handler: 'handleFail')]
+            #[Mod\FailTo(fallback: 'fallback', handler: 'handleFail')]
             #[CastTo\Uppercase]
             public mixed $value_1 = null;
 
             #[CastTo\Str]
-            #[FailTo(fallback: 'backfall', handler: [FailTo_CastFailureHandler::class, 'handleFail'])]
+            #[Mod\FailTo(fallback: 'backfall', handler: [FailTo_CastFailureHandler::class, 'handleFail'])]
             #[CastTo\Uppercase]
             public mixed $value_2 = null;
 
@@ -68,7 +70,7 @@ final class FailToTest extends TestCase
     {
         $dto = new class extends FullDto {
             #[CastTo\Str]
-            #[FailTo(fallback: 'failback', handler: ['BadClass', 'wrongHandler'])]
+            #[Mod\FailTo(fallback: 'failback', handler: ['BadClass', 'wrongHandler'])]
             #[CastTo\Uppercase]
             public mixed $value_fail = null;
         };
@@ -83,7 +85,7 @@ final class FailToTest extends TestCase
     public function testBadUsageAsFirstInChain(): void
     {
         $dto = new class extends FullDto {
-            #[FailTo(fallback: 'failback')]
+            #[Mod\FailTo(fallback: 'failback')]
             #[CastTo\Str]
             public mixed $value_fail = null;
         };
@@ -100,12 +102,63 @@ final class FailToTest extends TestCase
     {
         $dto = new class extends FullDto {
             #[V\IsBlank(false)]
-            #[FailTo(fallback: 'fallback')]
+            #[Mod\FailTo(fallback: 'fallback')]
             public mixed $name = null;
         };
 
         $dto->fill(['name' => '   '])->processInbound();
         $this->assertSame('fallback', $dto->name);
+    }
+
+    public function testCaughtUpstreamFailureKeepsCascadeTraceForLaterFailures(): void
+    {
+        $dto = new class extends FullDto {
+            #[CastTo\Trimmed]
+            #[CastTo\Boolean]
+            #[Mod\FailTo(fallback: 'fallback')]
+            #[Mod\FailIf('<context:mustFail')]
+            public mixed $value = null;
+        };
+
+        $dto->contextSet('mustFail', true);
+
+        try {
+            $dto->fill(['value' => 'not-bool'])->processInbound();
+        } catch (ProcessingException $e) {
+            $this->assertSame('fallback', $e->getDebugInfo('orig_value'));
+            $this->assertSame('value{CastTo\Trimmed->CastTo\Boolean->Mod\FailTo->Mod\FailIf}', $e->getPropertyPath());
+            $this->assertSame('processing.modifier.fail_if.condition_failed', $e->getMessageTemplate());
+        }
+    }
+
+    public function testTraceToggleDoesNotLoseNodePathFromMemoizedNodes(): void
+    {
+        BaseDto::clearAllCaches();
+
+        $dto = new class extends FullDto {
+            #[CastTo\Trimmed]
+            #[CastTo\Boolean]
+            #[Mod\FailTo(fallback: 'fallback')]
+            #[Mod\FailIf('<context:mustFail')]
+            public mixed $value = null;
+        };
+
+        ProcessingContext::setIncludeProcessingTraceInErrors(false);
+        $dto->contextSet('mustFail', false);
+        $dto->fill(['value' => 'not-bool'])->processInbound();
+        $this->assertSame('fallback', $dto->value);
+
+        ProcessingContext::setIncludeProcessingTraceInErrors(true);
+        $dto->contextSet('mustFail', true);
+        try {
+            $dto->fill(['value' => 'not-bool'])->processInbound();
+            $this->fail('Expected exception not thrown');
+        } catch (ProcessingException $e) {
+            $this->assertSame('value{CastTo\Trimmed->CastTo\Boolean->Mod\FailTo->Mod\FailIf}', $e->getPropertyPath());
+        } finally {
+            ProcessingContext::setIncludeProcessingTraceInErrors(null);
+            BaseDto::clearAllCaches();
+        }
     }
 }
 

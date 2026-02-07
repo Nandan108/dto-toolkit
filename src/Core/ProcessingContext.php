@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nandan108\DtoToolkit\Core;
 
 use Nandan108\DtoToolkit\Contracts\ContextStorageInterface;
+use Nandan108\DtoToolkit\Contracts\GlobalFrameAwareContextStorageInterface;
 use Nandan108\DtoToolkit\Contracts\HasContextInterface;
 use Nandan108\DtoToolkit\Enum\ErrorMode;
 use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
@@ -16,7 +17,11 @@ final class ProcessingContext
 
     public static function setDevMode(bool $devMode): void
     {
-        self::$devMode = $devMode;
+        if (self::$devMode !== $devMode) {
+            self::assertNoActiveProcessing('setDevMode');
+            self::$devMode = $devMode;
+            BaseDto::clearAllCaches();
+        }
     }
 
     public static function isDevMode(): bool
@@ -37,7 +42,11 @@ final class ProcessingContext
 
     public static function setIncludeProcessingTraceInErrors(?bool $include): void
     {
-        self::$includeProcessingTraceInErrors = $include;
+        if (self::$includeProcessingTraceInErrors !== $include) {
+            self::assertNoActiveProcessing('setIncludeProcessingTraceInErrors');
+            self::$includeProcessingTraceInErrors = $include;
+            BaseDto::clearAllCaches();
+        }
     }
 
     private static ?ContextStorageInterface $storage = null;
@@ -125,18 +134,35 @@ final class ProcessingContext
      *
      * @param non-empty-string $name
      *
-     * @return bool true if the node was pushed, false if processing traces
-     *              are disabled and the node was not added to the path
+     * @return false|int false if processing traces are disabled and the node was not added to the path
+     *                   or the original stack size before adding the node if processing traces are enabled (can be used to conditionally pop the node later)
      */
-    public static function pushPropPathNode(string $name): bool
+    public static function pushPropPathNode(string $name): bool | int
     {
-        if (ProcessingContext::includeProcessingTraceInErrors()) {
-            self::current()->propPathSegments[] = "#$name";
+        $frame = self::current();
+        $originalStackSize = count($frame->propPathSegments);
 
-            return true;
+        if (ProcessingContext::includeProcessingTraceInErrors()) {
+            $frame->propPathSegments[] = "#$name";
+
+            return $originalStackSize;
         }
 
         return false;
+    }
+
+    public static function popPropPathNode(): void
+    {
+        if (ProcessingContext::includeProcessingTraceInErrors()) {
+            $frame = self::current();
+            $lastKey = array_key_last($frame->propPathSegments);
+            null === $lastKey && throw new \LogicException('ProcessingContext: Cannot pop a node name from an empty property path stack.');
+            $lastNode = $frame->propPathSegments[$lastKey] ?? null;
+            // pop the last node if it's a node (starts with #), otherwise leave it (it will be popped by popPropPath)
+            if (\is_string($lastNode) && str_starts_with($lastNode, '#')) {
+                array_pop($frame->propPathSegments);
+            }
+        }
     }
 
     /**
@@ -174,11 +200,23 @@ final class ProcessingContext
     private static function storage(): ContextStorageInterface
     {
         if (null === self::$storage) {
-            self::setStorage(new GlobalContextStorage());
+            self::setStorage(new DefaultContextStorage());
         }
 
         /** @var ContextStorageInterface */
         return self::$storage;
+    }
+
+    private static function assertNoActiveProcessing(string $method): void
+    {
+        $storage = self::storage();
+        $hasActiveProcessing = $storage instanceof GlobalFrameAwareContextStorageInterface
+            ? $storage->hasFramesGlobally()
+            : $storage->hasFrames();
+
+        if ($hasActiveProcessing) {
+            throw new InvalidConfigException("Cannot call ProcessingContext::$method() while processing is active.");
+        }
     }
 
     /**

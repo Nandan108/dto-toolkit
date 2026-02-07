@@ -18,7 +18,7 @@ final class ProcessingFrame
     /** @var array<string, mixed> */
     public array $context;
 
-    /** @var array<int|non-empty-string> */
+    /** @var list<int|non-empty-string> */
     public array $propPathSegments;
 
     /**

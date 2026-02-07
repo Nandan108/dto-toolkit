@@ -25,13 +25,16 @@ final class ProcessingChain implements ProcessingNodeInterface
      */
     public $buildCasterClosure;
 
+    /** @var truthy-string Debugging info: name of the class that's creating this chain */
+    public string $nodeName;
+
     /**
      * ProcessingChain constructor.
      *
      * @param ?\ArrayIterator<int, ProcessingNodeProducerInterface>     $queue
      * @param int                                                       $count              The number of elements (sub-nodes) to include in this chain node
      *                                                                                      Negative values mean "all remaining"
-     * @param string                                                    $className          Debugging info: name of the class that's creating this chain
+     * @param non-empty-string                                          $nodeName           Debugging info: name of the class that's creating this chain
      * @param ?\Closure(ProcessingNodeInterface[], ?\Closure): \Closure $buildCasterClosure A \Closure that builds the final casting chain from consumed nodes.
      *                                                                                      Defaults to [$this, 'composeFromNodes'] unless overridden (e.g. by chain modifiers).
      *
@@ -41,9 +44,12 @@ final class ProcessingChain implements ProcessingNodeInterface
         ?\ArrayIterator $queue,
         BaseDto $dto,
         int $count = -1,
-        public string $className = 'Processing',
+        string $nodeName = 'Processing',
         ?\Closure $buildCasterClosure = null,
     ) {
+        (bool) $nodeName || throw new InvalidConfigException('ProcessingChain: Invalid node name "'.$nodeName.'".');
+        $this->nodeName = $nodeName;
+
         $queue ??= new \ArrayIterator();
 
         for ($i = $count; 0 !== $i && $queue->valid(); --$i) {
@@ -55,20 +61,17 @@ final class ProcessingChain implements ProcessingNodeInterface
         }
 
         if ($i > 0) {
-            $getClassName = function (ProcessingNodeInterface $node): string {
-                if ($node instanceof ProcessingChain) {
-                    return $node->className;
-                }
-                $class = $node instanceof ProcessingNodeMeta ? $node->instance::class : $node::class;
-                $i = strrpos($class, '\\');
+            if ($this->childNodes) {
+                $names = array_map(
+                    fn (ProcessingNodeInterface $node): string => $node->getName(),
+                    $this->childNodes,
+                );
+                $childNodesNames = 'only '.count($names).': ['.implode(', ', $names).']';
+            } else {
+                $childNodesNames = 'none';
+            }
 
-                return false === $i ? $class : substr($class, $i + 1);
-            };
-
-            $childNodesNames = $this->childNodes
-                ? 'only '.count($this->childNodes).': ['.implode(', ', array_map($getClassName, $this->childNodes)).']'
-                : 'none';
-            throw new InvalidConfigException("#[$className] expected $count child nodes, but found $childNodesNames.");
+            throw new InvalidConfigException("#[$nodeName] expected $count child nodes, but found $childNodesNames.");
         }
 
         // if no builder was provided, use $this->composeFromNodes()
@@ -80,6 +83,13 @@ final class ProcessingChain implements ProcessingNodeInterface
         }
 
         $this->buildCasterClosure = $buildCasterClosure;
+    }
+
+    #[\Override]
+    /** @return truthy-string */
+    public function getName(): string
+    {
+        return $this->nodeName;
     }
 
     #[\Override]

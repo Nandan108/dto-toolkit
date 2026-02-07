@@ -265,4 +265,6 @@ These paths are opt-in and fully compatible with the core memoization logic.
 - Use `CastTo::_getNodeMetadata()` to inspect resolved and cached node instances
 - Use `CastTo::_clearNodeMetadata()` to reset all cached instances
 
-When processing traces are enabled (default in dev mode), `ProcessingException` property paths include the chain/node context in braces, e.g. `price{CastTo\Trimmed->Mod\PerItem}[0]{CastTo\Rounded}`. Use `ProcessingContext::setIncludeProcessingTraceInErrors(false)` to omit the trace.
+When processing traces are enabled (default in dev mode), `ProcessingException` property paths include the chain/node context in braces, e.g. `price{CastTo\Trimmed->Mod\PerItem}[0]{CastTo\Rounded}`.
+Use `ProcessingContext::setIncludeProcessingTraceInErrors(false)` to omit the trace. (Note: this should normally only be called at boot time, and will throw if called while processing is ongoing.)
+When traces are omitted, `ProcessingException::getThrowerNodeName()` still provides the name of the node that raised the failure.

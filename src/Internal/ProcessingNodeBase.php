@@ -13,6 +13,7 @@ use Nandan108\DtoToolkit\Contracts\NodeResolverInterface;
 use Nandan108\DtoToolkit\Contracts\PhaseAwareInterface;
 use Nandan108\DtoToolkit\Contracts\ProcessingNodeInterface;
 use Nandan108\DtoToolkit\Contracts\ProcessingNodeProducerInterface;
+use Nandan108\DtoToolkit\Contracts\ProvidesProcessingNodeNameInterface;
 use Nandan108\DtoToolkit\Contracts\ValidatorInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Core\ProcessingContext;
@@ -40,6 +41,14 @@ abstract class ProcessingNodeBase implements PhaseAwareInterface, ProcessingNode
 
     /** @var array<string, array{nodes: array<string, ProcessingNodeMeta>, instance?: ProcessingNodeInterface}> */
     protected static array $globalMemoized = [];
+
+    /** @var array<class-string, array<int|string, array<string, ProcessingChain>>|null> */
+    protected static array $processingNodeClosureMapCache = [];
+
+    /** @var ?\WeakMap<BaseDto, true>
+     * Static cache to keep track of which DTOs have been booted
+     */
+    protected static ?\WeakMap $dtoBootCache = null;
 
     public ?string $methodOrClass = null;
 
@@ -135,16 +144,16 @@ abstract class ProcessingNodeBase implements PhaseAwareInterface, ProcessingNode
                 $callable = $this->makeClosureFromInstance($instance, $args);
             }
 
-            $className ??= $this->methodOrClass ?? '<unknown>';
-            // strip namespace except for last step and class name for better readability in debug
-            /** @var truthy-string $className */
-            $className = implode('\\', array_slice(explode('\\', $className), -2));
+            $nodeClass = $this->resolveNodeName(
+                className: $className ?? $this->methodOrClass,
+                instance: $instance,
+            );
 
             /** @psalm-suppress PossiblyNullArgument */
             $cache[$memoKey]['nodes'][$this->serializeCacheKey($args)] = $meta = new ProcessingNodeMeta(
                 callable: $callable,
                 instance: $instance,
-                sourceClass: $className,
+                nodeName: $nodeClass,
                 sourceMethod: $method,
             );
 
@@ -193,11 +202,48 @@ abstract class ProcessingNodeBase implements PhaseAwareInterface, ProcessingNode
         $cache[$memoKey]['nodes'][$this->serializeCacheKey($this->args)] = $meta = new ProcessingNodeMeta(
             callable: $callable,
             instance: $cache[$memoKey]['instance'] ?? $instance,
-            sourceClass: static::$customNodeResolver::class,
+            nodeName: $this->resolveNodeName(
+                className: static::$customNodeResolver::class,
+                instance: $instance,
+            ),
             sourceMethod: $this->methodOrClass ?: null,
         );
 
         return $meta;
+    }
+
+    /**
+     * Get a readable node name from a class name, for debugging purposes.
+     * The returned node name is a short version of the class name, stripping namespaces except
+     * for the last two segments (e.g. "CastTo\Int" instead of "Nandan108\DtoToolkit\CastTo\Int"),
+     * to improve readability in debug messages while still providing some context about the origin of the node.
+     *
+     *
+     * @return truthy-string
+     */
+    public static function getNodeNameFromClass(?string $className): string
+    {
+        // strip namespace except for last step and class name for better readability in debug
+        $nodeClass = implode('\\', array_slice(explode('\\', $className ?? ''), -2));
+
+        return (bool) $nodeClass ? $nodeClass : '<unknown>';
+    }
+
+    /**
+     * @param object|class-string|null $instance
+     *
+     * @return truthy-string
+     */
+    protected function resolveNodeName(?string $className, object | string | null $instance = null): string
+    {
+        if ($instance instanceof ProvidesProcessingNodeNameInterface) {
+            $name = trim($instance->getProcessingNodeName());
+            if ((bool) $name) {
+                return $name;
+            }
+        }
+
+        return self::getNodeNameFromClass($className);
     }
 
     protected function serializeCacheKey(mixed $value, bool $recursed = false): mixed
@@ -257,15 +303,16 @@ abstract class ProcessingNodeBase implements PhaseAwareInterface, ProcessingNode
      */
     public static function getProcessingNodeClosureMap(BaseDto $dto, bool $outbound = false): array
     {
-        /** @var array<class-string, array<int, array<string, ProcessingChain>>|null> */
-        static $cache = [];
         $reflection = new \ReflectionClass($dto);
         $dtoClass = $reflection->getName();
-        $processors = &$cache[$dtoClass];
+        /** @psalm-suppress UnsupportedPropertyReferenceUsage */
+        $processors = &self::$processingNodeClosureMapCache[$dtoClass];
 
-        // static cache to keep track of which DTOs have been booted
-        static $dtoBootCache = new \WeakMap();
-        /** @var \WeakMap<BaseDto, true> $dtoBootCache */
+        if (null === self::$dtoBootCache) {
+            /** @var \WeakMap<BaseDto, true> */
+            self::$dtoBootCache = new \WeakMap();
+        }
+
         $phase = Phase::fromComponents($outbound, false);
 
         $phaseKey = (int) $outbound;
@@ -306,7 +353,7 @@ abstract class ProcessingNodeBase implements PhaseAwareInterface, ProcessingNode
         $map = $processors[$phaseKey] ?? [];
 
         // Boot chain elements on DTO (recursively), if needed
-        if (!isset($dtoBootCache[$dto])) {
+        if (!isset(self::$dtoBootCache[$dto])) {
             // use a WeakMap for its object de-duplication properties
             /** @var \WeakMap<BootsOnDtoInterface, BootsOnDtoInterface> */
             $instances = new \WeakMap();
@@ -327,7 +374,7 @@ abstract class ProcessingNodeBase implements PhaseAwareInterface, ProcessingNode
             foreach ($instances as $instance) {
                 $instance->bootOnDto();
             }
-            $dtoBootCache[$dto] = true;
+            self::$dtoBootCache[$dto] = true;
         }
 
         // return the cast/ers for the requested phase
@@ -355,6 +402,8 @@ abstract class ProcessingNodeBase implements PhaseAwareInterface, ProcessingNode
             unset(self::$globalMemoized[$methodKey]);
         } else {
             self::$globalMemoized = [];
+            self::$processingNodeClosureMapCache = [];
+            self::$dtoBootCache = null;
         }
     }
 

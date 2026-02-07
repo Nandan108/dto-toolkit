@@ -77,6 +77,7 @@ final class ExportsOutboundTest extends TestCase
         $this->assertNotSame($entity1, $entity2, 'Each call to toEntity() should instanciate and return a new entity');
     }
 
+    /** @psalm-suppress MixedMethodCall */
     public function testMapsDtoFieldsToEntitySetters(): void
     {
         // Create dummy entity
@@ -120,7 +121,6 @@ final class ExportsOutboundTest extends TestCase
         $dto = new class extends BaseDto implements ProcessesInterface {
             use ProcessesFromAttributes;
             use ExportsOutbound;
-            // use CanCastBasicValues;
 
             public ?int $id = null;
             #[CastTo\Trimmed]
@@ -516,7 +516,7 @@ final class ImmutableAddressVoArrayConstructor
     public readonly ?string $state;
     public readonly ?string $ctryCode;
 
-    /** @psalm-suppress PossiblyUnusedMethod */
+    /** @psalm-suppress PossiblyUnusedMethod, MixedAssignment */
     public function __construct(array $props)
     {
         $this->street = $props['street'] ?? null;

@@ -18,7 +18,7 @@ trait ProcessesFromAttributes // implements ProcessesInterface
     #[\Override]
     public function processInbound(?ErrorMode $errorMode = null, ?ProcessingErrorList $errorList = null): void
     {
-        $errorList and $this->setErrorList($errorList);
+        $errorList && $this->setErrorList($errorList);
 
         $callback = function (ProcessingFrame $frame): void {
             $processorMap = CastTo::getProcessingNodeClosureMap(dto: $this, outbound: false);

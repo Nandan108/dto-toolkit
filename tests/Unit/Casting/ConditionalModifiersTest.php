@@ -7,6 +7,7 @@ namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 use Nandan108\DtoToolkit\Attribute\ChainModifier as Mod;
 use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Core\FullDto;
+use Nandan108\DtoToolkit\Exception\Process\ProcessingException;
 use Nandan108\DtoToolkit\Tests\Traits\CanTestCasterClassesAndMethods;
 use PHPUnit\Framework\TestCase;
 
@@ -46,6 +47,42 @@ final class ConditionalModifiersTest extends TestCase
 
             $dto->loadArray(['value' => "$case case"]);
             $this->assertSame($expected, $dto->value);
+        }
+    }
+
+    public function testSkipNextIf(): void
+    {
+        // Test the SkipNextIf modifier
+        $dto = new class extends FullDto {
+            // Apply PascalCase on odd calls of desiredCaseIs, skip it on even calls
+            #[Mod\SkipNextIf('<dto:desiredCaseIs', 2),
+                CastTo\PascalCase,
+                Mod\FailIf('<context:mustFail'),
+            ]
+            public mixed $value = null;
+
+            public function desiredCaseIs(): bool
+            {
+                static $calls = 0;
+
+                return (bool) ($calls++ % 2); // return true on odd calls, false on even calls
+            }
+        };
+
+        $dto->contextSet('mustFail', false);
+
+        $dto->loadArray(['value' => 'some value']);
+        $this->assertSame('SomeValue', $dto->value); // PascalCase applied
+
+        $dto->contextSet('mustFail', true);
+        $dto->loadArray(['value' => 'some value']); // failure is skipped
+
+        try {
+            $dto->loadArray(['value' => 'some value']);
+            $this->fail('Expected exception not thrown');
+        } catch (ProcessingException $e) {
+            $propPath = $e->getPropertyPath();
+            $this->assertSame('value{Mod\SkipNextIf->CastTo\PascalCase->Mod\FailIf}', $propPath); // PascalCase skipped
         }
     }
 }

@@ -11,13 +11,28 @@ All notable changes to this project will be documented in this file.
 - Invalid interface errors for casters and validators now throw `InvalidConfigException`
   instead of `TransformException::invalidInterface()`.
 - `#[Mod\Any]` now requires at least two strategies; default `$count` is `2`.
-- Processing errors can optionally include a processing node / chain trace in their property paths.
-  Trace inclusion is enabled by default in dev mode and configurable via `ProcessingContext`.
+- `ProcessingException::getPropertyPath()` can now include processing node/chain provenance traces
+  (for example: `price{CastTo\Trimmed->Mod\PerItem}[0]{CastTo\Rounded}`).
+- Processing trace inclusion is enabled by default in dev mode and can be configured via `ProcessingContext`.
 - `BaseDto::clearAllCaches()` now clears both DTO metadata and processing-node metadata caches.
+- `GlobalContextStorage` has been renamed to `DefaultContextStorage`; `GlobalContextStorage`
+  remains as a deprecated alias for backward compatibility.
+
+### Added
+
+- `ProcessingContext::setIncludeProcessingTraceInErrors()`, `includeProcessingTraceInErrors()`, `setDevMode()`, and `isDevMode()`.
+- These `ProcessingContext` config setters are intended for boot-time use and enforce safe semantics: changing values clears DTO/node caches and is rejected during active processing.
+- Optional adapter extension point `GlobalFrameAwareContextStorageInterface` to report globally active frames for concurrent runtimes (fibers/coroutines/tasks) when enforcing boot-time config changes.
+- `ProcessingException` now exposes `getThrowerNodeName()`, and processing-node execution enriches thrown `ProcessingException` instances with the current node name when missing. This provides node-level failure origin even when full processing traces are disabled.
+- New optional contract `ProvidesProcessingNodeNameInterface` allows custom caster/validator producers to override the node name used in traces and thrower-origin metadata.
 
 ### Fixed
 
 - Docs: Replace `CastingException` references with `TransformException` in casting/caster docs and update debugging guidance.
+
+### Breaking
+
+- `ProcessingNodeInterface` now requires `getName(): string`. Custom node implementations must add this method.
 
 ## [1.2.0] - 2026-01-28
 
