@@ -20,7 +20,6 @@ final class DtoHasNoErrors extends ValidatorBase
     {
         if (!$value instanceof BaseDto) {
             throw GuardException::expected(
-                methodOrClass: self::class,
                 operand: $value,
                 expected: BaseDto::class,
             );

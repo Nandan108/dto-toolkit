@@ -32,7 +32,6 @@ final class Range extends ValidatorBase
     {
         if (!\is_int($value) && !\is_float($value)) {
             throw GuardException::expected(
-                methodOrClass: self::class,
                 operand: $value,
                 expected: 'number',
             );
@@ -51,7 +50,6 @@ final class Range extends ValidatorBase
                 value: $value,
                 template_suffix: "number.$error",
                 parameters: ['min' => $min, 'max' => $max, 'inclusive' => $inclusive],
-                methodOrClass: self::class,
             );
         }
     }

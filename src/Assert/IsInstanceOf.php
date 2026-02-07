@@ -35,7 +35,6 @@ final class IsInstanceOf extends ValidatorBase
 
         if (!is_object($value) || !$value instanceof $className) {
             throw GuardException::expected(
-                methodOrClass: static::class,
                 operand: $value,
                 expected: 'instance_of_class',
                 templateSuffix: 'not_instance_of',

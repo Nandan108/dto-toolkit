@@ -43,7 +43,6 @@ final class Extract extends CastBase
 
         $this->evalErrorHandler = function (string $message, ExtractContext $context): never {
             throw ExtractionException::extractFailed(
-                methodOrClass: self::class,
                 message: $message,
                 context: $context,
             );

@@ -27,7 +27,6 @@ final class NumericString extends CastBase implements CasterInterface
 
         if (!is_numeric($value)) {
             throw TransformException::expected(
-                methodOrClass: static::class,
                 operand: $value,
                 expected: 'numeric string',
             );

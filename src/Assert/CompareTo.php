@@ -49,7 +49,6 @@ final class CompareTo extends ValidatorBase
                     'left'     => $value,
                     'right'    => $scalar,
                 ],
-                methodOrClass: self::class,
             );
         }
     }
@@ -117,7 +116,6 @@ final class CompareTo extends ValidatorBase
                     throw GuardException::invalidValue(
                         value: $operand,
                         template_suffix: 'compare_to.invalid_datetime',
-                        methodOrClass: self::class,
                     );
                 }
 

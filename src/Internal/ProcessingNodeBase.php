@@ -436,20 +436,20 @@ abstract class ProcessingNodeBase implements PhaseAwareInterface, ProcessingNode
             $value = (string) $value;
 
             if ($expectNonEmpty && '' === trim($value)) {
-                throw $exceptionType::expectedStringable(
-                    static::class,
-                    $value,
-                    true, // non empty
+                throw $exceptionType::expected(
+                    operand: $value,
+                    expected: 'non-empty stringable',
+                    templateSuffix: 'stringable.non_empty_expected',
                 );
             }
 
             return $value;
         }
 
-        throw $exceptionType::expectedStringable(
-            static::class,
-            $value,
-            $expectNonEmpty,
+        throw $exceptionType::expected(
+            operand: $value,
+            expected: $expectNonEmpty ? 'non-empty stringable' : 'stringable',
+            templateSuffix: $expectNonEmpty ? 'stringable.non_empty_expected' : 'stringable.expected',
         );
     }
 

@@ -34,7 +34,6 @@ final class RegexSplit extends CastBase
 
         if (\PREG_NO_ERROR !== preg_last_error()) {
             throw TransformException::reason(
-                methodOrClass: static::class,
                 value: $value,
                 // Failed to split string with regex
                 template_suffix: 'regex.split_failed',

@@ -25,7 +25,6 @@ final class Luhn extends ValidatorBase
         if ('' === $normalized || !ctype_digit($normalized)) {
             throw GuardException::invalidValue(
                 value: $value,
-                methodOrClass: self::class,
                 template_suffix: 'luhn.invalid',
                 errorCode: 'validate.luhn.invalid',
             );
@@ -37,7 +36,6 @@ final class Luhn extends ValidatorBase
 
         throw GuardException::invalidValue(
             value: $value,
-            methodOrClass: self::class,
             template_suffix: 'luhn.invalid',
             errorCode: 'validate.luhn.invalid',
         );

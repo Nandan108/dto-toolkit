@@ -34,7 +34,6 @@ final class RegexReplace extends CastBase
 
         if (\PREG_NO_ERROR !== preg_last_error()) {
             throw TransformException::reason(
-                methodOrClass: static::class,
                 value: $value,
                 template_suffix: 'regex.replace_failed',
                 parameters: [

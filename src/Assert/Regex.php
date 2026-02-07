@@ -50,7 +50,6 @@ final class Regex extends ValidatorBase
         $matched = 1 === preg_match($pattern, $value, $matches);
         if (!$matched xor $negate) {
             throw GuardException::reason(
-                methodOrClass: static::class,
                 value: $value,
                 template_suffix: 'regex.'.($negate ? 'match_forbidden' : 'no_match'),
                 parameters: ['pattern' => $pattern],

@@ -22,7 +22,6 @@ final class Uuid extends ValidatorBaseNoArgs
             throw GuardException::invalidValue(
                 value: $value,
                 template_suffix: 'invalid_uuid',
-                methodOrClass: self::class,
                 errorCode: 'validate.uuid.invalid',
             );
         }

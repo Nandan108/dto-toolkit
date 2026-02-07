@@ -49,7 +49,6 @@ final class Isbn extends ValidatorBase
 
         throw GuardException::invalidValue(
             value: $value,
-            methodOrClass: self::class,
             template_suffix: 'isbn.invalid',
             errorCode: 'validate.isbn.invalid',
         );

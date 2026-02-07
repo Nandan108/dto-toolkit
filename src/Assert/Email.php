@@ -19,7 +19,6 @@ final class Email extends ValidatorBaseNoArgs
         if (!is_string($value) || false === filter_var($value, FILTER_VALIDATE_EMAIL)) {
             throw GuardException::invalidValue(
                 value: $value,
-                methodOrClass: self::class,
                 template_suffix: 'email.invalid',
                 errorCode: 'validate.email.invalid',
             );

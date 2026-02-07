@@ -69,7 +69,6 @@ final class CompareToExtract extends ValidatorBase
 
         $this->evalErrorHandler = function (string $message, ExtractContext $context): never {
             throw ExtractionException::extractFailed(
-                methodOrClass: self::class,
                 message: $message,
                 context: $context,
             );
@@ -121,7 +120,6 @@ final class CompareToExtract extends ValidatorBase
                     'leftPath'  => $leftValue,
                     'rightPath' => $rightValue,
                 ],
-                methodOrClass: self::class,
             );
         }
     }

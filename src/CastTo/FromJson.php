@@ -27,7 +27,6 @@ final class FromJson extends CastBase
             return json_decode($value, true, 512, JSON_THROW_ON_ERROR | $asAssocFlag);
         } catch (\JsonException $e) {
             throw TransformException::reason(
-                methodOrClass: static::class,
                 value: $value,
                 template_suffix: 'json.parsing_failed',
                 parameters: ['message' => $e->getMessage()],

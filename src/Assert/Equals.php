@@ -41,7 +41,6 @@ final class Equals extends ValidatorBase
                     'strict'   => $strict,
                     'expected' => $expected,
                 ],
-                methodOrClass: self::class,
             );
         }
     }

@@ -37,7 +37,7 @@ final class Rounded extends CastBase
         }
 
         if (!isset($floatValue)) {
-            throw TransformException::expected(static::class, $value, 'numeric');
+            throw TransformException::expected($value, 'numeric');
         }
 
         return round($floatValue, $precision);

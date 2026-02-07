@@ -79,7 +79,6 @@ class Any extends ChainModifierBase
 
                     // If all closures fail, throw!
                     throw ProcessingException::reason(
-                        methodOrClass: self::class,
                         value: $value,
                         template_suffix: 'modifier.first_success.all_failed',
                         parameters: [

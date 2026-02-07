@@ -26,7 +26,6 @@ final class Currency extends ValidatorBase
 
         throw GuardException::invalidValue(
             value: $value,
-            methodOrClass: self::class,
             template_suffix: 'currency.invalid',
             errorCode: 'validate.currency.invalid',
         );

@@ -96,7 +96,6 @@ final class Age extends CastBase
         }
 
         throw TransformException::reason(
-            methodOrClass: static::class,
             value: $value,
             template_suffix: 'date.parsing_failed',
             parameters: ['format' => 'ISO 8601'],

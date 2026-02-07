@@ -63,7 +63,6 @@ final class CardScheme extends ValidatorBase
 
         throw GuardException::invalidValue(
             value: $value,
-            methodOrClass: self::class,
             template_suffix: 'card_scheme.invalid',
             errorCode: 'validate.card_scheme.invalid',
         );

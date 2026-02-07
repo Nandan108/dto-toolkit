@@ -36,7 +36,6 @@ final class Length extends ValidatorBase
             'array'  => \count($value),
             'string' => \mb_strlen($value),
             default  => throw GuardException::expected(
-                methodOrClass: self::class,
                 operand: $value,
                 expected: 'string|array',
             ),
@@ -51,7 +50,6 @@ final class Length extends ValidatorBase
                     value: $value,
                     template_suffix: "$type.length_not_in_range",
                     parameters: ['min' => $min, 'max' => $max],
-                    methodOrClass: self::class,
                 );
             }
 
@@ -59,7 +57,6 @@ final class Length extends ValidatorBase
                 value: $value,
                 template_suffix: "$type.length_below_min",
                 parameters: ['min' => $min],
-                methodOrClass: self::class,
             );
         }
 
@@ -68,7 +65,6 @@ final class Length extends ValidatorBase
                 value: $value,
                 template_suffix: "$type.length_above_max",
                 parameters: ['max' => $max],
-                methodOrClass: self::class,
             );
         }
     }

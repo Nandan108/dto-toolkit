@@ -26,7 +26,6 @@ final class Bic extends ValidatorBase
 
         throw GuardException::invalidValue(
             value: $value,
-            methodOrClass: self::class,
             template_suffix: 'bic.invalid',
             errorCode: 'validate.bic.invalid',
         );

@@ -54,7 +54,6 @@ class FailIf extends ChainModifierBase
                         ProcessingContext::pushPropPathNode('Mod\FailIf');
 
                         throw ProcessingException::reason(
-                            methodOrClass: static::class,
                             value: $value,
                             template_suffix: 'modifier.fail_if.condition_failed',
                             parameters: [

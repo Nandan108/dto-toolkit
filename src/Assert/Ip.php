@@ -74,7 +74,6 @@ final class Ip extends ValidatorBase
 
         throw GuardException::invalidValue(
             value: $value,
-            methodOrClass: self::class,
             template_suffix: 'ip.invalid',
             errorCode: 'validate.ip.invalid',
         );

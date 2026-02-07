@@ -37,7 +37,6 @@ final class DateFormat extends ValidatorBase
             throw GuardException::invalidValue(
                 value: $value,
                 template_suffix: 'date.format_mismatch',
-                methodOrClass: self::class,
                 parameters: ['format' => $format],
                 debug: $errors ?: [],
                 errorCode: 'validate.date.format_mismatch',

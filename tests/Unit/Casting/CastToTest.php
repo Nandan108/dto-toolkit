@@ -44,7 +44,6 @@ final class CastToTest extends TestCase
             public function castToLocalType($value, ...$args): string
             {
                 throw TransformException::expected(
-                    methodOrClass: __METHOD__,
                     operand: $value,
                     expected: 'Something different',
                 );

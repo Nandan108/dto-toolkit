@@ -52,12 +52,11 @@ class ProcessingException extends \RuntimeException implements DtoToolkitExcepti
     }
 
     /**
-     * Basic reason builder with method/class and value info.
+     * Basic reason builder with value info.
      *
      * @param non-empty-string $template_suffix
      */
     final public static function reason(
-        string $methodOrClass,
         mixed $value,
         string $template_suffix,
         array $parameters = [],
@@ -65,7 +64,6 @@ class ProcessingException extends \RuntimeException implements DtoToolkitExcepti
         array $debugExtras = [],
     ): self {
         $public = array_merge([
-            'methodOrClass' => $methodOrClass,
             'type'          => get_debug_type($value),
         ], $parameters);
 
@@ -109,11 +107,9 @@ class ProcessingException extends \RuntimeException implements DtoToolkitExcepti
     /**
      * Expected $expected, but got type($operand).
      *
-     * @param non-empty-string $
-     * @param ?non-empty-string $templateSuffix
+     * @param ?truthy-string $templateSuffix
      */
     public static function expected(
-        string $methodOrClass,
         mixed $operand,
         string $expected,
         ?string $templateSuffix = null,
@@ -125,29 +121,12 @@ class ProcessingException extends \RuntimeException implements DtoToolkitExcepti
             errorCode: static::DOMAIN.'.expected',
             parameters: [
                 'expected'      => $expected,
-                'methodOrClass' => $methodOrClass,
                 'type'          => get_debug_type($operand),
             ] + $parameters,
             debug: [
                 'value'      => self::prepareOperandForDebug($operand),
                 'orig_value' => $operand,
             ],
-        );
-    }
-
-    public static function expectedStringable(
-        string $methodOrClass,
-        mixed $value,
-        bool $expectNonEmpty = false,
-    ): ProcessingException {
-
-        $template = $expectNonEmpty ? 'stringable.non_empty_expected' : 'stringable.expected';
-
-        return static::expected(
-            methodOrClass: $methodOrClass,
-            operand: $value,
-            expected: $expectNonEmpty ? 'non-empty stringable' : 'stringable',
-            templateSuffix: $template,
         );
     }
 

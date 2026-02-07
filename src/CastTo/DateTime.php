@@ -68,7 +68,6 @@ class DateTime extends CastBase implements CasterInterface, BootsOnDtoInterface
         }
 
         throw TransformException::reason(
-            methodOrClass: static::class,
             value: $value,
             template_suffix: 'date.parsing_failed',
             parameters: ['format' => $format],

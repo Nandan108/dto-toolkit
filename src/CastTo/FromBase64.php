@@ -20,7 +20,6 @@ final class FromBase64 extends CastBaseNoArgs
 
         if (false === $decoded) {
             throw TransformException::reason(
-                methodOrClass: static::class,
                 value: $value,
                 template_suffix: 'base64.decode_failed',
             );

@@ -33,6 +33,11 @@ All notable changes to this project will be documented in this file.
 ### Breaking
 
 - `ProcessingNodeInterface` now requires `getName(): string`. Custom node implementations must add this method.
+- `ProcessingException` helpers no longer accept/pass `methodOrClass`:
+  `reason()`, `expected()`, `GuardException::required()`, `GuardException::invalidValue()`,
+  and `ExtractionException::extractFailed()` signatures were simplified accordingly.
+  Error-message parameters no longer include `methodOrClass`; node origin should be read from
+  `ProcessingException::getThrowerNodeName()`.
 
 ## [1.2.0] - 2026-01-28
 

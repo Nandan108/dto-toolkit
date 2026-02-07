@@ -45,7 +45,6 @@ class MapFrom implements PhaseAwareInterface
 
         $this->evalErrorHandler = function (string $message, ExtractContext $context): never {
             throw ExtractionException::extractFailed(
-                self::class,
                 $message,
                 $context,
             );

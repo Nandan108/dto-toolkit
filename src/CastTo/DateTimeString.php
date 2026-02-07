@@ -21,7 +21,7 @@ final class DateTimeString extends DateTime
     public function cast(mixed $value, array $args): string
     {
         if (!($value instanceof \DateTimeImmutable || $value instanceof \DateTime)) {
-            throw TransformException::expected(static::class, $value, 'DateTime or DateTimeImmutable instance');
+            throw TransformException::expected($value, 'DateTime or DateTimeImmutable instance');
         }
 
         /** @var ?\DateTimeZone $tz */

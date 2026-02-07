@@ -49,7 +49,6 @@ final class Json extends ValidatorBase
         if (!$valid) {
             throw GuardException::invalidValue(
                 value: $value,
-                methodOrClass: self::class,
                 template_suffix: 'json.invalid',
                 errorCode: 'validate.json.invalid',
             );
@@ -64,7 +63,6 @@ final class Json extends ValidatorBase
         $detectedType = self::detectType($value);
         if (null === $detectedType || !\in_array($detectedType, $allowedTypes, true)) {
             throw GuardException::reason(
-                methodOrClass: self::class,
                 value: $value,
                 template_suffix: 'json.type_not_allowed',
                 parameters: [

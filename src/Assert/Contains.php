@@ -100,7 +100,6 @@ final class Contains extends ValidatorBase
         throw GuardException::invalidValue(
             value: $value,
             template_suffix: 'contains.type_mismatch',
-            methodOrClass: self::class,
         );
     }
 
@@ -109,7 +108,6 @@ final class Contains extends ValidatorBase
         throw GuardException::invalidValue(
             value: $value,
             template_suffix: 'contains.non_rewindable',
-            methodOrClass: self::class,
         );
     }
 
@@ -118,7 +116,6 @@ final class Contains extends ValidatorBase
         throw GuardException::invalidValue(
             value: $value,
             template_suffix: 'contains.not_contained',
-            methodOrClass: self::class,
         );
     }
 }

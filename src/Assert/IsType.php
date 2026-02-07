@@ -77,7 +77,6 @@ final class IsType extends ValidatorBase
         }
 
         throw GuardException::expected(
-            methodOrClass: self::class,
             operand: $value,
             expected: implode('|', $types),
         );

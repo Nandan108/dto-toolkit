@@ -40,7 +40,6 @@ final class Dto extends CastBase
     {
         if (!\is_array($value) && !\is_object($value)) {
             throw TransformException::expected(
-                methodOrClass: self::class,
                 operand: $value,
                 expected: 'array|object',
             );

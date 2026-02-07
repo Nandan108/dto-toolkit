@@ -31,7 +31,6 @@ final class IsBlank extends ValidatorBase
             throw GuardException::invalidValue(
                 value: $value,
                 template_suffix: $template,
-                methodOrClass: self::class,
             );
         }
     }

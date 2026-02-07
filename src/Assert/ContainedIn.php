@@ -81,7 +81,6 @@ final class ContainedIn extends ValidatorBase
         throw GuardException::invalidValue(
             value: $value,
             template_suffix: 'contained_in.type_mismatch',
-            methodOrClass: self::class,
         );
     }
 
@@ -90,7 +89,6 @@ final class ContainedIn extends ValidatorBase
         throw GuardException::invalidValue(
             value: $value,
             template_suffix: 'contained_in.non_rewindable',
-            methodOrClass: self::class,
         );
     }
 
@@ -99,7 +97,6 @@ final class ContainedIn extends ValidatorBase
         throw GuardException::invalidValue(
             value: $value,
             template_suffix: 'contained_in.not_contained',
-            methodOrClass: self::class,
         );
     }
 }

@@ -55,7 +55,7 @@ final class Floating extends CastBase
             return (float) $value;
         }
 
-        throw TransformException::expected(static::class, $value, 'numeric');
+        throw TransformException::expected($value, 'numeric');
     }
 
     public function normalizeNumberString(string $input, string $decimalPoint): string

@@ -45,7 +45,6 @@ final class TransformExceptionTest extends TestCase
     public function testExpectedBuildsCorrectTemplateAndParameters(): void
     {
         $ex = TransformException::expected(
-            methodOrClass: 'App\\CastTo\\NumericCaster',
             operand: 'hello',
             expected: 'numeric',
         );
@@ -62,14 +61,12 @@ final class TransformExceptionTest extends TestCase
         $this->assertSame('hello', $debug['orig_value']);
         $this->assertSame(json_encode('hello'), $debug['value']);
         $this->assertSame('string', $params['type']);
-        $this->assertSame('App\\CastTo\\NumericCaster', $params['methodOrClass']);
     }
 
     /** @psalm-suppress MixedAssignment, MixedArrayAccess */
     public function testReasonBuildsCorrectTemplateAndParameters(): void
     {
         $ex = TransformException::reason(
-            methodOrClass: 'App\\CastTo\\DateCaster',
             value: '99-99-9999',
             template_suffix: 'date.invalid_format',
             parameters: ['format' => 'Y-m-d'],
@@ -94,7 +91,6 @@ final class TransformExceptionTest extends TestCase
         $obj->foo = 'bar';
 
         $ex = TransformException::expected(
-            methodOrClass: 'App\\CastTo\\StringCaster',
             operand: $obj,
             expected: 'string',
         );
@@ -111,7 +107,6 @@ final class TransformExceptionTest extends TestCase
         $jsonObj = new JsonLike(['x' => 'y']);
 
         $ex = TransformException::expected(
-            methodOrClass: 'App\\CastTo\\JsonCaster',
             operand: $jsonObj,
             expected: 'numeric',
         );
@@ -128,7 +123,6 @@ final class TransformExceptionTest extends TestCase
         $stringable = new StringableClass();
 
         $ex = TransformException::expected(
-            methodOrClass: 'App\\CastTo\\ToStringCaster',
             operand: $stringable,
             expected: 'numeric',
         );
@@ -145,7 +139,6 @@ final class TransformExceptionTest extends TestCase
         $resource = fopen('php://temp', 'r');
 
         $ex = TransformException::expected(
-            methodOrClass: 'App\\CastTo\\ResourceCaster',
             operand: $resource,
             expected: 'string',
         );
@@ -168,7 +161,6 @@ final class TransformExceptionTest extends TestCase
         ProcessingException::$max_text_length = 30;
 
         $ex = TransformException::expected(
-            methodOrClass: 'App\\CastTo\\Truncate',
             operand: $long,
             expected: 'numeric',
         );

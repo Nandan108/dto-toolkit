@@ -37,7 +37,6 @@ trait UsesDiacriticSanitizer
 
         // Transliteration failure is very unlikely to happen, but if it does, we throw an exception
         false !== $result || throw TransformException::reason(
-            methodOrClass: static::class,
             value: $value,
             // Failed to transliterate string with Intl extension
             template_suffix: 'intl.transliterate_failed',

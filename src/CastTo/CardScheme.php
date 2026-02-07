@@ -65,7 +65,6 @@ final class CardScheme extends CastBase
         }
 
         throw TransformException::reason(
-            methodOrClass: self::class,
             value: $value,
             template_suffix: 'card_scheme.no_match',
             errorCode: 'card_scheme.no_match',

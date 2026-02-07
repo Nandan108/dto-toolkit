@@ -42,7 +42,6 @@ final class In extends ValidatorBase
                 value: $value,
                 template_suffix: 'in.not_allowed',
                 parameters: ['allowed' => $allowedValues],
-                methodOrClass: self::class,
             );
         }
     }

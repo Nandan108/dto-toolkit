@@ -50,7 +50,6 @@ final class Url extends ValidatorBase
             throw GuardException::invalidValue(
                 value: $value,
                 template_suffix: 'invalid_url',
-                methodOrClass: __CLASS__,
             );
         }
         /** @var array<string, string> $parsed */
@@ -62,7 +61,6 @@ final class Url extends ValidatorBase
                 throw GuardException::invalidValue(
                     value: $value,
                     template_suffix: "url_missing_{$part}",
-                    methodOrClass: __CLASS__,
                 );
             }
         }
@@ -74,7 +72,6 @@ final class Url extends ValidatorBase
                 throw GuardException::invalidValue(
                     value: $value,
                     template_suffix: 'url_invalid_host',
-                    methodOrClass: __CLASS__,
                 );
             }
         }
@@ -88,7 +85,6 @@ final class Url extends ValidatorBase
                 throw GuardException::invalidValue(
                     value: $value,
                     template_suffix: 'invalid_url_scheme',
-                    methodOrClass: __CLASS__,
                     parameters: [
                         'allowed_schemes' => implode(', ', $allowedSchemes),
                     ],

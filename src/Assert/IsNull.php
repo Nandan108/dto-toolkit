@@ -27,7 +27,6 @@ final class IsNull extends ValidatorBase
         if ($expect) {
             if (null !== $value) {
                 throw GuardException::expected(
-                    methodOrClass: self::class,
                     operand: $value,
                     expected: 'null',
                 );
@@ -40,7 +39,6 @@ final class IsNull extends ValidatorBase
             throw GuardException::required(
                 what: 'non_null_value',
                 badValue: $value,
-                methodOrClass: self::class,
             );
         }
     }

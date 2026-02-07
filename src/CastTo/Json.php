@@ -30,7 +30,6 @@ final class Json extends CastBase
         }
 
         throw TransformException::reason(
-            methodOrClass: self::class,
             value: $value,
             template_suffix: 'json.encoding_failed',
             errorCode: 'json.encoding_failed',

@@ -32,7 +32,6 @@ final class Enum extends CastBase
 
         if (!\is_string($value) && !\is_int($value)) {
             throw TransformException::reason(
-                methodOrClass: self::class,
                 value: $value,
                 template_suffix: 'enum.invalid_type',
                 parameters: ['enum' => $enumClass],
@@ -44,7 +43,6 @@ final class Enum extends CastBase
 
         if (null === $enumInstance) {
             throw TransformException::reason(
-                methodOrClass: self::class,
                 value: $value,
                 template_suffix: 'enum.invalid_value',
                 parameters: ['enum' => $enumClass],

@@ -48,6 +48,6 @@ final class Integer extends CastBase
             };
         }
 
-        throw TransformException::expected(static::class, $value, 'numeric');
+        throw TransformException::expected($value, 'numeric');
     }
 }

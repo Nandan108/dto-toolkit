@@ -49,7 +49,7 @@ final class LocalizedDateTime extends CastBase implements CasterInterface, Boots
         [$dateStyle, $timeStyle, $pattern] = $args;
 
         if (!$value instanceof \DateTimeInterface) {
-            throw TransformException::expected(static::class, $value, 'DateTimeInterface');
+            throw TransformException::expected($value, 'DateTimeInterface');
         }
 
         /** @var string $locale */

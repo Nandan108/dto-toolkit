@@ -47,7 +47,6 @@ final class EnumCase extends ValidatorBase
             value: $value,
             template_suffix: 'enum.invalid_case',
             parameters: ['enum' => $enumClass],
-            methodOrClass: self::class,
             errorCode: 'validate.enum.invalid_case',
         );
     }

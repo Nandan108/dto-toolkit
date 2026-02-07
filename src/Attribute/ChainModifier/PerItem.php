@@ -53,7 +53,6 @@ class PerItem extends ChainModifierBase
                     // If the value is not an array, we throw!
                     if (!is_array($value)) {
                         throw ProcessingException::reason(
-                            methodOrClass: static::class,
                             value: $value,
                             template_suffix: 'modifier.per_item.expected_array',
                             errorCode: 'modifier.per_item.expected_array',

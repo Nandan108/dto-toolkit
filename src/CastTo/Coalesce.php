@@ -41,7 +41,6 @@ final class Coalesce extends CastBase
             $iterable = $value;
         } else {
             throw TransformException::expected(
-                methodOrClass: self::class,
                 operand: $value,
                 expected: 'array|Traversable',
             );
@@ -58,7 +57,6 @@ final class Coalesce extends CastBase
         }
 
         throw TransformException::reason(
-            methodOrClass: self::class,
             value: $value,
             template_suffix: 'coalesce.no_value',
             errorCode: 'coalesce.no_value',

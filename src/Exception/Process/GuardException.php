@@ -24,7 +24,6 @@ class GuardException extends ProcessingException
     public static function invalidValue(
         mixed $value,
         string $template_suffix = 'invalid_value',
-        ?string $methodOrClass = null,
         array $parameters = [],
         string | int | null $errorCode = 'guard.invalid_value',
         array $debug = [],
@@ -37,7 +36,6 @@ class GuardException extends ProcessingException
             errorCode: $errorCode,
             httpCode: 422,
             debug: [
-                'methodOrClass' => $methodOrClass,
                 'value'         => self::prepareOperandForDebug($value),
                 'orig_value'    => $value,
             ] + $debug,
@@ -50,13 +48,11 @@ class GuardException extends ProcessingException
     public static function required(
         mixed $what,
         mixed $badValue,
-        string $methodOrClass,
         array $parameters = [],
         string | int | null $errorCode = 'guard.required',
     ): static {
         /** @var static */
         return static::reason(
-            methodOrClass: $methodOrClass,
             value: $badValue,
             template_suffix: "required.$what",
             parameters: $parameters,

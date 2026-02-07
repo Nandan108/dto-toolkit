@@ -9,7 +9,6 @@ use Nandan108\PropPath\Support\ExtractContext;
 final class ExtractionException extends ProcessingException
 {
     public static function extractFailed(
-        string $methodOrClass,
         string $message,
         ?ExtractContext $context = null,
     ): self {
@@ -17,9 +16,6 @@ final class ExtractionException extends ProcessingException
 
         return new static(
             template_suffix: 'extract.failed',
-            parameters: [
-                'methodOrClass' => $methodOrClass,
-            ],
             debug: [
                 'message'    => $message,
                 'value'      => self::prepareOperandForDebug($value),

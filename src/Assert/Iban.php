@@ -34,7 +34,6 @@ final class Iban extends ValidatorBase
         if (\strlen($normalized) < 15 || \strlen($normalized) > 34) {
             throw GuardException::invalidValue(
                 value: $value,
-                methodOrClass: self::class,
                 template_suffix: 'iban.invalid',
                 errorCode: 'validate.iban.invalid',
             );
@@ -43,7 +42,6 @@ final class Iban extends ValidatorBase
         if (1 !== \preg_match('/^[A-Z]{2}[0-9]{2}[A-Z0-9]+$/', $normalized)) {
             throw GuardException::invalidValue(
                 value: $value,
-                methodOrClass: self::class,
                 template_suffix: 'iban.invalid',
                 errorCode: 'validate.iban.invalid',
             );
@@ -54,7 +52,6 @@ final class Iban extends ValidatorBase
         if (null !== $countryCode && !str_starts_with($normalized, $countryCode)) {
             throw GuardException::invalidValue(
                 value: $value,
-                methodOrClass: self::class,
                 template_suffix: 'iban.invalid',
                 errorCode: 'validate.iban.invalid',
             );
@@ -63,7 +60,6 @@ final class Iban extends ValidatorBase
         if (!self::passesChecksum($normalized)) {
             throw GuardException::invalidValue(
                 value: $value,
-                methodOrClass: self::class,
                 template_suffix: 'iban.invalid',
                 errorCode: 'validate.iban.invalid',
             );
