@@ -19,9 +19,10 @@ final class DtoHasNoErrors extends ValidatorBase
     public function validate(mixed $value, array $args = []): void
     {
         if (!$value instanceof BaseDto) {
-            throw GuardException::expected(
-                operand: $value,
-                expected: BaseDto::class,
+            throw GuardException::reason(
+                value: $value,
+                template_suffix: 'nested_dto.errors',
+                errorCode: 'guard.nested_dto',
             );
         }
 

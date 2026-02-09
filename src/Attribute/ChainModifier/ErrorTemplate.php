@@ -7,7 +7,7 @@ namespace Nandan108\DtoToolkit\Attribute\ChainModifier;
 use Nandan108\DtoToolkit\Contracts\ProcessingNodeProducerInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Core\ProcessingContext;
-use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
+use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
 use Nandan108\DtoToolkit\Internal\ProcessingChain;
 
 /**
@@ -28,15 +28,15 @@ class ErrorTemplate extends ChainModifierBase
     ) {
         /** @psalm-suppress DocblockTypeContradiction */
         if ($this->count < 1) {
-            throw new InvalidConfigException('ErrorTemplate count must be greater than 0');
+            throw new InvalidArgumentException('ErrorTemplate count must be greater than 0');
         }
         /** @psalm-suppress TypeDoesNotContainType, DocblockTypeContradiction */
         if (\is_string($override)) {
-            '' === $override && throw new InvalidConfigException('ErrorTemplate override string cannot be empty');
+            '' === $override && throw new InvalidArgumentException('ErrorTemplate override string cannot be empty');
         } else {
             foreach ($override as $key => $value) {
-                '' === $key && throw new InvalidConfigException('ErrorTemplate override keys cannot be empty strings');
-                '' === $value && throw new InvalidConfigException('ErrorTemplate override values cannot be empty strings');
+                '' === $key && throw new InvalidArgumentException('ErrorTemplate override keys cannot be empty strings');
+                '' === $value && throw new InvalidArgumentException('ErrorTemplate override values cannot be empty strings');
             }
         }
     }

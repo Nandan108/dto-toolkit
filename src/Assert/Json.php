@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Nandan108\DtoToolkit\Assert;
 
 use Nandan108\DtoToolkit\Core\ValidatorBase;
-use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
+use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
 use Nandan108\DtoToolkit\Exception\Process\GuardException;
 
 /**
@@ -30,7 +30,7 @@ final class Json extends ValidatorBase
             /** @psalm-suppress DocblockTypeContradiction */
             if (!\in_array($type, self::ALLOWED_TYPES, true)) {
                 /** @var string $type */
-                throw new InvalidConfigException("Json validator: unknown JSON type '{$type}'.");
+                throw new InvalidArgumentException("Json validator: unknown JSON type '{$type}'.");
             }
         }
 
@@ -49,8 +49,8 @@ final class Json extends ValidatorBase
         if (!$valid) {
             throw GuardException::invalidValue(
                 value: $value,
-                template_suffix: 'json.invalid',
-                errorCode: 'validate.json.invalid',
+                template_suffix: 'json',
+                errorCode: 'guard.json',
             );
         }
 
@@ -62,14 +62,17 @@ final class Json extends ValidatorBase
 
         $detectedType = self::detectType($value);
         if (null === $detectedType || !\in_array($detectedType, $allowedTypes, true)) {
+
+            $allowedTypes = array_map(fn (string $t) =>'type.json.'.$t, $allowedTypes);
+
             throw GuardException::reason(
                 value: $value,
-                template_suffix: 'json.type_not_allowed',
+                template_suffix: 'json.type',
                 parameters: [
                     'allowedTypes' => $allowedTypes,
                     'detectedType' => $detectedType ?? 'unknown',
                 ],
-                errorCode: 'validate.json.type_not_allowed',
+                errorCode: 'guard.json',
             );
         }
     }
@@ -92,10 +95,13 @@ final class Json extends ValidatorBase
         $first = $trimmed[0];
 
         return match (true) {
-            '{' === $first                   => 'object',
-            '[' === $first                   => 'array',
-            '"' === $first                   => 'string',
-            't' === $first || 'f' === $first => 'bool',            'n' === $first => 'null',            '-' === $first || ctype_digit($first) => 'number',            default => null,
+            '{' === $first                        => 'object',
+            '[' === $first                        => 'array',
+            '"' === $first                        => 'string',
+            't' === $first || 'f' === $first      => 'bool',
+            'n' === $first                        => 'null',
+            '-' === $first || ctype_digit($first) => 'number',
+            default                               => null,
         };
     }
 }

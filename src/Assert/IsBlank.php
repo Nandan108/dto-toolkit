@@ -27,10 +27,9 @@ final class IsBlank extends ValidatorBase
         $isBlank = $this->isBlankValue($value);
 
         if ($expect !== $isBlank) {
-            $template = $expect ? 'blank.expected' : 'not_blank';
-            throw GuardException::invalidValue(
-                value: $value,
-                template_suffix: $template,
+            throw GuardException::expected(
+                operand: $value,
+                expected: $expect ? 'type.blank' : 'type.non_blank',
             );
         }
     }

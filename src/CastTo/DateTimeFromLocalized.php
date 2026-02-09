@@ -98,6 +98,7 @@ final class DateTimeFromLocalized extends CastBase implements CasterInterface, B
                 value: $value,
                 template_suffix: 'date.parsing_failed',
                 parameters: $getParams(),
+                errorCode: 'transform.date',
             );
         }
 

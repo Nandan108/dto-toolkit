@@ -36,6 +36,9 @@ class MapTo implements PhaseAwareInterface
     {
         // This attribute is only used in the outbound-export phase,
         // so calls to setOutbound() are a no-op.
+
+        // Note: We don't throw an exception here even if $isOutbound is false,
+        // so as to not force the use of #[Outbound] on top of #[MapTo] attributes, which would be redundant.
     }
 
     /**

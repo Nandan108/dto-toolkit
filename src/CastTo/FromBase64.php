@@ -22,6 +22,7 @@ final class FromBase64 extends CastBaseNoArgs
             throw TransformException::reason(
                 value: $value,
                 template_suffix: 'base64.decode_failed',
+                errorCode: 'transform.base64',
             );
         }
 

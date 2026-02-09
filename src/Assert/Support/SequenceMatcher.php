@@ -6,11 +6,11 @@ namespace Nandan108\DtoToolkit\Assert\Support;
 
 trait SequenceMatcher
 {
-    private function assertValidPosition(string | int | null $at): void
+    private function assertValidPosition(string | int | null $at, string $validator): void
     {
         if (null !== $at && !\is_int($at) && 'start' !== $at && 'end' !== $at) {
-            throw new \Nandan108\DtoToolkit\Exception\Config\InvalidConfigException(
-                "Contains/ContainedIn validator: invalid 'at' position '{$at}'.",
+            throw new \Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException(
+                "{$validator} validator: invalid 'at' position '{$at}'.",
             );
         }
     }

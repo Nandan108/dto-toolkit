@@ -6,11 +6,11 @@ namespace Nandan108\DtoToolkit\Exception\Process;
 
 class GuardException extends ProcessingException
 {
-    public const DOMAIN = 'processing.guard';
+    public const DOMAIN = 'guard';
     /** @psalm-suppress PossiblyUnusedProperty */
-    protected static string $template_prefix = 'processing.guard.failed.';
+    protected static string $template_prefix = self::DOMAIN.'.failed.';
     /** @psalm-suppress PossiblyUnusedProperty */
-    protected static string $error_code = 'guard.failed';
+    protected static string $error_code = self::DOMAIN.'.failed';
 
     /**
      * Guard failed with value information.
@@ -23,40 +23,22 @@ class GuardException extends ProcessingException
      */
     public static function invalidValue(
         mixed $value,
-        string $template_suffix = 'invalid_value',
+        ?string $template_suffix = null,
         array $parameters = [],
-        string | int | null $errorCode = 'guard.invalid_value',
+        string | int | null $errorCode = self::DOMAIN.'.invalid_value',
         array $debug = [],
     ): self {
         return new self(
-            template_suffix: $template_suffix,
+            template_suffix: 'invalid_value'.(null !== $template_suffix ? ".$template_suffix" : ''),
             parameters: [
                 'type'          => get_debug_type($value),
             ] + $parameters,
             errorCode: $errorCode,
             httpCode: 422,
             debug: [
-                'value'         => self::prepareOperandForDebug($value),
+                'value'         => self::normalizeValueForDebug($value),
                 'orig_value'    => $value,
             ] + $debug,
-        );
-    }
-
-    /**
-     * Guard failed due to missing value (null or empty).
-     */
-    public static function required(
-        mixed $what,
-        mixed $badValue,
-        array $parameters = [],
-        string | int | null $errorCode = 'guard.required',
-    ): static {
-        /** @var static */
-        return static::reason(
-            value: $badValue,
-            template_suffix: "required.$what",
-            parameters: $parameters,
-            errorCode: $errorCode,
         );
     }
 }

@@ -24,8 +24,8 @@ final class Issn extends ValidatorBase
         if (!self::isValidIssn($normalized)) {
             throw GuardException::invalidValue(
                 value: $value,
-                template_suffix: 'issn.invalid',
-                errorCode: 'validate.issn.invalid',
+                template_suffix: 'issn',
+                errorCode: 'guard.issn',
             );
         }
     }

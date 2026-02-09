@@ -34,12 +34,13 @@ final class Equals extends ValidatorBase
         );
 
         if (!$matches) {
-            throw GuardException::invalidValue(
-                value: $value,
-                template_suffix: 'equals.failed',
+            throw GuardException::expected(
+                operand: $value,
+                expected: 'value.equals',
+                templateSuffix: 'equals',
                 parameters: [
-                    'strict'   => $strict,
-                    'expected' => $expected,
+                    'expectedValue' => $expected,
+                    'strict'        => $strict,
                 ],
             );
         }

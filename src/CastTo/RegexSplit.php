@@ -41,6 +41,7 @@ final class RegexSplit extends CastBase
                     'pattern' => $pattern,
                     'error'   => function_exists('preg_last_error_msg') ? preg_last_error_msg() : preg_last_error(),
                 ],
+                errorCode: 'transform.regex',
             );
         }
 

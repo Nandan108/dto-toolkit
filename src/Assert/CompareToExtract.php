@@ -71,6 +71,7 @@ final class CompareToExtract extends ValidatorBase
             throw ExtractionException::extractFailed(
                 message: $message,
                 context: $context,
+                errorCode: 'guard.compare_to.extract_failure',
             );
         };
     }
@@ -110,7 +111,7 @@ final class CompareToExtract extends ValidatorBase
         if (!$matches) {
             throw GuardException::invalidValue(
                 value: $value,
-                template_suffix: 'compare_to.failed',
+                template_suffix: 'compare_to',
                 parameters: [
                     'operator'  => $op,
                     'leftPath'  => $leftPath,
@@ -120,6 +121,7 @@ final class CompareToExtract extends ValidatorBase
                     'leftPath'  => $leftValue,
                     'rightPath' => $rightValue,
                 ],
+                errorCode: 'guard.compare_to',
             );
         }
     }

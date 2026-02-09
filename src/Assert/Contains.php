@@ -6,7 +6,7 @@ namespace Nandan108\DtoToolkit\Assert;
 
 use Nandan108\DtoToolkit\Assert\Support\SequenceMatcher;
 use Nandan108\DtoToolkit\Core\ValidatorBase;
-use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
+use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
 use Nandan108\DtoToolkit\Exception\Process\GuardException;
 
 /**
@@ -15,7 +15,7 @@ use Nandan108\DtoToolkit\Exception\Process\GuardException;
  * - null: anywhere
  * - 'start' or 'end': anchored match
  * - int: absolute start index; negative values are end-relative (e.g. -1 means the match ends 1 element before end); 0 == 'start'
- * Negative $at on non-countable iterables throws an InvalidConfigException.
+ * Negative $at on non-countable iterables throws an InvalidArgumentException.
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class Contains extends ValidatorBase
@@ -30,7 +30,7 @@ final class Contains extends ValidatorBase
     public function __construct(string | iterable $needle, string | int | null $at = null, bool $caseSensitive = true)
     {
         if (\is_int($at) && $at < 0 && \is_iterable($needle) && !\is_countable($needle)) {
-            throw new InvalidConfigException(
+            throw new InvalidArgumentException(
                 "Contains validator: negative '\$at' requires a countable iterable.",
             );
         }
@@ -42,7 +42,7 @@ final class Contains extends ValidatorBase
     public function validate(mixed $value, array $args = []): void
     {
         [$needle, $at, $caseSensitive] = $args;
-        $this->assertValidPosition($at);
+        $this->assertValidPosition($at, 'Contains');
 
         if (\is_string($value)) {
             if (!\is_string($needle)) {
@@ -67,7 +67,7 @@ final class Contains extends ValidatorBase
             }
 
             if (!$caseSensitive) {
-                throw new InvalidConfigException('Contains validator: caseSensitive=false requires a string needle.');
+                throw new InvalidArgumentException('Contains validator: caseSensitive=false requires a string needle.');
             }
 
             if (!$this->isRewindableIterable($value) || !$this->isRewindableIterable($needle)) {
@@ -97,25 +97,28 @@ final class Contains extends ValidatorBase
 
     private function throwTypeMismatch(mixed $value): never
     {
-        throw GuardException::invalidValue(
+        throw GuardException::reason(
             value: $value,
             template_suffix: 'contains.type_mismatch',
+            errorCode: 'guard.contains',
         );
     }
 
     private function throwNonRewindable(mixed $value): never
     {
-        throw GuardException::invalidValue(
+        throw GuardException::reason(
             value: $value,
             template_suffix: 'contains.non_rewindable',
+            errorCode: 'guard.contains',
         );
     }
 
     private function throwNotContained(mixed $value): never
     {
-        throw GuardException::invalidValue(
+        throw GuardException::reason(
             value: $value,
             template_suffix: 'contains.not_contained',
+            errorCode: 'guard.contains',
         );
     }
 }

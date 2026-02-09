@@ -13,6 +13,7 @@ use Nandan108\DtoToolkit\Contracts\Bootable;
 use Nandan108\DtoToolkit\Contracts\Injectable;
 use Nandan108\DtoToolkit\Contracts\PhaseAwareInterface;
 use Nandan108\DtoToolkit\Contracts\ProcessesInterface;
+use Nandan108\DtoToolkit\Contracts\ProvidesProcessingNodeNameInterface;
 use Nandan108\DtoToolkit\Contracts\ScopedPropertyAccessInterface;
 use Nandan108\DtoToolkit\Enum\ErrorMode;
 use Nandan108\DtoToolkit\Enum\Phase;
@@ -28,11 +29,12 @@ use Nandan108\DtoToolkit\Support\ContainerBridge;
  *     defaultValue: array<string, mixed>,
  *     propRef: array<string, \ReflectionProperty>,
  *     presencePolicy:  array<string, PresencePolicy>,
+ *     nodeName?: ?truthy-string,
  *     classRef?: \ReflectionClass<static>,
  *     phase?: array<string, array<string, PhaseAwareInterface|list<PhaseAwareInterface>>>,
  * }
  */
-abstract class BaseDto
+abstract class BaseDto implements ProvidesProcessingNodeNameInterface
 {
     protected static ErrorMode $_defaultErrorMode = ErrorMode::FailFast;
     protected ?ErrorMode $_errorMode = null;
@@ -571,5 +573,30 @@ abstract class BaseDto
         }
 
         return $methodRef;
+    }
+
+    #[\Override]
+    /** @return truthy-string */
+    public function getProcessingNodeName(): string
+    {
+        // make sure we initialize the prop meta cache
+        static::getPropMeta();
+        /** @psalm-suppress UnsupportedPropertyReferenceUsage, PossiblyUndefinedArrayOffset */
+        $nodeName = &static::$_dtoMetaCache[static::class]['nodeName'];
+
+        if (null === $nodeName) {
+            if (ProcessingContext::isDevMode()) {
+                $ref = static::getClassRef();
+                /** @psalm-suppress PropertyTypeCoercion */
+                $nodeName = $ref->isAnonymous()
+                    ? 'AnonymousDTO('.basename($ref->getFileName()).":{$ref->getStartLine()})"
+                    : $ref->getShortName();
+            } else {
+                $nodeName = 'DTO';
+            }
+        }
+
+        /** @var truthy-string */
+        return $nodeName;
     }
 }

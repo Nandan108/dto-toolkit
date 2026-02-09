@@ -26,6 +26,8 @@ use Nandan108\DtoToolkit\Exception\Process\ProcessingException;
 /**
  * Shared resolution logic for processing nodes (casters, validators, etc.).
  *
+ * @psalm-type nodeCache = array<string, array{nodes: array<string, ProcessingNodeMeta>, instance?: ProcessingNodeInterface}>
+ *
  * @psalm-api
  */
 abstract class ProcessingNodeBase implements PhaseAwareInterface, ProcessingNodeProducerInterface
@@ -39,7 +41,7 @@ abstract class ProcessingNodeBase implements PhaseAwareInterface, ProcessingNode
 
     public static ?NodeResolverInterface $customNodeResolver = null;
 
-    /** @var array<string, array{nodes: array<string, ProcessingNodeMeta>, instance?: ProcessingNodeInterface}> */
+    /** @var nodeCache */
     protected static array $globalMemoized = [];
 
     /** @var array<class-string, array<int|string, array<string, ProcessingChain>>|null> */
@@ -78,6 +80,7 @@ abstract class ProcessingNodeBase implements PhaseAwareInterface, ProcessingNode
     public function getProcessingNode(BaseDto $dto, ?\ArrayIterator $queue = null): ProcessingNodeMeta
     {
         /** @psalm-suppress UnsupportedPropertyReferenceUsage */
+        /** @var nodeCache $cache */
         $cache = &static::$globalMemoized;
         $args = $this->args;
         $this->methodOrClass ??= $this::class;
@@ -102,54 +105,53 @@ abstract class ProcessingNodeBase implements PhaseAwareInterface, ProcessingNode
         }
 
         $memoize = /**
-         * @param ?class-string            $className The Class name for debugging
-         * @param ?truthy-string           $method    The method name for debugging
-         * @param object|class-string|null $instance  The instance backing the callable (if any)
+         * @param object|class-string $instance  The instance backing the callable (if any)
+         * @param ?class-string       $className The Class name for debugging
+         * @param ?truthy-string      $method    The method name for debugging
          */
         function (
+            object | string $instance,
             ?string $className = null,
             ?string $method = null,
-            object | string | null $instance = null,
         ) use (&$cache, $args, $dto, $getMemoizeKey): ProcessingNodeMeta {
-            $keyType = $instance ? 'class' : 'dto-method';
+            $keyType = $instance instanceof BaseDto ? 'dto-method' : 'class';
             $memoKey = $getMemoizeKey($keyType, $dto);
 
-            if (null === $instance) {
+            if ('dto-method' === $keyType) {
                 /** @var truthy-string $method A DTO method? Use it! */
                 $callable = $this->makeClosureFromDtoMethod($dto, $method, $args);
             } else {
-                // A class name was provided? Resolve and use it.
+                // Get class name from instance or class
                 if (is_string($instance)) {
                     $this->methodOrClass = $instance;
+                } else {
+                    $this->methodOrClass ??= $instance::class;
                 }
 
-                $this->methodOrClass ??= $instance::class;
                 $cachedInstance = $cache[$memoKey]['instance'] ?? null;
-                if (null === $cachedInstance) {
+                if ($cachedInstance) {
+                    // cache hit
+                    $instance = $cachedInstance;
+                } else {
+                    // cache miss - resolve the instance if necessary...
                     if (is_string($instance)) {
-                        /** @psalm-suppress ArgumentTypeCoercion */
                         $instance = $this->resolveFromClass($instance);
                     }
+                    // ... and cache it
                     $cache[$memoKey]['instance'] = $instance;
-                    if ($instance instanceof Injectable) {
-                        $instance->inject();
-                    }
-                    if ($instance instanceof Bootable) {
-                        $instance->boot();
-                    }
-                } else {
-                    $instance = $cachedInstance;
+                    // if the new instance implements Injectable and/or Bootable, call the respective methods
+                    $instance instanceof Injectable && $instance->inject();
+                    $instance instanceof Bootable && $instance->boot();
                 }
 
                 $callable = $this->makeClosureFromInstance($instance, $args);
             }
-
+            /** @var object $instance */
             $nodeClass = $this->resolveNodeName(
                 className: $className ?? $this->methodOrClass,
                 instance: $instance,
             );
 
-            /** @psalm-suppress PossiblyNullArgument */
             $cache[$memoKey]['nodes'][$this->serializeCacheKey($args)] = $meta = new ProcessingNodeMeta(
                 callable: $callable,
                 instance: $instance,
@@ -163,19 +165,19 @@ abstract class ProcessingNodeBase implements PhaseAwareInterface, ProcessingNode
         // Attribute instance implements the interface directly
         $expectedInterface = $this->getInterface();
         if ($this instanceof $expectedInterface) {
-            return $memoize(instance: $this);
+            return $memoize($this, null, null);
         }
 
         // A class name was provided? Resolve and use it.
         if (class_exists($this->methodOrClass)) {
-            return $memoize(instance: $this->methodOrClass, className: $this->methodOrClass);
+            return $memoize($this->methodOrClass, $this->methodOrClass, null);
         }
 
         // A DTO method? Use it.
         $methodName = static::$methodPrefix.ucfirst($this->methodOrClass);
         if (method_exists($dto, method: $methodName)) {
             /** @var truthy-string $methodName */
-            return $memoize(className: $dto::class, method: $methodName);
+            return $memoize($dto, null, $methodName);
         }
 
         if (!static::$customNodeResolver) {
@@ -436,21 +438,13 @@ abstract class ProcessingNodeBase implements PhaseAwareInterface, ProcessingNode
             $value = (string) $value;
 
             if ($expectNonEmpty && '' === trim($value)) {
-                throw $exceptionType::expected(
-                    operand: $value,
-                    expected: 'non-empty stringable',
-                    templateSuffix: 'stringable.non_empty_expected',
-                );
+                throw $exceptionType::expected($value, 'type.non_empty_stringable');
             }
 
             return $value;
         }
 
-        throw $exceptionType::expected(
-            operand: $value,
-            expected: $expectNonEmpty ? 'non-empty stringable' : 'stringable',
-            templateSuffix: $expectNonEmpty ? 'stringable.non_empty_expected' : 'stringable.expected',
-        );
+        throw $exceptionType::expected($value, 'type.'.($expectNonEmpty ? 'non_empty_' : '').'stringable');
     }
 
     protected function ensureExtensionLoaded(string $extensionName): void

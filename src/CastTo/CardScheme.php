@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Nandan108\DtoToolkit\CastTo;
 
 use Nandan108\DtoToolkit\Core\CastBase;
-use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
+use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
 use Nandan108\DtoToolkit\Exception\Process\TransformException;
 use Nandan108\DtoToolkit\Internal\ProcessingNodeBase;
 use Nandan108\DtoToolkit\Support\CardSchemeDetector;
@@ -26,18 +26,18 @@ final class CardScheme extends CastBase
         if (null !== $schemes) {
             $schemes = \is_array($schemes) ? $schemes : [$schemes];
             if ([] === $schemes) {
-                throw new InvalidConfigException('CardScheme caster requires at least one scheme.');
+                throw new InvalidArgumentException('CardScheme caster requires at least one scheme.');
             }
 
             $normalized = [];
             foreach ($schemes as $scheme) {
                 if (!ProcessingNodeBase::is_stringable($scheme)) {
-                    throw new InvalidConfigException('CardScheme caster: schemes must be strings.');
+                    throw new InvalidArgumentException('CardScheme caster: schemes must be strings.');
                 }
                 /** @psalm-suppress RedundantCastGivenDocblockType */
                 $scheme = strtolower((string) $scheme);
                 if (!CardSchemeDetector::isSupportedScheme($scheme)) {
-                    throw new InvalidConfigException("CardScheme caster: unknown scheme '{$scheme}'.");
+                    throw new InvalidArgumentException("CardScheme caster: unknown scheme '{$scheme}'.");
                 }
                 $normalized[] = $scheme;
             }
@@ -67,7 +67,7 @@ final class CardScheme extends CastBase
         throw TransformException::reason(
             value: $value,
             template_suffix: 'card_scheme.no_match',
-            errorCode: 'card_scheme.no_match',
+            errorCode: 'transform.card_scheme',
         );
     }
 }

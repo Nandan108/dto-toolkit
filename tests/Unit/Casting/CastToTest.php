@@ -45,7 +45,7 @@ final class CastToTest extends TestCase
             {
                 throw TransformException::expected(
                     operand: $value,
-                    expected: 'Something different',
+                    expected: 'type.custom',
                 );
             }
         };

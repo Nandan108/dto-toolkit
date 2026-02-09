@@ -11,7 +11,7 @@ use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Core\FullDto;
 use Nandan108\DtoToolkit\Enum\DateTimeFormat;
 use Nandan108\DtoToolkit\Enum\IntCastMode;
-use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
+use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
 use Nandan108\DtoToolkit\Exception\Process\TransformException;
 use Nandan108\DtoToolkit\Tests\Traits\CanTestCasterClassesAndMethods;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -147,7 +147,7 @@ final class CanCastBasicValuesTest extends TestCase
 
     public function testAgeRejectsInvalidUnit(): void
     {
-        $this->expectException(InvalidConfigException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("Age caster: invalid unit 'weeks'.");
 
         /** @psalm-suppress InvalidArgument */
@@ -172,7 +172,7 @@ final class CanCastBasicValuesTest extends TestCase
 
     public function testAgeWithInvalidRelativeToConfig(): void
     {
-        $this->expectException(InvalidConfigException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("Age caster: invalid relativeTo ISO datetime string 'not-a-date'.");
 
         /** @psalm-suppress InvalidArgument */

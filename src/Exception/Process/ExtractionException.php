@@ -11,6 +11,7 @@ final class ExtractionException extends ProcessingException
     public static function extractFailed(
         string $message,
         ?ExtractContext $context = null,
+        string $errorCode = 'processing.extract_failure',
     ): self {
         $value = $context->roots['value'] ?? null;
 
@@ -18,10 +19,11 @@ final class ExtractionException extends ProcessingException
             template_suffix: 'extract.failed',
             debug: [
                 'message'    => $message,
-                'value'      => self::prepareOperandForDebug($value),
+                'value'      => self::normalizeValueForDebug($value),
                 'orig_value' => $value,
                 'context'    => $context?->getEvalErrorMessage($message) ?? $message,
             ],
+            errorCode: $errorCode,
         );
     }
 }

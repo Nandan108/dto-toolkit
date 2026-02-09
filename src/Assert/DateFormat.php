@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Nandan108\DtoToolkit\Assert;
 
 use Nandan108\DtoToolkit\Core\ValidatorBase;
-use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
+use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
 use Nandan108\DtoToolkit\Exception\Process\GuardException;
 
 /**
@@ -18,7 +18,7 @@ final class DateFormat extends ValidatorBase
     public function __construct(string $format)
     {
         if ('' === $format) {
-            throw new InvalidConfigException('DateFormat validator requires a format string.');
+            throw new InvalidArgumentException('DateFormat validator requires a format string.');
         }
         parent::__construct([$format]);
     }
@@ -36,10 +36,10 @@ final class DateFormat extends ValidatorBase
             // Date does not match date format
             throw GuardException::invalidValue(
                 value: $value,
-                template_suffix: 'date.format_mismatch',
+                template_suffix: 'date.format',
                 parameters: ['format' => $format],
                 debug: $errors ?: [],
-                errorCode: 'validate.date.format_mismatch',
+                errorCode: 'guard.date.format',
             );
         }
     }

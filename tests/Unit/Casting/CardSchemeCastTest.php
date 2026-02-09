@@ -7,7 +7,7 @@ namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Contracts\ProcessesInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
-use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
+use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
 use Nandan108\DtoToolkit\Exception\Process\TransformException;
 use Nandan108\DtoToolkit\Traits\ProcessesFromAttributes;
 use PHPUnit\Framework\TestCase;
@@ -43,21 +43,21 @@ final class CardSchemeCastTest extends TestCase
 
     public function testConstructorRejectsUnknownScheme(): void
     {
-        $this->expectException(InvalidConfigException::class);
+        $this->expectException(InvalidArgumentException::class);
 
         new CastTo\CardScheme(['nope']);
     }
 
     public function testConstructorRejectsEmptySchemeList(): void
     {
-        $this->expectException(InvalidConfigException::class);
+        $this->expectException(InvalidArgumentException::class);
 
         new CastTo\CardScheme([]);
     }
 
     public function testConstructorRejectsNonStringableScheme(): void
     {
-        $this->expectException(InvalidConfigException::class);
+        $this->expectException(InvalidArgumentException::class);
         /** @psalm-suppress InvalidArgument */
         new CastTo\CardScheme([[]]);
     }

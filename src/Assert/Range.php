@@ -6,7 +6,6 @@ namespace Nandan108\DtoToolkit\Assert;
 
 use Nandan108\DtoToolkit\Core\ValidatorBase;
 use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
-use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
 use Nandan108\DtoToolkit\Exception\Process\GuardException;
 
 /**
@@ -19,7 +18,7 @@ final class Range extends ValidatorBase
     public function __construct(?float $min = null, ?float $max = null, bool $inclusive = true)
     {
         if (null === $min && null === $max) {
-            throw new InvalidConfigException('Range validator requires at least one of min or max.');
+            throw new InvalidArgumentException('Range validator requires at least one of min or max.');
         }
         if (null !== $min && null !== $max && $min > $max) {
             throw new InvalidArgumentException('Range validator requires min to be less than or equal to max.');
@@ -33,7 +32,7 @@ final class Range extends ValidatorBase
         if (!\is_int($value) && !\is_float($value)) {
             throw GuardException::expected(
                 operand: $value,
-                expected: 'number',
+                expected: 'type.number',
             );
         }
 
@@ -50,6 +49,7 @@ final class Range extends ValidatorBase
                 value: $value,
                 template_suffix: "number.$error",
                 parameters: ['min' => $min, 'max' => $max, 'inclusive' => $inclusive],
+                errorCode: 'guard.range',
             );
         }
     }

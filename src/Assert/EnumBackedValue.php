@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Nandan108\DtoToolkit\Assert;
 
 use Nandan108\DtoToolkit\Core\ValidatorBase;
-use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
+use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
 use Nandan108\DtoToolkit\Exception\Process\GuardException;
 
 /**
@@ -22,7 +22,7 @@ final class EnumBackedValue extends ValidatorBase
     public function __construct(string $enumClass)
     {
         if (!is_subclass_of($enumClass, \BackedEnum::class)) {
-            throw new InvalidConfigException("EnumBackedValue validator expects a BackedEnum class, got {$enumClass}.");
+            throw new InvalidArgumentException("EnumBackedValue validator expects a BackedEnum class, got {$enumClass}.");
         }
 
         parent::__construct([$enumClass]);
@@ -35,13 +35,32 @@ final class EnumBackedValue extends ValidatorBase
         $enumClass = $args[0];
 
         if ($value instanceof $enumClass) {
-            throw GuardException::failed("must be a backing value of {$enumClass}, instance given");
+            throw GuardException::expected(
+                operand: $value,
+                templateSuffix: 'instance_given',
+                expected: 'type.enum.backing_value',
+                parameters: [
+                    'enumClass' => (new \ReflectionClass($enumClass))->getShortName(),
+                ],
+                debug: ['fullEnumClass' => $enumClass],
+            );
         }
 
         if ($enumClass::tryFrom($value) instanceof $enumClass) {
             return;
         }
 
-        throw GuardException::failed("must be a backing value of {$enumClass}");
+        throw GuardException::expected(
+            operand: $value,
+            expected: 'type.enum.backing_value',
+            parameters: [
+                'enumClass' => (new \ReflectionClass($enumClass))->getShortName(),
+                'allowed'   => array_map(
+                    fn ($case) => (string) $case->value,
+                    $enumClass::cases(),
+                ),
+            ],
+            debug: ['fullEnumClass' => $enumClass],
+        );
     }
 }

@@ -45,6 +45,7 @@ final class Extract extends CastBase
             throw ExtractionException::extractFailed(
                 message: $message,
                 context: $context,
+                errorCode: 'transform.extract_failure',
             );
         };
     }

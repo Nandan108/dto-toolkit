@@ -21,8 +21,8 @@ final class Uuid extends ValidatorBaseNoArgs
         if (!is_string($value) || 1 !== preg_match(self::REGEX, $value)) {
             throw GuardException::invalidValue(
                 value: $value,
-                template_suffix: 'invalid_uuid',
-                errorCode: 'validate.uuid.invalid',
+                template_suffix: 'uuid',
+                errorCode: 'guard.uuid',
             );
         }
     }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
 use Nandan108\DtoToolkit\Core\BaseDto;
+use Nandan108\DtoToolkit\Core\ProcessingContext;
 use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
 use PHPUnit\Framework\TestCase;
 
@@ -117,6 +118,25 @@ final class BaseDtoTest extends TestCase
         $propName = 'propWithoutDefaultValue';
         $this->expectExceptionMessage("Default value missing on DTO property: {$class}::\${$propName}.");
         InvalidBaseDtoWithPropMissingDefaultValue::new()->getDefaultValues();
+    }
+
+    public function testIsInstanceOfValidatorErrorMessageClassParameter(): void
+    {
+        $file = basename(__FILE__);
+        $line = __LINE__ + 1;
+        $dto = new class extends BaseDto {
+            public mixed $testCase = null;
+        };
+
+        // In dev mode, the node name should include the file and line number for anonymous DTOs
+        $this->assertSame("AnonymousDTO($file:$line)", $dto->getProcessingNodeName());
+
+        // In production mode, the node name should be the default 'DTO'
+        ProcessingContext::setDevMode(false);
+        $this->assertSame('DTO', $dto->getProcessingNodeName());
+
+        // Reset dev mode for other tests
+        ProcessingContext::setDevMode(true);
     }
 }
 

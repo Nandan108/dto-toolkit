@@ -30,6 +30,7 @@ final class FromJson extends CastBase
                 value: $value,
                 template_suffix: 'json.parsing_failed',
                 parameters: ['message' => $e->getMessage()],
+                errorCode: 'transform.json',
             );
         }
     }

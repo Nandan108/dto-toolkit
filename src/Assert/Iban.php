@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Nandan108\DtoToolkit\Assert;
 
 use Nandan108\DtoToolkit\Core\ValidatorBase;
-use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
+use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
 use Nandan108\DtoToolkit\Exception\Process\GuardException;
 
 /**
@@ -19,7 +19,7 @@ final class Iban extends ValidatorBase
     public function __construct(?string $countryCode = null)
     {
         if (null !== $countryCode && 1 !== \preg_match('/^[A-Z]{2}$/i', $countryCode)) {
-            throw new InvalidConfigException('Iban validator: country code must be a 2-letter ISO code.');
+            throw new InvalidArgumentException('Iban validator: country code must be a 2-letter ISO code.');
         }
         /** @var ?truthy-string $countryCode */
         parent::__construct([$countryCode ? strtoupper($countryCode) : null]);
@@ -31,39 +31,25 @@ final class Iban extends ValidatorBase
         $value = $this->ensureStringable($value, true);
         $normalized = strtoupper(preg_replace('/\s+/', '', $value) ?? $value);
 
-        if (\strlen($normalized) < 15 || \strlen($normalized) > 34) {
-            throw GuardException::invalidValue(
-                value: $value,
-                template_suffix: 'iban.invalid',
-                errorCode: 'validate.iban.invalid',
-            );
-        }
+        $failIf = function (bool $condition) use ($value): void {
+            if ($condition) {
+                throw GuardException::invalidValue(
+                    value: $value,
+                    template_suffix: 'iban',
+                    errorCode: 'guard.iban',
+                );
+            }
+        };
 
-        if (1 !== \preg_match('/^[A-Z]{2}[0-9]{2}[A-Z0-9]+$/', $normalized)) {
-            throw GuardException::invalidValue(
-                value: $value,
-                template_suffix: 'iban.invalid',
-                errorCode: 'validate.iban.invalid',
-            );
-        }
+        $failIf(\strlen($normalized) < 15 || \strlen($normalized) > 34);
+
+        $failIf(1 !== \preg_match('/^[A-Z]{2}[0-9]{2}[A-Z0-9]+$/', $normalized));
 
         /** @var ?string $countryCode */
         $countryCode = $args[0];
-        if (null !== $countryCode && !str_starts_with($normalized, $countryCode)) {
-            throw GuardException::invalidValue(
-                value: $value,
-                template_suffix: 'iban.invalid',
-                errorCode: 'validate.iban.invalid',
-            );
-        }
+        $failIf(null !== $countryCode && !str_starts_with($normalized, $countryCode));
 
-        if (!self::passesChecksum($normalized)) {
-            throw GuardException::invalidValue(
-                value: $value,
-                template_suffix: 'iban.invalid',
-                errorCode: 'validate.iban.invalid',
-            );
-        }
+        $failIf(!self::passesChecksum($normalized));
     }
 
     private static function passesChecksum(string $iban): bool

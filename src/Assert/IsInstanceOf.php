@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Nandan108\DtoToolkit\Assert;
 
+use Nandan108\DtoToolkit\Core\ProcessingContext;
 use Nandan108\DtoToolkit\Core\ValidatorBase;
-use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
+use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
 use Nandan108\DtoToolkit\Exception\Process\GuardException;
 
 /**
@@ -23,22 +24,32 @@ final class IsInstanceOf extends ValidatorBase
     {
         /** @psalm-suppress DocblockTypeContradiction */
         if ('' === $className) {
-            throw new InvalidConfigException('IsInstanceOf validator requires a class or interface name.');
+            throw new InvalidArgumentException('IsInstanceOf validator requires a class or interface name.');
         }
-        parent::__construct([$className]);
+        if (!class_exists($className) && !interface_exists($className)) {
+            throw new InvalidArgumentException("Class or interface '$className' does not exist.");
+        }
+
+        $shortClassName = ProcessingContext::isDevMode()
+            // in development, use full class name for error message
+            ? $className
+            // in production, use short class name to avoid leaking namespaces
+            : (new \ReflectionClass($className))->getShortName();
+
+        parent::__construct([$className, $shortClassName]);
     }
 
     #[\Override]
     public function validate(mixed $value, array $args = []): void
     {
-        $className = $args[0];
+        [$className, $shortClassName] = $args;
 
         if (!is_object($value) || !$value instanceof $className) {
             throw GuardException::expected(
                 operand: $value,
-                expected: 'instance_of_class',
-                templateSuffix: 'not_instance_of',
-                parameters: ['class' => $className],
+                expected: 'type.instance_of_class',
+                templateSuffix: 'instance_of',
+                parameters: ['class' => $shortClassName],
             );
         }
     }

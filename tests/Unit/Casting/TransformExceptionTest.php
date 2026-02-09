@@ -57,7 +57,7 @@ final class TransformExceptionTest extends TestCase
         // Parameters
         $params = $ex->getMessageParameters();
         $debug = $ex->getDebugInfo();
-        $this->assertSame('numeric', $params['expected']);
+        $this->assertSame(['numeric'], $params['expected']);
         $this->assertSame('hello', $debug['orig_value']);
         $this->assertSame(json_encode('hello'), $debug['value']);
         $this->assertSame('string', $params['type']);
@@ -99,6 +99,17 @@ final class TransformExceptionTest extends TestCase
         $debug = $ex->getDebugInfo();
         $this->assertIsString($debug['value']);
         $this->assertStringContainsString('foo', $debug['value']);
+
+        // test with an anonymous class that doesn't have a __toString method
+        $anon = new class { };
+        $ex = TransformException::expected(
+            operand: $anon,
+            expected: 'string',
+        );
+        $debug = $ex->getDebugInfo();
+        $this->assertSame('anonymous object', $ex->getMessageParameters()['type']);
+        $this->assertIsString($debug['value']);
+        $this->assertStringContainsString('x', $debug['value']);
     }
 
     /** @psalm-suppress MixedAssignment, MixedArrayAccess */

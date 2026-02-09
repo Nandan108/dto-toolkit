@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Nandan108\DtoToolkit\Assert;
 
 use Nandan108\DtoToolkit\Core\ValidatorBase;
-use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
+use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
 use Nandan108\DtoToolkit\Exception\Process\GuardException;
 
 /**
@@ -23,19 +23,19 @@ final class IsType extends ValidatorBase
      *                   |'real'|'numeric'|'string'|'class-string'|'scalar'|'array'|'iterable'
      *                   |'countable'|'callable'|'object'|'resource'|'null'
      *
-     * @param TType|list<TType> $type
+     * @param TType|non-empty-list<TType> $type
      */
     public function __construct(string | array $type)
     {
         $types = \is_array($type) ? $type : [$type];
         if ([] === $types) {
-            throw new InvalidConfigException('IsType validator requires at least one type.');
+            throw new InvalidArgumentException('IsType validator requires at least one type.');
         }
 
         /** @psalm-suppress DocblockTypeContradiction, InvalidCast */
         foreach ($types as $type) {
             if (!\is_string($type)) {
-                throw new InvalidConfigException('IsType validator expects type names as strings.');
+                throw new InvalidArgumentException('IsType validator expects type names as strings.');
             }
 
             if (!in_array(
@@ -58,7 +58,7 @@ final class IsType extends ValidatorBase
                 ],
                 true,
             )) {
-                throw new InvalidConfigException("IsType validator: unknown type '{$type}'.");
+                throw new InvalidArgumentException("IsType validator: unknown type '{$type}'.");
             }
         }
 
@@ -76,9 +76,14 @@ final class IsType extends ValidatorBase
             }
         }
 
+        // map type name to snake_cased error message token
+        $map = [
+            'class-string' => 'class_name',
+        ];
+
         throw GuardException::expected(
             operand: $value,
-            expected: implode('|', $types),
+            expected: array_map(fn (string $t) =>'type.'.($map[$t] ?? $t), $types),
         );
     }
 

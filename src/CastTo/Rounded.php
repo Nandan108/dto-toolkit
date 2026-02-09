@@ -8,11 +8,7 @@ use Nandan108\DtoToolkit\Core\CastBase;
 use Nandan108\DtoToolkit\Exception\Process\TransformException;
 
 /**
- * Converts a value to bool.
- *
- * In case of casting failure, where $value can't be converted to bool:
- * - if $nullable = true, will return null.
- * - if $nullable = false, will throw a TransformException.
+ * Converts a numeric value to a rounded float.
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class Rounded extends CastBase
@@ -37,7 +33,7 @@ final class Rounded extends CastBase
         }
 
         if (!isset($floatValue)) {
-            throw TransformException::expected($value, 'numeric');
+            throw TransformException::expected($value, 'type.numeric');
         }
 
         return round($floatValue, $precision);

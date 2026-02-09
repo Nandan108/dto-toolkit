@@ -40,7 +40,7 @@ final class Entity extends CastBase
         if (!(\is_array($value) || $value instanceof BaseDto)) {
             throw TransformException::expected(
                 operand: $value,
-                expected: 'DTO|array',
+                expected: ['type.dto', 'type.array'],
             );
         }
 

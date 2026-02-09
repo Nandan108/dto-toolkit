@@ -20,6 +20,9 @@ final class Length extends ValidatorBase
         if (null === $min && null === $max) {
             throw new InvalidArgumentException('Length validator requires at least one of min or max.');
         }
+        if (null !== $min && null !== $max && $min > $max) {
+            throw new InvalidArgumentException('Length validator requires min to be less than or equal to max.');
+        }
         parent::__construct([$min, $max]);
     }
 
@@ -37,7 +40,7 @@ final class Length extends ValidatorBase
             'string' => \mb_strlen($value),
             default  => throw GuardException::expected(
                 operand: $value,
-                expected: 'string|array',
+                expected: ['type.string', 'type.array'],
             ),
         };
 
@@ -45,26 +48,20 @@ final class Length extends ValidatorBase
         $max_ok = null === $max ? true : $len <= $max;
 
         if (!$min_ok) {
-            if (!$max_ok) {
-                throw GuardException::invalidValue(
-                    value: $value,
-                    template_suffix: "$type.length_not_in_range",
-                    parameters: ['min' => $min, 'max' => $max],
-                );
-            }
-
-            throw GuardException::invalidValue(
+            throw GuardException::reason(
                 value: $value,
-                template_suffix: "$type.length_below_min",
+                template_suffix: "{$type}_length.below_min",
                 parameters: ['min' => $min],
+                errorCode: 'guard.range',
             );
         }
 
         if (!$max_ok) {
-            throw GuardException::invalidValue(
+            throw GuardException::reason(
                 value: $value,
-                template_suffix: "$type.length_above_max",
+                template_suffix: "{$type}_length.above_max",
                 parameters: ['max' => $max],
+                errorCode: 'guard.range',
             );
         }
     }

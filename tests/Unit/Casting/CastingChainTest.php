@@ -70,7 +70,7 @@ final class CastingChainTest extends TestCase
                 ->processInbound();
             $this->fail('Expected exception not thrown');
         } catch (ProcessingException $e) {
-            $this->assertSame('processing.guard.number.above_max', $e->getMessageTemplate());
+            $this->assertSame('processing.guard.invalid_value.number.above_max', $e->getMessageTemplate());
             $this->assertSame(
                 expected: 'prices{CastTo\Trimmed->CastTo\Split->Mod\PerItem}[1]{CastTo\Trimmed->CastTo\Rounded->Assert\Range}',
                 actual: $e->getPropertyPath(),

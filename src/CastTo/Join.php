@@ -21,7 +21,7 @@ final class Join extends CastBase
         [$separator] = $args;
         /** @var string $separator */
         if (!is_array($value)) {
-            throw TransformException::expected($value, 'array');
+            throw TransformException::expected($value, 'type.array');
         }
 
         $value = array_map(

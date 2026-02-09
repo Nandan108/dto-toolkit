@@ -37,7 +37,7 @@ final class CompareToExtractTest extends TestCase
         // $dto->fill(['left' => 5, 'right' => 6]);
 
         // $this->expectException(GuardException::class);
-        // $this->expectExceptionMessage('processing.guard.compare_to.failed');
+        // $this->expectExceptionMessage('processing.guard.compare_to');
         // $dto->processInbound();
     }
 
@@ -59,7 +59,7 @@ final class CompareToExtractTest extends TestCase
         $dto->withContext(['expected' => 'nope']);
 
         $this->expectException(GuardException::class);
-        $this->expectExceptionMessage('processing.guard.compare_to.failed');
+        $this->expectExceptionMessage('processing.guard.invalid_value.compare_to');
         $dto->processInbound();
     }
 

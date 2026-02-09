@@ -47,6 +47,7 @@ class MapFrom implements PhaseAwareInterface
             throw ExtractionException::extractFailed(
                 $message,
                 $context,
+                errorCode: 'io.map_from.extract_failure',
             );
         };
     }

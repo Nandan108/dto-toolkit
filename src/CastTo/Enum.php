@@ -35,6 +35,7 @@ final class Enum extends CastBase
                 value: $value,
                 template_suffix: 'enum.invalid_type',
                 parameters: ['enum' => $enumClass],
+                errorCode: 'transform.enum',
             );
         }
 
@@ -46,6 +47,7 @@ final class Enum extends CastBase
                 value: $value,
                 template_suffix: 'enum.invalid_value',
                 parameters: ['enum' => $enumClass],
+                errorCode: 'transform.enum',
             );
         }
 

@@ -61,7 +61,7 @@ final class LocalizedCurrency extends CastBase implements CasterInterface, Boots
         if (!is_numeric($value)) {
             throw TransformException::expected(
                 operand: $value,
-                expected: 'numeric',
+                expected: 'type.numeric',
             );
         }
 

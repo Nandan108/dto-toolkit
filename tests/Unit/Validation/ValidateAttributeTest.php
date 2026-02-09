@@ -49,7 +49,11 @@ final class MethodValidatedDto extends BaseDto implements ProcessesInterface
     public function assertNotEmpty(?string $value): void
     {
         if ('' === $value) {
-            throw GuardException::failed('empty');
+            throw GuardException::failed(
+                template_suffix: 'empty',
+                errorCode: 'guard.expected',
+                parameters: ['expected' => 'type.non_empty_string'],
+            );
         }
     }
 }
@@ -60,7 +64,11 @@ final class NonEmptyValidator implements ValidatorInterface
     public function validate(mixed $value, array $args = []): void
     {
         if ('' === $value) {
-            throw GuardException::failed('empty');
+            throw GuardException::failed(
+                template_suffix: 'empty',
+                errorCode: 'guard.expected',
+                parameters: ['expected' => 'type.non_empty_string'],
+            );
         }
     }
 }

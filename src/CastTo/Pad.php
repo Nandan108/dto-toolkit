@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Nandan108\DtoToolkit\CastTo;
 
 use Nandan108\DtoToolkit\Core\CastBase;
-use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
+use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
 
 /**
  * Pads a string to a specified length
@@ -26,10 +26,10 @@ final class Pad extends CastBase
         int $padType = STR_PAD_RIGHT,
     ) {
         if ($length < 1) {
-            throw new InvalidConfigException('Pad caster: length must be >= 1.');
+            throw new InvalidArgumentException('Pad caster: length must be >= 1.');
         }
         if (!\in_array($padType, [STR_PAD_LEFT, STR_PAD_RIGHT, STR_PAD_BOTH], true)) {
-            throw new InvalidConfigException('Pad caster: invalid pad type.');
+            throw new InvalidArgumentException('Pad caster: invalid pad type.');
         }
 
         parent::__construct([$length, $char, $padType]);

@@ -65,7 +65,25 @@ for example:
 prices{CastTo\Trimmed->CastTo\Split->Mod\PerItem}[1]{CastTo\Rounded->Assert\Range}
 ```
 
-Regardless of trace mode, `ProcessingException::getThrowerNodeName()` returns the name of the node that threw (or rethrew) the exception.This is useful in production mode where `getPropertyPath()` intentionally omits chain provenance.
+Regardless of trace mode, `ProcessingException::getThrowerNodeName()` returns the
+name of the node that threw (or rethrew) the exception. This is useful in
+production mode where `getPropertyPath()` intentionally omits chain provenance.
+
+### Node-name contract
+
+To avoid leaking internal class details in user-facing messages:
+
+- Trace node names and thrower node names use processing node names, not fully
+  qualified implementation class names.
+- Anonymous class internals are not exposed in public error metadata.
+- DTO method-based nodes use the DTO processing node name (default: `DTO`),
+  then the method, for example: `num{DTO::assertFoo}`.
+- Custom producers can override the displayed node name by implementing
+  `ProvidesProcessingNodeNameInterface`.
+
+This contract applies to both:
+- `ProcessingException::getPropertyPath()` (when traces are enabled)
+- `ProcessingException::getThrowerNodeName()` (always available)
 
 By default, trace inclusion follows dev mode (`ProcessingContext::isDevMode()`), which is inferred from `APP_ENV`, `DEBUG`, and CLI usage. You can override this behavior explicitly:
 

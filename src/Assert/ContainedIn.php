@@ -6,6 +6,7 @@ namespace Nandan108\DtoToolkit\Assert;
 
 use Nandan108\DtoToolkit\Assert\Support\SequenceMatcher;
 use Nandan108\DtoToolkit\Core\ValidatorBase;
+use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
 use Nandan108\DtoToolkit\Exception\Process\GuardException;
 
 /**
@@ -28,7 +29,7 @@ final class ContainedIn extends ValidatorBase
     public function __construct(string | iterable $haystack, string | int | null $at = null)
     {
         if (\is_int($at) && $at < 0 && \is_iterable($haystack) && !\is_countable($haystack)) {
-            throw new \Nandan108\DtoToolkit\Exception\Config\InvalidConfigException(
+            throw new InvalidArgumentException(
                 "ContainedIn validator: negative '\$at' requires a countable iterable.",
             );
         }
@@ -40,7 +41,7 @@ final class ContainedIn extends ValidatorBase
     public function validate(mixed $value, array $args = []): void
     {
         [$haystack, $at] = $args;
-        $this->assertValidPosition($at);
+        $this->assertValidPosition($at, 'ContainedIn');
 
         if (\is_string($value)) {
             if (!\is_string($haystack)) {
@@ -78,25 +79,28 @@ final class ContainedIn extends ValidatorBase
 
     private function throwTypeMismatch(mixed $value): never
     {
-        throw GuardException::invalidValue(
+        throw GuardException::reason(
             value: $value,
             template_suffix: 'contained_in.type_mismatch',
+            errorCode: 'guard.contained_in',
         );
     }
 
     private function throwNonRewindable(mixed $value): never
     {
-        throw GuardException::invalidValue(
+        throw GuardException::reason(
             value: $value,
             template_suffix: 'contained_in.non_rewindable',
+            errorCode: 'guard.contained_in',
         );
     }
 
     private function throwNotContained(mixed $value): never
     {
-        throw GuardException::invalidValue(
+        throw GuardException::reason(
             value: $value,
             template_suffix: 'contained_in.not_contained',
+            errorCode: 'guard.contained_in',
         );
     }
 }

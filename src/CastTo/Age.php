@@ -6,7 +6,7 @@ namespace Nandan108\DtoToolkit\CastTo;
 
 use Nandan108\DtoToolkit\Core\CastBase;
 use Nandan108\DtoToolkit\Enum\DateTimeFormat;
-use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
+use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
 use Nandan108\DtoToolkit\Exception\Process\TransformException;
 
 /**
@@ -35,7 +35,9 @@ final class Age extends CastBase
             ? $this->parseIsoDateTime($relativeTo, 'relativeTo', true)
             : null;
 
-        $this->assertValidUnit($in);
+        if (!in_array($in, ['seconds', 'hours', 'days', 'years'], true)) {
+            throw new InvalidArgumentException("Age caster: invalid unit '{$in}'.");
+        }
 
         parent::__construct(args: [$in], constructorArgs: ['relativeTo' => $relativeTo]);
     }
@@ -68,13 +70,6 @@ final class Age extends CastBase
         return (float) $diffSeconds / $divisor;
     }
 
-    private function assertValidUnit(string $in): void
-    {
-        if (!in_array($in, ['seconds', 'hours', 'days', 'years'], true)) {
-            throw new InvalidConfigException("Age caster: invalid unit '{$in}'.");
-        }
-    }
-
     private function parseIsoDateTime(string $value, string $label, bool $isConfig): \DateTimeImmutable
     {
         $timezone = new \DateTimeZone('UTC');
@@ -92,13 +87,14 @@ final class Age extends CastBase
         }
 
         if ($isConfig) {
-            throw new InvalidConfigException("Age caster: invalid {$label} ISO datetime string '{$value}'.");
+            throw new InvalidArgumentException("Age caster: invalid {$label} ISO datetime string '{$value}'.");
         }
 
         throw TransformException::reason(
             value: $value,
             template_suffix: 'date.parsing_failed',
             parameters: ['format' => 'ISO 8601'],
+            errorCode: 'transform.date',
         );
     }
 }

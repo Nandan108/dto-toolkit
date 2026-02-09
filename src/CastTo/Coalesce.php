@@ -42,7 +42,7 @@ final class Coalesce extends CastBase
         } else {
             throw TransformException::expected(
                 operand: $value,
-                expected: 'array|Traversable',
+                expected: ['type.array', 'type.traversable'],
             );
         }
 
@@ -59,7 +59,7 @@ final class Coalesce extends CastBase
         throw TransformException::reason(
             value: $value,
             template_suffix: 'coalesce.no_value',
-            errorCode: 'coalesce.no_value',
+            errorCode: 'transform.coalesce',
         );
     }
 }

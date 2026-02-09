@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Nandan108\DtoToolkit\Assert;
 
 use Nandan108\DtoToolkit\Core\ValidatorBase;
-use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
+use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
 use Nandan108\DtoToolkit\Exception\Process\GuardException;
 use Nandan108\DtoToolkit\Support\CardSchemeDetector;
 
@@ -27,7 +27,7 @@ final class CardScheme extends ValidatorBase
         /** @psalm-suppress TypeDoesNotContainType */
         if ([] === $schemes) {
             // path needs test coverage
-            throw new InvalidConfigException('CardScheme validator requires at least one scheme.');
+            throw new InvalidArgumentException('CardScheme validator requires at least one scheme.');
         }
 
         $normalized = [];
@@ -35,13 +35,13 @@ final class CardScheme extends ValidatorBase
             /** @psalm-suppress DocblockTypeContradiction */
             if (!$this->is_stringable($scheme)) {
                 // path needs test coverage
-                throw new InvalidConfigException('CardScheme validator expects scheme names as strings.');
+                throw new InvalidArgumentException('CardScheme validator expects scheme names as strings.');
             }
             /** @psalm-suppress RedundantCastGivenDocblockType */
             $scheme = strtolower((string) $scheme);
             if (!CardSchemeDetector::isSupportedScheme($scheme)) {
                 // path needs test coverage
-                throw new InvalidConfigException("CardScheme validator: unknown scheme '{$scheme}'.");
+                throw new InvalidArgumentException("CardScheme validator: unknown scheme '{$scheme}'.");
             }
             $normalized[] = $scheme;
         }
@@ -63,8 +63,8 @@ final class CardScheme extends ValidatorBase
 
         throw GuardException::invalidValue(
             value: $value,
-            template_suffix: 'card_scheme.invalid',
-            errorCode: 'validate.card_scheme.invalid',
+            template_suffix: 'card_scheme',
+            errorCode: 'guard.card_scheme',
         );
     }
 }

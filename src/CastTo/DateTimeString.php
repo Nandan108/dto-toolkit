@@ -9,6 +9,8 @@ use Nandan108\DtoToolkit\Exception\Process\TransformException;
 /**
  * Casts a DateTimeInterface object into a formatted string.
  *
+ * Note: userland DateTimeInterface implementations without a setTimezone method are not supported.
+ *
  * @see https://secure.php.net/manual/en/datetime.format.php
  *
  * @psalm-suppress UnusedClass
@@ -20,16 +22,17 @@ final class DateTimeString extends DateTime
     #[\Override]
     public function cast(mixed $value, array $args): string
     {
-        if (!($value instanceof \DateTimeImmutable || $value instanceof \DateTime)) {
-            throw TransformException::expected($value, 'DateTime or DateTimeImmutable instance');
+        if (!$value instanceof \DateTimeInterface
+            || !method_exists($value, 'setTimezone')
+        ) {
+            throw TransformException::expected(operand: $value, expected: ['type.date_time']);
         }
 
         /** @var ?\DateTimeZone $tz */
         $tz = $this->resolveParam('timezone', $value);
 
-        // if the timezone is the same, no need to create a new DateTime object
+        // if the timezone different, we need to adjust it
         if ($tz && $value->getTimezone()->getName() !== $tz->getName()) {
-            // rather than mutate the original DateTime object, create a new one
             $value = $value->setTimezone($tz);
         }
 

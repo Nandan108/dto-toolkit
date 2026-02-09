@@ -12,7 +12,6 @@ use Nandan108\DtoToolkit\Assert\Support\SequenceMatcher;
 use Nandan108\DtoToolkit\Core\FullDto;
 use Nandan108\DtoToolkit\Core\ProcessingContext;
 use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
-use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
 use Nandan108\PropPath\PropPath;
 use PHPUnit\Framework\TestCase;
 
@@ -93,14 +92,14 @@ final class ValidatorInternalCoverageTest extends TestCase
             }
         };
 
-        $matcher->call('assertValidPosition', [null]);
-        $matcher->call('assertValidPosition', ['start']);
+        $matcher->call('assertValidPosition', [null, 'Contains']);
+        $matcher->call('assertValidPosition', ['start', 'Contains']);
 
         try {
-            $matcher->call('assertValidPosition', ['middle']);
-            $this->fail('Expected InvalidConfigException was not thrown');
-        } catch (InvalidConfigException $e) {
-            $this->assertStringContainsString('invalid', $e->getMessage());
+            $matcher->call('assertValidPosition', ['middle', 'Contains']);
+            $this->fail('Expected InvalidArgumentException was not thrown');
+        } catch (InvalidArgumentException $e) {
+            $this->assertStringContainsString('Contains validator: invalid \'at\' position', $e->getMessage());
         }
 
         $this->assertTrue($matcher->call('isRewindableIterable', [[1, 2]]));

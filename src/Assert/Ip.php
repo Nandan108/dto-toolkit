@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Nandan108\DtoToolkit\Assert;
 
 use Nandan108\DtoToolkit\Core\ValidatorBase;
-use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
+use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
 use Nandan108\DtoToolkit\Exception\Process\GuardException;
 
 /**
@@ -45,12 +45,12 @@ final class Ip extends ValidatorBase
     {
         $versions = \is_array($version) ? $version : [$version];
         if ([] === $versions) {
-            throw new InvalidConfigException('Ip validator requires at least one version.');
+            throw new InvalidArgumentException('Ip validator requires at least one version.');
         }
 
         foreach ($versions as $v) {
             if (!\in_array($v, self::ALLOWED_VERSIONS, true)) {
-                throw new InvalidConfigException("Ip validator: unknown version '{$v}'.");
+                throw new InvalidArgumentException("Ip validator: unknown version '{$v}'.");
             }
         }
 
@@ -74,8 +74,8 @@ final class Ip extends ValidatorBase
 
         throw GuardException::invalidValue(
             value: $value,
-            template_suffix: 'ip.invalid',
-            errorCode: 'validate.ip.invalid',
+            template_suffix: 'ip',
+            errorCode: 'guard.ip',
         );
     }
 

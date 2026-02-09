@@ -12,11 +12,12 @@ use Nandan108\DtoToolkit\Core\CastBaseNoArgs;
 use Nandan108\DtoToolkit\Core\ProcessingErrorList;
 use Nandan108\DtoToolkit\Enum\ErrorMode;
 use Nandan108\DtoToolkit\Exception\Process\ProcessingException;
+use Nandan108\DtoToolkit\Exception\Process\TransformException;
 use Nandan108\DtoToolkit\Traits;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Dummy caster that always throws a ProcessingException.
+ * Dummy caster that always throws a TransformException.
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class AlwaysFails extends CastBaseNoArgs
@@ -24,7 +25,7 @@ final class AlwaysFails extends CastBaseNoArgs
     #[\Override]
     public function cast(mixed $value, array $args): string
     {
-        throw new ProcessingException('always fails');
+        throw new TransformException('always_fails');
     }
 }
 

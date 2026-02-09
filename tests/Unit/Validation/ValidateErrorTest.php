@@ -11,7 +11,6 @@ use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
 use Nandan108\DtoToolkit\Exception\Config\NodeProducerResolutionException;
 use Nandan108\DtoToolkit\Exception\Process\GuardException;
-use Nandan108\DtoToolkit\Internal\ProcessingNodeBase;
 use Nandan108\DtoToolkit\Traits\CreatesFromArrayOrEntity;
 use Nandan108\DtoToolkit\Traits\ProcessesFromAttributes;
 use PHPUnit\Framework\TestCase;
@@ -58,7 +57,7 @@ final class ValidateErrorTest extends TestCase
 
             public function assertFoo(mixed $value): void
             {
-                throw GuardException::failed('assertFoo.failed');
+                throw GuardException::failed('assertFoo.failed', errorCode: 'guard.custom_assert_failed');
             }
         };
 
@@ -69,9 +68,10 @@ final class ValidateErrorTest extends TestCase
         } catch (GuardException $e) {
             $msg = $e->getMessage();
             $this->assertStringContainsString('assertFoo.failed', $msg);
-            $dtoNodeName = ProcessingNodeBase::getNodeNameFromClass($dto::class);
-            $propertyPath = $e->getPropertyPath();
-            $this->assertSame('num{'.$dtoNodeName.'::assertFoo}', $propertyPath);
+            $this->assertSame(
+                'num{'.$dto->getProcessingNodeName().'::assertFoo}',
+                $e->getPropertyPath(),
+            );
         }
 
     }

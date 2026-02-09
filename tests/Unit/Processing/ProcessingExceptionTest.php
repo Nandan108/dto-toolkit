@@ -11,6 +11,7 @@ use Nandan108\DtoToolkit\Core\FullDto;
 use Nandan108\DtoToolkit\Core\ProcessingContext;
 use Nandan108\DtoToolkit\Core\ProcessingFrame;
 use Nandan108\DtoToolkit\Exception\Process\ProcessingException;
+use Nandan108\DtoToolkit\Exception\Process\TransformException;
 use PHPUnit\Framework\TestCase;
 
 final class ProcessingExceptionTest extends TestCase
@@ -98,6 +99,6 @@ final class NodeNameOverrideCaster extends CastBaseNoArgs
     #[\Override]
     public function cast(mixed $value, array $args): mixed
     {
-        throw ProcessingException::failed('custom.reason');
+        throw TransformException::reason($value, 'custom.reason');
     }
 }

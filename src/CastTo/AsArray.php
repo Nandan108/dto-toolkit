@@ -27,7 +27,7 @@ final class AsArray extends CastBase
         if (!\is_object($value)) {
             throw TransformException::expected(
                 operand: $value,
-                expected: 'object',
+                expected: 'type.object',
             );
         }
 

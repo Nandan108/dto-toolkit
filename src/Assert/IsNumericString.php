@@ -17,7 +17,7 @@ final class IsNumericString extends ValidatorBaseNoArgs
     public function validate(mixed $value, array $args = []): void
     {
         if (!is_string($value) || !is_numeric($value)) {
-            throw GuardException::failed('must be a numeric string');
+            throw GuardException::expected($value, 'type.numeric_string');
         }
     }
 }

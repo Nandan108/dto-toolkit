@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Nandan108\DtoToolkit\Assert;
 
 use Nandan108\DtoToolkit\Core\ValidatorBase;
-use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
+use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
 use Nandan108\DtoToolkit\Exception\Process\GuardException;
 
 /**
@@ -22,7 +22,7 @@ final class Isbn extends ValidatorBase
     public function __construct(?string $type = null)
     {
         if (null !== $type && !\in_array($type, [self::ISBN_10, self::ISBN_13], true)) {
-            throw new InvalidConfigException('Isbn validator: type must be isbn10, isbn13, or null.');
+            throw new InvalidArgumentException('Isbn validator: type must be isbn10, isbn13, or null.');
         }
 
         parent::__construct([$type]);
@@ -49,8 +49,8 @@ final class Isbn extends ValidatorBase
 
         throw GuardException::invalidValue(
             value: $value,
-            template_suffix: 'isbn.invalid',
-            errorCode: 'validate.isbn.invalid',
+            template_suffix: 'isbn',
+            errorCode: 'guard.isbn',
         );
     }
 

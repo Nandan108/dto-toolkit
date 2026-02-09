@@ -53,6 +53,7 @@ final class Regex extends ValidatorBase
                 value: $value,
                 template_suffix: 'regex.'.($negate ? 'match_forbidden' : 'no_match'),
                 parameters: ['pattern' => $pattern],
+                errorCode: 'guard.regex',
             );
         }
     }

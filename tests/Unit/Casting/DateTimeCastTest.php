@@ -42,7 +42,6 @@ final class DateTimeCastTest extends TestCase
             $this->fail('DateTime cast should not be able to cast "invalid date" string into a DateTimeImmutable');
         } catch (TransformException $e) {
             $this->assertSame('processing.transform.date.parsing_failed', $e->getMessageTemplate());
-            // $this->assertSame('processing.transform.date.parsing_failed', $e->getMessageParameters()['reason'] ?? null);
         }
 
         // Throws on input value that's not a stringable
@@ -56,7 +55,10 @@ final class DateTimeCastTest extends TestCase
             }
             $this->fail('DateTime cast should not be able to cast "invalid date" string into a DateTimeImmutable');
         } catch (TransformException $e) {
-            $this->assertSame('processing.transform.stringable.non_empty_expected', $e->getMessageTemplate());
+            $this->assertSame('processing.transform.expected', $e->getMessageTemplate());
+            $params = $e->getMessageParameters();
+            $this->assertSame('stdClass', $params['type']);
+            $this->assertSame(['type.non_empty_stringable'], $params['expected']);
         }
     }
 

@@ -26,10 +26,7 @@ final class NumericString extends CastBase implements CasterInterface
         [$decimals, $decimalPoint, $thousandsSeparator] = $args;
 
         if (!is_numeric($value)) {
-            throw TransformException::expected(
-                operand: $value,
-                expected: 'numeric string',
-            );
+            throw TransformException::expected($value, 'type.numeric_string');
         }
 
         return number_format((float) $value, (int) $decimals, $decimalPoint, $thousandsSeparator);

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Nandan108\DtoToolkit\Assert;
 
 use Nandan108\DtoToolkit\Core\ValidatorBase;
-use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
+use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
 use Nandan108\DtoToolkit\Exception\Process\GuardException;
 
 /**
@@ -17,14 +17,14 @@ final class EnumCase extends ValidatorBase
     /**
      * @psalm-suppress PossiblyUnusedMethod
      *
-     * @param class-string<\BackedEnum> $enumClass
+     * @param class-string<\BackedEnum> $class
      **/
-    public function __construct(string $enumClass)
+    public function __construct(string $class)
     {
-        if (!enum_exists($enumClass)) {
-            throw new InvalidConfigException("EnumCase validator expects an enum class, got {$enumClass}.");
+        if (!enum_exists($class)) {
+            throw new InvalidArgumentException("EnumCase validator expects an enum class, got {$class}.");
         }
-        parent::__construct([$enumClass]);
+        parent::__construct([$class]);
     }
 
     #[\Override]
@@ -45,9 +45,11 @@ final class EnumCase extends ValidatorBase
 
         throw GuardException::invalidValue(
             value: $value,
-            template_suffix: 'enum.invalid_case',
-            parameters: ['enum' => $enumClass],
-            errorCode: 'validate.enum.invalid_case',
+            template_suffix: 'enum.case',
+            parameters: [
+                // Using short name for error message, but including full class in debug info for better diagnostics
+                'enumClass' => (new \ReflectionClass($enumClass))->getShortName(),
+            ],
         );
     }
 }

@@ -67,7 +67,7 @@ final class LocalizedNumber extends CastBase implements CasterInterface, BootsOn
         if (!is_numeric($value)) {
             throw TransformException::expected(
                 operand: $value,
-                expected: 'numeric',
+                expected: 'type.numeric',
             );
         }
 

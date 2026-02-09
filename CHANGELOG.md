@@ -13,10 +13,29 @@ All notable changes to this project will be documented in this file.
 - `#[Mod\Any]` now requires at least two strategies; default `$count` is `2`.
 - `ProcessingException::getPropertyPath()` can now include processing node/chain provenance traces
   (for example: `price{CastTo\Trimmed->Mod\PerItem}[0]{CastTo\Rounded}`).
+- Public processing provenance metadata uses processing node names instead of raw
+  implementation class names (including anonymous class internals), to avoid leaking
+  internal class details in user-facing errors.
+  - DTO method-based provenance uses the DTO processing node name contract
+    (`DTO::method` in prod; in dev, class-derived names such as `UserDto::method`
+    or `AnonymousDTO(file:line)::method`; configurable via `ProvidesProcessingNodeNameInterface`).
+  - Attribute casters and validators may also declare a name via this interface, but by default their node name is derived from their class name as the last two namespace segments (for example `CastTo\Boolean`, `Assert\Range`).
 - Processing trace inclusion is enabled by default in dev mode and can be configured via `ProcessingContext`.
-- `BaseDto::clearAllCaches()` now clears both DTO metadata and processing-node metadata caches.
+- `BaseDto::clearAllCaches()` now clears DTO metadata (including cached DTO processing node names) and processing-node metadata caches.
 - `GlobalContextStorage` has been renamed to `DefaultContextStorage`; `GlobalContextStorage`
   remains as a deprecated alias for backward compatibility.
+
+### Error Contract Normalization
+
+- Error codes were normalized across `src/Assert/*` and `src/CastTo/*`:
+  validators now consistently use `guard.*` and casters use `transform.*`.
+- Template suffixes were normalized from mixed ad-hoc names to consistent families
+  (for example `invalid_value.*`, `expected.*`, and structured subkeys like
+  `compare_to.datetime` and `json.type`).
+- Expected-value metadata now uses type keys (for example `type.numeric`,
+  `type.array`) instead of free-form expected strings.
+- Public error metadata now avoids exposing internal class details where normalized
+  node/type names are available.
 
 ### Added
 
@@ -29,6 +48,8 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 
 - Docs: Replace `CastingException` references with `TransformException` in casting/caster docs and update debugging guidance.
+- `Assert\IsInstanceOf` now validates configured class/interface existence up front,
+  avoiding runtime reflection failures when generating error parameters.
 
 ### Breaking
 
@@ -38,6 +59,9 @@ All notable changes to this project will be documented in this file.
   and `ExtractionException::extractFailed()` signatures were simplified accordingly.
   Error-message parameters no longer include `methodOrClass`; node origin should be read from
   `ProcessingException::getThrowerNodeName()`.
+- `ProcessingException::expected()` now normalizes `params.expected` to a list shape
+  (e.g. `["type.numeric"]`) instead of a scalar string. Consumers that deserialize
+  `params.expected` as a string must be updated.
 
 ## [1.2.0] - 2026-01-28
 

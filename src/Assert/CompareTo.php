@@ -8,7 +8,6 @@ namespace Nandan108\DtoToolkit\Assert;
 
 use Nandan108\DtoToolkit\Core\ValidatorBase;
 use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
-use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
 use Nandan108\DtoToolkit\Exception\Process\GuardException;
 
 /**
@@ -43,7 +42,8 @@ final class CompareTo extends ValidatorBase
         if (!$matches) {
             throw GuardException::invalidValue(
                 value: $value,
-                template_suffix: 'compare_to.failed',
+                template_suffix: 'compare_to',
+                errorCode: 'guard.compare_to',
                 parameters: [
                     'operator' => $op,
                     'left'     => $value,
@@ -115,11 +115,12 @@ final class CompareTo extends ValidatorBase
                 if ($operandIsValue) {
                     throw GuardException::invalidValue(
                         value: $operand,
-                        template_suffix: 'compare_to.invalid_datetime',
+                        template_suffix: 'compare_to.datetime',
+                        errorCode: 'guard.compare_to',
                     );
                 }
 
-                throw new InvalidConfigException("CompareTo validator: scalar '{$operand}' is not a valid datetime.", previous: $e);
+                throw new InvalidArgumentException("CompareTo validator: scalar '{$operand}' is not a valid datetime.", previous: $e);
             }
 
             return $parsed->getTimestamp();

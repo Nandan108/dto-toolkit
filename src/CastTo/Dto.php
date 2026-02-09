@@ -8,7 +8,7 @@ use Nandan108\DtoToolkit\Contracts\CreatesFromArrayOrEntityInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Core\CastBase;
 use Nandan108\DtoToolkit\Core\FullDto;
-use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
+use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
 use Nandan108\DtoToolkit\Exception\Process\TransformException;
 
 /**
@@ -23,13 +23,13 @@ final class Dto extends CastBase
     public function __construct(string $dtoClass)
     {
         if (!class_exists($dtoClass)) {
-            throw new InvalidConfigException("DTO class '{$dtoClass}' does not exist.");
+            throw new InvalidArgumentException("DTO class '{$dtoClass}' does not exist.");
         }
         if (!is_subclass_of($dtoClass, CreatesFromArrayOrEntityInterface::class)) {
-            throw new InvalidConfigException("DTO class '{$dtoClass}' must implement CreatesFromArrayOrEntityInterface.");
+            throw new InvalidArgumentException("DTO class '{$dtoClass}' must implement CreatesFromArrayOrEntityInterface.");
         }
         if (!is_subclass_of($dtoClass, BaseDto::class)) {
-            throw new InvalidConfigException("DTO class '{$dtoClass}' must extend BaseDto.");
+            throw new InvalidArgumentException("DTO class '{$dtoClass}' must extend BaseDto.");
         }
 
         parent::__construct([$dtoClass]);
@@ -41,7 +41,7 @@ final class Dto extends CastBase
         if (!\is_array($value) && !\is_object($value)) {
             throw TransformException::expected(
                 operand: $value,
-                expected: 'array|object',
+                expected: ['type.array', 'type.object'],
             );
         }
 

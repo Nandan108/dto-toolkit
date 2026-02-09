@@ -42,9 +42,12 @@ class ProcessingException extends \RuntimeException implements DtoToolkitExcepti
         string | int | null $errorCode = null,
         int $httpCode = 422,
     ) {
-        $this->template = ErrorTemplate::resolve(static::DOMAIN.'.'.$template_suffix);
+        $template_suffix = (self::DOMAIN !== static::DOMAIN ? self::DOMAIN.'.' : '').static::DOMAIN.'.'.$template_suffix;
+        $this->template = ErrorTemplate::resolve($template_suffix);
         $this->propertyPath = ProcessingContext::propPath();
-        $this->parameters = ['propertyPath' => $this->propertyPath] + $parameters;
+        $this->parameters = [
+            'propertyPath' => $this->propertyPath,
+        ] + $parameters;
         $this->debug = $debug;
         $this->errorCode = $errorCode ?? static::$defaultErrorCode;
 
@@ -64,11 +67,11 @@ class ProcessingException extends \RuntimeException implements DtoToolkitExcepti
         array $debugExtras = [],
     ): self {
         $public = array_merge([
-            'type'          => get_debug_type($value),
+            'type'          => self::normalizeTypeForParams($value),
         ], $parameters);
 
         $debug = [
-            'value'         => self::prepareOperandForDebug($value),
+            'value'         => self::normalizeValueForDebug($value),
             'type'          => get_debug_type($value),
             'orig_value'    => $value,
         ] + $debugExtras;
@@ -111,22 +114,23 @@ class ProcessingException extends \RuntimeException implements DtoToolkitExcepti
      */
     public static function expected(
         mixed $operand,
-        string $expected,
+        string | array $expected,
         ?string $templateSuffix = null,
         array $parameters = [],
+        array $debug = [],
     ): static {
         /** @var static */
         return static::failed(
-            template_suffix: $templateSuffix ?? 'expected',
+            template_suffix: 'expected'.($templateSuffix ? '.'.$templateSuffix : ''),
             errorCode: static::DOMAIN.'.expected',
             parameters: [
-                'expected'      => $expected,
-                'type'          => get_debug_type($operand),
+                'expected'      => (array) $expected,
+                'type'          => self::normalizeTypeForParams($operand),
             ] + $parameters,
             debug: [
-                'value'      => self::prepareOperandForDebug($operand),
+                'value'      => self::normalizeValueForDebug($operand),
                 'orig_value' => $operand,
-            ],
+            ] + $debug,
         );
     }
 
@@ -182,10 +186,27 @@ class ProcessingException extends \RuntimeException implements DtoToolkitExcepti
         return $this->debug[$key] ?? [];
     }
 
+    public static function normalizeTypeForParams(mixed $operand): string
+    {
+        if (is_object($operand)) {
+            if ($operand instanceof \Stringable) {
+                return 'stringable object';
+            }
+
+            if ((new \ReflectionClass($operand))->isAnonymous()) {
+                return 'anonymous object';
+            }
+
+            return (new \ReflectionClass($operand))->getShortName();
+        }
+
+        return get_debug_type($operand);
+    }
+
     /**
      * Serializes $operand and returns a string for the `debug` parameter.
      */
-    protected static function prepareOperandForDebug(mixed $operand): string
+    protected static function normalizeValueForDebug(mixed $operand): string
     {
         // Scalar, empty, or array → try json
         if (null === $operand || is_scalar($operand) || is_array($operand)) {

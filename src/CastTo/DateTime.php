@@ -71,6 +71,7 @@ class DateTime extends CastBase implements CasterInterface, BootsOnDtoInterface
             value: $value,
             template_suffix: 'date.parsing_failed',
             parameters: ['format' => $format],
+            errorCode: 'transform.date',
         );
     }
 }

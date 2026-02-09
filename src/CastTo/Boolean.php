@@ -32,6 +32,7 @@ final class Boolean extends CastBaseNoArgs
         throw TransformException::reason(
             value: $value,
             template_suffix: 'boolean.unable_to_cast',
+            errorCode: 'transform.boolean',
         );
     }
 }

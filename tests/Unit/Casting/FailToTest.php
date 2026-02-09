@@ -63,7 +63,7 @@ final class FailToTest extends TestCase
         $this->assertSame('RECOVERED TO FALLBACK', $dto->value_1);
         $this->assertSame('UNCOVERED TO BACKFALL', $dto->value_2);
         $this->assertTrue($dto->context['called']);
-        $this->assertSame('processing.transform.stringable.expected', $dto->context['message']);
+        $this->assertSame('processing.transform.expected', $dto->context['message']);
     }
 
     public function testBadFailureHandlerThrows(): void

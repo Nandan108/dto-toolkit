@@ -14,7 +14,7 @@ use Nandan108\DtoToolkit\Core\ProcessingContext;
 use Nandan108\DtoToolkit\Core\ProcessingErrorList;
 use Nandan108\DtoToolkit\Core\ProcessingFrame;
 use Nandan108\DtoToolkit\Enum\ErrorMode;
-use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
+use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
 use Nandan108\DtoToolkit\Exception\Process\GuardException;
 use Nandan108\DtoToolkit\Exception\Process\InnerDtoErrorsException;
 use Nandan108\DtoToolkit\Exception\Process\TransformException;
@@ -27,7 +27,7 @@ final class DtoCastTest extends TestCase
     /** @psalm-suppress PossiblyUnusedMethod */
     public function testConstructorRejectsMissingClass(): void
     {
-        $this->expectException(InvalidConfigException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("DTO class 'MissingDto' does not exist.");
         /** @psalm-suppress UndefinedClass, ArgumentTypeCoercion */
         new CastTo\Dto('MissingDto');
@@ -36,7 +36,7 @@ final class DtoCastTest extends TestCase
     /** @psalm-suppress PossiblyUnusedMethod */
     public function testConstructorRejectsNonCreatesFromArray(): void
     {
-        $this->expectException(InvalidConfigException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('DTO class');
 
         /** @psalm-suppress InvalidArgument */
@@ -46,7 +46,7 @@ final class DtoCastTest extends TestCase
     /** @psalm-suppress PossiblyUnusedMethod */
     public function testConstructorRejectsNonBaseDto(): void
     {
-        $this->expectException(InvalidConfigException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('must extend BaseDto');
 
         /** @psalm-suppress InvalidArgument */
@@ -120,7 +120,7 @@ final class DtoCastTest extends TestCase
         ProcessingContext::pushFrame($frame);
         try {
             $this->expectException(GuardException::class);
-            $this->expectExceptionMessage('processing.guard.expected');
+            $this->expectExceptionMessage('processing.guard.nested_dto.errors');
             $validator->validate('not-a-dto');
         } finally {
             ProcessingContext::popFrame();

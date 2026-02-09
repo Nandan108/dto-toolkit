@@ -7,7 +7,7 @@ namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Contracts\ProcessesInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
-use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
+use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
 use Nandan108\DtoToolkit\Traits\ProcessesFromAttributes;
 use PHPUnit\Framework\TestCase;
 
@@ -43,14 +43,14 @@ final class PadCastTest extends TestCase
 
     public function testPadRejectsInvalidLength(): void
     {
-        $this->expectException(InvalidConfigException::class);
+        $this->expectException(InvalidArgumentException::class);
 
         new CastTo\Pad(0);
     }
 
     public function testPadRejectsInvalidPadType(): void
     {
-        $this->expectException(InvalidConfigException::class);
+        $this->expectException(InvalidArgumentException::class);
 
         new CastTo\Pad(3, '_', 999);
     }
