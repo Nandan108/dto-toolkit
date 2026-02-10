@@ -56,7 +56,7 @@ final class AsArrayCastTest extends TestCase
         $caster = new CastTo\AsArray();
 
         $this->expectException(TransformException::class);
-        $this->expectExceptionMessage('processing.transform.expected');
+        $this->expectExceptionMessage('Expected an object, got a string');
         $dto = new FullDto();
         $callback = fn (): mixed => $caster->cast('nope', [[], false]);
         ProcessingContext::wrapProcessing($dto, $callback);

@@ -40,8 +40,7 @@ final class ProcessingContextTest extends TestCase
                 ProcessingContext::wrapProcessing(
                     $dto,
                     errorMode: ErrorMode::CollectNone,
-                    callback: static function (): void {
-                    },
+                    callback: static function (): void { },
                 );
             },
         );
@@ -63,8 +62,7 @@ final class ProcessingContextTest extends TestCase
                 ProcessingContext::wrapProcessing(
                     $dto,
                     errorMode: null,
-                    callback: static function (): void {
-                    },
+                    callback: static function (): void { },
                 );
             },
         );

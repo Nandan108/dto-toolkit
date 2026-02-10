@@ -3,6 +3,36 @@
 All notable changes to this project will be documented in this file.
 
 ---
+## [1.4.0] - 2026-02-10
+
+### Added
+
+- New error rendering contract: `ErrorMessageRendererInterface`.
+- Default locale-aware renderer: `DefaultErrorMessageRenderer`.
+- Built-in English catalogs:
+  - `resources/i18n/en/messages.php`
+  - `resources/i18n/en/tokens.php`
+- Runtime i18n configuration APIs (locale override/resolver, catalog registration, language-default locale map, cache/runtime reset helpers).
+- New i18n documentation: `docs/i18n.md`.
+
+### Changed
+
+- `ProcessingException` messages are now rendered via a pluggable renderer (custom renderer, container-resolved renderer, or default renderer).
+- Error messages now resolve from locale catalogs with fallback behavior and token translation.
+- Validator/caster messaging normalized toward translated human-readable output in tests/docs.
+- `CompareTo` `!=` behavior now uses loose inequality (`!=`) consistently with PHP operator semantics.
+
+### Removed
+
+- `Assert\Equals` validator class removed (use `Assert\CompareTo` with `==` / `===` as appropriate).
+
+### Breaking
+
+- Public static property renamed:
+  - `ProcessingException::$max_text_length` -> `ProcessingException::$maxTextLength`
+- If your integration relied on raw template text from `Exception::getMessage()`, message text is now renderer output; use `getMessageTemplate()` for stable template keys.
+
+---
 
 ## [1.3.0]
 

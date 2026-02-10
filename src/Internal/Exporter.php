@@ -236,11 +236,10 @@ final class Exporter
             // we've got a class string to instantiate
             if (ConstructMode::Default === $constructMode) {
                 /** @var object */
-                $entity = ContainerBridge::has($entity)
-                    // Delegate entity instantiation to container if possible
-                    ? ContainerBridge::get($entity)
+                // Delegate entity instantiation to container if possible
+                $entity = ContainerBridge::tryGet($entity) ??
                     // Instantiate entity via no-args constructor
-                    : self::instantiate($entity, ConstructMode::Default, [], $source);
+                    self::instantiate($entity, ConstructMode::Default, [], $source);
                 $hydrated = false;
             } else {
                 /** @var BaseDto $source */

@@ -82,6 +82,7 @@ These provide a convenient, framework-free entry point with all standard functio
 - [Built-In Core Validators](docs/BuiltInValidators.md) — list of available `Validate\*` validators *(more are planned)*
 - [Built-In Core Modifiers](docs/BuiltInModifiers.md) — Full list of available `Mod\*` chain modifiers
 - [Dependency Injection](docs/DI.md)
+- [I18n](docs/i18n.md) — locale-aware casters and error-message translation setup
 - Writing Adapters *(planned)*
 
 ---
@@ -105,7 +106,7 @@ That said, DTOT **plays very well with immutable objects**.
 
 While DTOs themselves are mutable, DTOT is designed to **export into immutable value objects or entities** via constructor-based instantiation. This allows you to use DTOT as a *builder* for immutable domain models (value objects), without compromising immutability where it matters.
 
-👉 If you’re looking for *immutability at the DTO layer itself*, DTOT may not be the right fit.
+👉 If you’re looking for *immutability at the DTO layer itself*, DTOT may not be the right fit.<br>
 👉 If you want **powerful, declarative transformation pipelines to produce immutable domain objects**, DTOT is a strong match.
 
 ---

@@ -37,7 +37,7 @@ final class EnumBackedValue extends ValidatorBase
         if ($value instanceof $enumClass) {
             throw GuardException::expected(
                 operand: $value,
-                templateSuffix: 'instance_given',
+                templateSuffix: 'backing_value.instance_given',
                 expected: 'type.enum.backing_value',
                 parameters: [
                     'enumClass' => (new \ReflectionClass($enumClass))->getShortName(),
@@ -46,8 +46,22 @@ final class EnumBackedValue extends ValidatorBase
             );
         }
 
-        if ($enumClass::tryFrom($value) instanceof $enumClass) {
-            return;
+        try {
+            // Use tryFrom to check validity without throwing an exception
+            if ($enumClass::tryFrom($value) instanceof $enumClass) {
+                return;
+            }
+
+        } catch (\TypeError $e) {
+            // If a TypeError is thrown, it means the value is of an incompatible type (e.g., object or array)
+            throw GuardException::expected(
+                operand: $value,
+                templateSuffix: 'backing_value.invalid_type',
+                expected: 'type.enum.backing_value',
+                parameters: [
+                    'enumClass' => (new \ReflectionClass($enumClass))->getShortName(),
+                ],
+            );
         }
 
         throw GuardException::expected(

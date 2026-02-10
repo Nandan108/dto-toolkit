@@ -10,11 +10,18 @@ use Nandan108\DtoToolkit\Contracts\ProcessesInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
 use Nandan108\DtoToolkit\Exception\Process\ProcessingException;
+use Nandan108\DtoToolkit\Support\DefaultErrorMessageRenderer;
 use Nandan108\DtoToolkit\Traits\ProcessesFromAttributes;
 use PHPUnit\Framework\TestCase;
 
 final class ErrorTemplateTest extends TestCase
 {
+    #[\Override]
+    protected function tearDown(): void
+    {
+        DefaultErrorMessageRenderer::resetRuntimeConfig();
+    }
+
     public function testScalarOverride(): void
     {
         /** @psalm-suppress ExtensionRequirementViolation */
@@ -94,6 +101,35 @@ final class ErrorTemplateTest extends TestCase
             $this->fail('Expected ProcessingException was not thrown');
         } catch (ProcessingException $e) {
             $this->assertSame('inner.map', $e->getMessageTemplate());
+        }
+    }
+
+    public function testOverrideTemplateUsesRegisteredTranslation(): void
+    {
+        DefaultErrorMessageRenderer::setLocale('en');
+        DefaultErrorMessageRenderer::registerCatalog(
+            locale: 'en',
+            messages: [
+                'custom.map' => 'My custom translated error.',
+            ],
+        );
+
+        /** @psalm-suppress ExtensionRequirementViolation */
+        $dto = new class extends BaseDto implements ProcessesInterface {
+            use ProcessesFromAttributes;
+            #[Mod\ErrorTemplate(['processing.transform.boolean.unable_to_cast' => 'custom.map'])]
+            #[CastTo\Boolean]
+            public mixed $flag = null;
+        };
+
+        $dto->fill(['flag' => 'not-a-bool']);
+
+        try {
+            $dto->processInbound();
+            $this->fail('Expected ProcessingException was not thrown');
+        } catch (ProcessingException $e) {
+            $this->assertSame('custom.map', $e->getMessageTemplate());
+            $this->assertStringEndsWith('My custom translated error.', $e->getMessage());
         }
     }
 

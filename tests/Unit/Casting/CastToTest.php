@@ -53,7 +53,7 @@ final class CastToTest extends TestCase
         $dto->fill(['value1' => 'input1', 'value2' => 'input2']);
 
         $this->expectException(TransformException::class);
-        $this->expectExceptionMessage('processing.transform.expected');
+        $this->expectExceptionMessage('Expected type.custom, got a string.');
 
         $dto->processInbound();
     }

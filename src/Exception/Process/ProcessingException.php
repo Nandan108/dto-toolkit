@@ -6,8 +6,11 @@ namespace Nandan108\DtoToolkit\Exception\Process;
 
 use Nandan108\DtoToolkit\Attribute\ChainModifier\ErrorTemplate;
 use Nandan108\DtoToolkit\Contracts\DtoToolkitException;
+use Nandan108\DtoToolkit\Contracts\ErrorMessageRendererInterface;
 use Nandan108\DtoToolkit\Contracts\ProcessingExceptionInterface;
 use Nandan108\DtoToolkit\Core\ProcessingContext;
+use Nandan108\DtoToolkit\Support\ContainerBridge;
+use Nandan108\DtoToolkit\Support\DefaultErrorMessageRenderer;
 
 /**
  * Base exception for processing nodes (casting + validation).
@@ -17,7 +20,8 @@ class ProcessingException extends \RuntimeException implements DtoToolkitExcepti
     /** @var non-empty-string */
     public const DOMAIN = 'processing';
     protected static string $defaultErrorCode = self::DOMAIN.'.failure';
-    public static int $max_text_length = 100;
+    public static int $maxTextLength = 100;
+    protected static ?ErrorMessageRendererInterface $messageRenderer = null;
 
     protected string $template;
 
@@ -51,7 +55,7 @@ class ProcessingException extends \RuntimeException implements DtoToolkitExcepti
         $this->debug = $debug;
         $this->errorCode = $errorCode ?? static::$defaultErrorCode;
 
-        parent::__construct($this->template, $httpCode);
+        parent::__construct(static::getMessageRenderer()->render($this), $httpCode);
     }
 
     /**
@@ -119,14 +123,21 @@ class ProcessingException extends \RuntimeException implements DtoToolkitExcepti
         array $parameters = [],
         array $debug = [],
     ): static {
+        $autoParams = [
+            'expected' => (array) $expected,
+            // If 'type' is provided in $parameters and looks like a type token, use it;
+            // otherwise, use the normalized type of $operand.
+            'type'     => is_string($parameters['type'] ?? null)
+                && 'type.' === substr($parameters['type'], 0, 5)
+                ? $parameters['type']
+                : self::normalizeTypeForParams($operand),
+        ];
+
         /** @var static */
         return static::failed(
             template_suffix: 'expected'.($templateSuffix ? '.'.$templateSuffix : ''),
             errorCode: static::DOMAIN.'.expected',
-            parameters: [
-                'expected'      => (array) $expected,
-                'type'          => self::normalizeTypeForParams($operand),
-            ] + $parameters,
+            parameters: $autoParams + $parameters,
             debug: [
                 'value'      => self::normalizeValueForDebug($operand),
                 'orig_value' => $operand,
@@ -162,6 +173,25 @@ class ProcessingException extends \RuntimeException implements DtoToolkitExcepti
     public function getThrowerNodeName(): ?string
     {
         return $this->throwerNodeName;
+    }
+
+    public static function setMessageRenderer(?ErrorMessageRendererInterface $renderer): void
+    {
+        static::$messageRenderer = $renderer;
+    }
+
+    public static function getMessageRenderer(): ErrorMessageRendererInterface
+    {
+        if (null !== static::$messageRenderer) {
+            return static::$messageRenderer;
+        }
+
+        $renderer = ContainerBridge::tryGet(ErrorMessageRendererInterface::class);
+        if ($renderer instanceof ErrorMessageRendererInterface) {
+            return static::$messageRenderer = $renderer;
+        }
+
+        return static::$messageRenderer = new DefaultErrorMessageRenderer();
     }
 
     public function setThrowerNodeNameIfMissing(string $throwerNodeName): void
@@ -251,8 +281,8 @@ class ProcessingException extends \RuntimeException implements DtoToolkitExcepti
 
     protected static function truncate(string $txt): string
     {
-        return (strlen($txt) > self::$max_text_length)
-            ? substr($txt, 0, self::$max_text_length).'...'
+        return (strlen($txt) > self::$maxTextLength)
+            ? substr($txt, 0, self::$maxTextLength).'...'
             : $txt;
     }
 }

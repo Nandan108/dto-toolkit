@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nandan108\DtoToolkit\CastTo;
 
 use Nandan108\DtoToolkit\Core\CastBase;
+use Nandan108\DtoToolkit\Core\ProcessingContext;
 use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
 use Nandan108\DtoToolkit\Exception\Process\TransformException;
 
@@ -22,19 +23,25 @@ final class Enum extends CastBase
             throw new InvalidArgumentException("Enum caster: '{$enumClass}' is not a backed enum.");
         }
 
-        parent::__construct([$enumClass]);
+        $shortClassName = ProcessingContext::isDevMode()
+            // in development, use full class name for error message
+            ? $enumClass
+            // in production, use short class name to avoid leaking namespaces
+            : (new \ReflectionClass($enumClass))->getShortName();
+
+        parent::__construct([$enumClass, $shortClassName]);
     }
 
     #[\Override]
     public function cast(mixed $value, array $args): \BackedEnum
     {
-        [$enumClass] = $args;
+        [$enumClass, $shortClassName] = $args;
 
         if (!\is_string($value) && !\is_int($value)) {
             throw TransformException::reason(
                 value: $value,
                 template_suffix: 'enum.invalid_type',
-                parameters: ['enum' => $enumClass],
+                parameters: ['enum' => $shortClassName],
                 errorCode: 'transform.enum',
             );
         }
@@ -46,7 +53,7 @@ final class Enum extends CastBase
             throw TransformException::reason(
                 value: $value,
                 template_suffix: 'enum.invalid_value',
-                parameters: ['enum' => $enumClass],
+                parameters: ['enum' => $shortClassName],
                 errorCode: 'transform.enum',
             );
         }

@@ -118,9 +118,9 @@ final class ValidatorInternalCoverageTest extends TestCase
     public function testIsBlankPrivateHelper(): void
     {
         $validator = new IsBlank(true);
-        $this->assertTrue($this->callPrivate($validator, 'isBlankValue', [[]]));
-        $this->assertFalse($this->callPrivate($validator, 'isBlankValue', [0]));
-        $this->assertTrue($this->callPrivate($validator, 'isBlankValue', [$this->emptyIterator()]));
+        $this->assertTrue($this->callPrivate($validator, 'isBlankValue', [[]])['isBlank']);
+        $this->assertFalse($this->callPrivate($validator, 'isBlankValue', [0])['isBlank']);
+        $this->assertTrue($this->callPrivate($validator, 'isBlankValue', [$this->emptyIterator()])['isBlank']);
     }
 
     public function testIsTypePrivateHelpers(): void

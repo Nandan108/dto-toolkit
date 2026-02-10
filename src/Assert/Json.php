@@ -67,10 +67,10 @@ final class Json extends ValidatorBase
 
             throw GuardException::reason(
                 value: $value,
-                template_suffix: 'json.type',
+                template_suffix: 'json.type_mismatch',
                 parameters: [
-                    'allowedTypes' => $allowedTypes,
-                    'detectedType' => $detectedType ?? 'unknown',
+                    'expected' => $allowedTypes,
+                    'type'     => $detectedType ?? 'unknown',
                 ],
                 errorCode: 'guard.json',
             );

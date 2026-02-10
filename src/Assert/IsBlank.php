@@ -24,42 +24,54 @@ final class IsBlank extends ValidatorBase
     {
         [$expect] = $args;
 
-        $isBlank = $this->isBlankValue($value);
+        ['isBlank' => $isBlank, 'typeToken' => $typeToken] = $this->isBlankValue($value);
 
         if ($expect !== $isBlank) {
             throw GuardException::expected(
                 operand: $value,
-                expected: $expect ? 'type.blank' : 'type.non_blank',
+                expected: $expect ? 'a blank value' : 'a non-blank value',
+                parameters: ['type' => $typeToken],
             );
         }
     }
 
-    private function isBlankValue(mixed $value): bool
+    /**
+     * Determines if the given value is considered blank.
+     *
+     * @return array{isBlank: bool, typeToken: ?string}
+     */
+    private function isBlankValue(mixed $value): array
     {
         if (null === $value) {
-            return true;
+            return ['isBlank' => true, 'typeToken' => 'type.null'];
         }
 
         if (\is_string($value)) {
-            return '' === trim($value);
+            return '' === trim($value)
+                ? ['isBlank' => true, 'typeToken' => 'type.empty_string']
+                : ['isBlank' => false, 'typeToken' => 'type.non_empty_string'];
         }
 
         if (\is_array($value)) {
-            return [] === $value;
+            return empty($value)
+                ? ['isBlank' => true, 'typeToken' => 'type.empty_array']
+                : ['isBlank' => false, 'typeToken' => 'type.non_empty_array'];
         }
 
         if ($value instanceof \Countable) {
-            return 0 === $value->count();
+            return 0 === $value->count()
+                ? ['isBlank' => true, 'typeToken' => 'type.empty_countable']
+                : ['isBlank' => false, 'typeToken' => 'type.non_empty_countable'];
         }
 
         if (\is_iterable($value)) {
             foreach ($value as $_) {
-                return false;
+                return ['isBlank' => false, 'typeToken' => 'type.non_empty_iterable'];
             }
 
-            return true;
+            return ['isBlank' => true, 'typeToken' => 'type.empty_iterable'];
         }
 
-        return false;
+        return ['isBlank' => false, 'typeToken' => null];
     }
 }

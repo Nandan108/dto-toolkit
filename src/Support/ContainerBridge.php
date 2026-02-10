@@ -72,4 +72,9 @@ final class ContainerBridge
             ? true
             : self::$container?->has($id) ?? false;
     }
+
+    public static function tryGet(string $id): mixed
+    {
+        return self::has($id) ? self::get($id) : null;
+    }
 }

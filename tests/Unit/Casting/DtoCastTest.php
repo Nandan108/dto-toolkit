@@ -64,7 +64,7 @@ final class DtoCastTest extends TestCase
             $caster = new CastTo\Dto(PublicProfileDto::class);
 
             $this->expectException(TransformException::class);
-            $this->expectExceptionMessage('processing.transform.expected');
+            $this->expectExceptionMessage('Expected an array or an object, got a string');
             $caster->cast('nope', []);
         } finally {
             ProcessingContext::popFrame();

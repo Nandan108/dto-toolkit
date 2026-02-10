@@ -42,7 +42,7 @@ final class LocalizedDateTimeFormattingTest extends TestCase
         };
 
         $this->expectException(TransformException::class);
-        $this->expectExceptionMessage('processing.transform.expected');
+        $this->expectExceptionMessage('Expected a DateTimeInterface instance, got a string.');
 
         $dtoClass::newFromArray(['date' => '2025-01-01 12:34']);
     }

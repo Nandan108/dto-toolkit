@@ -223,7 +223,7 @@ final class LocaleAwareTest extends TestCase
         };
 
         $this->expectException(TransformException::class);
-        $this->expectExceptionMessage('processing.transform.expected');
+        $this->expectExceptionMessage('Expected a number, got a string.');
         $dtoClass::newFromArray(['number' => 'not-a-number']);
     }
 

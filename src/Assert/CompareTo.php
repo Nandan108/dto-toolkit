@@ -12,6 +12,14 @@ use Nandan108\DtoToolkit\Exception\Process\GuardException;
 
 /**
  * Validates that a value compares to a scalar using the given operator.
+ *
+ * Supported operators: '==', '===', '!=', '!==', '<', '<=', '>', '>='.
+ *
+ * - If either of the two operands is a DateTimeInterface, an attempt will be made to parse the other operand as a datetime string for comparison. If parsing fails, the behavior depends on which operand is the datetime:
+ *   - If the datetime is the operand being validated (left operand), a validation failure will be raised.
+ *   - If the datetime is the scalar argument (right operand), an InvalidArgumentException will be thrown, as this indicates a misconfiguration of the validator.
+ * - If either operand is a BackedEnum, the comparison will be made against the backing value of the enum case.
+ * - If either operand is a UnitEnum, the comparison will be made against the enum case itself, and only '==', '===', '!=', and '!==' operators are supported.
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class CompareTo extends ValidatorBase
@@ -74,7 +82,7 @@ final class CompareTo extends ValidatorBase
         return match ($op) {
             '=='  => $leftNorm == $rightNorm,
             '===' => $leftNorm === $rightNorm,
-            '!='  => $leftNorm !== $rightNorm,
+            '!='  => $leftNorm != $rightNorm,
             '!==' => $leftNorm !== $rightNorm,
             '<'   => $leftNorm < $rightNorm,
             '<='  => $leftNorm <= $rightNorm,
@@ -113,10 +121,10 @@ final class CompareTo extends ValidatorBase
                 $parsed = new \DateTimeImmutable($operand);
             } catch (\Exception $e) {
                 if ($operandIsValue) {
-                    throw GuardException::invalidValue(
-                        value: $operand,
-                        template_suffix: 'compare_to.datetime',
-                        errorCode: 'guard.compare_to',
+                    throw GuardException::expected(
+                        operand: $operand,
+                        expected: 'date_time',
+                        parameters: ['type' => 'type.invalid_string'],
                     );
                 }
 

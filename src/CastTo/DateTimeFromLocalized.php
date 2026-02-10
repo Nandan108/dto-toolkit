@@ -96,7 +96,7 @@ final class DateTimeFromLocalized extends CastBase implements CasterInterface, B
         if (false === $timestamp) {
             throw TransformException::reason(
                 value: $value,
-                template_suffix: 'date.parsing_failed',
+                template_suffix: 'date.intl.parsing_failed',
                 parameters: $getParams(),
                 errorCode: 'transform.date',
             );

@@ -100,21 +100,6 @@ public ProfileDto | array | null $profile = null;
 
 ---
 
-### Assert\Equals
-
-**Arguments:** `mixed $value, bool $strict = true`
-
-Checks the value equals the expected value (strict by default).
-
-**Example:**
-
-```php
-#[Assert\Equals('draft', strict: true)]
-public string $status;
-```
-
----
-
 ### Assert\Length
 
 **Arguments:** `?int $min = null, ?int $max = null`

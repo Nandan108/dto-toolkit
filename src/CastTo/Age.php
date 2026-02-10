@@ -12,7 +12,8 @@ use Nandan108\DtoToolkit\Exception\Process\TransformException;
 /**
  * Computes a time difference from an ISO datetime string, in seconds/hours/days/years.
  *
- * Negative values are allowed (future dates).
+ * Accepts values as either DateTimeInterface instances or ISO datetime strings,
+ * and computes the difference from a reference datetime (defaulting to now in UTC).
  *
  * @template TUnit of 'seconds'|'hours'|'days'|'years'
  */

@@ -67,7 +67,7 @@ final class EntityCastTest extends TestCase
         };
 
         $this->expectException(\Nandan108\DtoToolkit\Exception\Process\TransformException::class);
-        $this->expectExceptionMessage('processing.transform.expected');
+        $this->expectExceptionMessage('Expected a DTO or an array, got a string');
 
         $dto->fill(['name' => 'A string is neither an array nor a DTO!'])
             ->processInbound();

@@ -32,7 +32,7 @@ final class Range extends ValidatorBase
         if (!\is_int($value) && !\is_float($value)) {
             throw GuardException::expected(
                 operand: $value,
-                expected: 'type.number',
+                expected: ['type.int', 'type.float'],
             );
         }
 

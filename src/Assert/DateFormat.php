@@ -36,10 +36,10 @@ final class DateFormat extends ValidatorBase
             // Date does not match date format
             throw GuardException::invalidValue(
                 value: $value,
-                template_suffix: 'date.format',
+                template_suffix: 'date.format_mismatch',
                 parameters: ['format' => $format],
                 debug: $errors ?: [],
-                errorCode: 'guard.date.format',
+                errorCode: 'guard.date',
             );
         }
     }

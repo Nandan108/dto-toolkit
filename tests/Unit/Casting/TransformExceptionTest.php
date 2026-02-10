@@ -168,8 +168,8 @@ final class TransformExceptionTest extends TestCase
         $long = str_repeat('A', 200);
 
         // temporarily reduce debug max length
-        $orig = ProcessingException::$max_text_length;
-        ProcessingException::$max_text_length = 30;
+        $orig = ProcessingException::$maxTextLength;
+        ProcessingException::$maxTextLength = 30;
 
         $ex = TransformException::expected(
             operand: $long,
@@ -178,9 +178,9 @@ final class TransformExceptionTest extends TestCase
 
         $debugValue = $ex->getDebugInfo()['value'];
         $debugValueLength = strlen($debugValue);
-        $maxDebugValueLength = ProcessingException::$max_text_length + 3; // account for "..."
+        $maxDebugValueLength = ProcessingException::$maxTextLength + 3; // account for "..."
 
-        ProcessingException::$max_text_length = $orig; // restore
+        ProcessingException::$maxTextLength = $orig; // restore
 
         $this->assertStringContainsString('AAA', $debugValue);
         $this->assertStringContainsString('...', $debugValue);

@@ -57,7 +57,10 @@ final class ValidateErrorTest extends TestCase
 
             public function assertFoo(mixed $value): void
             {
-                throw GuardException::failed('assertFoo.failed', errorCode: 'guard.custom_assert_failed');
+                throw GuardException::failed(
+                    template_suffix: 'assertFoo.failed',
+                    errorCode: 'guard.custom_assert_failed',
+                );
             }
         };
 
@@ -66,8 +69,8 @@ final class ValidateErrorTest extends TestCase
             $dto->loadArray(['num' => 42]);
             $this->fail('Expected exception not thrown');
         } catch (GuardException $e) {
-            $msg = $e->getMessage();
-            $this->assertStringContainsString('assertFoo.failed', $msg);
+            $msg = $e->getMessageTemplate();
+            $this->assertStringContainsString('processing.guard.assertFoo.failed', $msg);
             $this->assertSame(
                 'num{'.$dto->getProcessingNodeName().'::assertFoo}',
                 $e->getPropertyPath(),

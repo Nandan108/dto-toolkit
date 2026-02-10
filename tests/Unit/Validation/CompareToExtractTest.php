@@ -57,10 +57,12 @@ final class CompareToExtractTest extends TestCase
         $this->assertSame($complexProperty, $dto->check);
 
         $dto->withContext(['expected' => 'nope']);
-
-        $this->expectException(GuardException::class);
-        $this->expectExceptionMessage('processing.guard.invalid_value.compare_to');
-        $dto->processInbound();
+        try {
+            $dto->processInbound();
+            $this->fail('Expected GuardException was not thrown.');
+        } catch (GuardException $e) {
+            $this->assertSame("check{Assert\CompareToExtract}: '==' comparison failed.", $e->getMessage());
+        }
     }
 
     public function testCompareToExtractRejectsInvalidPath(): void
