@@ -14,7 +14,8 @@
         "mockery/mockery": "^1.6",
         "vimeo/psalm": "^6.12",
         "nunomaduro/collision": "^6.4",
-        "friendsofphp/php-cs-fixer": "^3.92"
+        "friendsofphp/php-cs-fixer": "^3.92",
+        "wikimedia/composer-merge-plugin": "^2.1"
     },
     "license": "MIT",
     "autoload": {
@@ -25,6 +26,16 @@
     "autoload-dev": {
         "psr-4": {
             "Nandan108\\DtoToolkit\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "merge-plugin": {
+            "include": [
+                "composer.local.json"
+            ],
+            "recurse": true,
+            "replace": false,
+            "ignore-duplicates": false
         }
     },
     "authors": [
@@ -39,5 +50,18 @@
         "test": "./vendor/bin/phpunit",
         "testAndCover": "./vendor/bin/phpunit --coverage-text --coverage-html coverage"
     },
-    "minimum-stability": "stable"
+    "minimum-stability": "stable",
+    "merge-plugin": {
+        "include": [
+            "composer.local.json"
+        ],
+        "recurse": true,
+        "replace": false,
+        "ignore-duplicates": false
+    },
+    "config": {
+        "allow-plugins": {
+            "wikimedia/composer-merge-plugin": true
+        }
+    }
 }
