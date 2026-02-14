@@ -199,28 +199,6 @@ class ProcessingException extends \RuntimeException implements DtoToolkitExcepti
         if (null === $this->throwerNodeName) {
             $this->throwerNodeName = $throwerNodeName;
         }
-
-        // This is temporary code to produce a full list of exceptions thrown by processing nodes
-        // with their thrower node names, to help identify any missing or incorrect node name assignments.
-        // TODO: remove before next commit!
-        try {
-            // store file at cli root
-            $root = (getcwd() ?: __DIR__);
-            file_put_contents(
-                filename: $root.'/dto-toolkit-processing-errors.jsonl',
-                data: json_encode([
-                    'exception'   => (new \ReflectionClass($this))->getShortName(),
-                    'errorCode'   => $this->getErrorCode(),
-                    'template'    => $this->template,
-                    'message'     => $this->getMessage(),
-                    'params'      => $this->parameters,
-                    'throwerNode' => $this->throwerNodeName,
-                ], JSON_THROW_ON_ERROR).PHP_EOL,
-                flags: FILE_APPEND,
-            );
-        } catch (\Throwable) {
-            // swallow everything
-        }
     }
 
     /**

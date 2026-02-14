@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 
 ---
+## [1.4.1] - 2026-02-14
+
+### Fixed
+
+- Removed unintended temporary debug logging from `ProcessingException::setThrowerNodeNameIfMissing()` that was shipped in `v1.4.0`.
+
+---
 ## [1.4.0] - 2026-02-10
 
 ### Added
