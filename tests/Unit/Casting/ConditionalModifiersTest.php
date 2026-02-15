@@ -57,8 +57,7 @@ final class ConditionalModifiersTest extends TestCase
             // Apply PascalCase on odd calls of desiredCaseIs, skip it on even calls
             #[Mod\SkipNextIf('<dto:desiredCaseIs', 2),
                 CastTo\PascalCase,
-                Mod\FailIf('<context:mustFail'),
-            ]
+                Mod\FailIf('<context:mustFail'),]
             public mixed $value = null;
 
             public function desiredCaseIs(): bool

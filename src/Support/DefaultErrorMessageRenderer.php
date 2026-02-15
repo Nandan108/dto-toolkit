@@ -7,6 +7,12 @@ namespace Nandan108\DtoToolkit\Support;
 use Nandan108\DtoToolkit\Contracts\ErrorMessageRendererInterface;
 use Nandan108\DtoToolkit\Contracts\ProcessingExceptionInterface;
 
+/**
+ * Default error message renderer that supports locale-based message catalogs
+ * with parameterized templates and tokens.
+ *
+ * @api
+ */
 final class DefaultErrorMessageRenderer implements ErrorMessageRendererInterface
 {
     private static ?string $locale = null;
@@ -68,7 +74,9 @@ final class DefaultErrorMessageRenderer implements ErrorMessageRendererInterface
      */
     public static function setLocaleResolver(?callable $resolver): void
     {
-        self::$localeResolver = null !== $resolver ? \Closure::fromCallable($resolver) : null;
+        self::$localeResolver = null !== $resolver
+            ? \Closure::fromCallable($resolver)
+            : null;
     }
 
     /**

@@ -15,6 +15,8 @@ use Nandan108\DtoToolkit\Traits\IsInjectable;
 
 /**
  * Base class for all Caster classes.
+ *
+ * @api
  */
 abstract class CastBase extends CastTo implements CasterInterface, Injectable, ProvidesProcessingNodeNameInterface
 {
@@ -42,6 +44,14 @@ abstract class CastBase extends CastTo implements CasterInterface, Injectable, P
     }
 
     #[\Override]
+    protected function ensureStringable(
+        mixed $value,
+        bool $expectNonEmpty = false,
+    ): string {
+        return parent::ensureStringable($value, $expectNonEmpty);
+    }
+
+    #[\Override]
     public function getProcessingNodeName(): string
     {
         return static::$nodeName ?: ProcessingNodeBase::getNodeNameFromClass(static::class);
@@ -51,6 +61,8 @@ abstract class CastBase extends CastTo implements CasterInterface, Injectable, P
      * Transform $value according to caster logic and arguments, and return it.
      *
      * @param mixed[] $args passed from Attribute constructor
+     *
+     * @api
      */
     #[\Override]
     abstract public function cast(mixed $value, array $args): mixed;

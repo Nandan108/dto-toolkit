@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace Nandan108\DtoToolkit\Exception\Process;
 
+/**
+ * Exception thrown by validator nodes when a value fails to meet the criteria defined by the validator.
+ *
+ * @api
+ */
 class GuardException extends ProcessingException
 {
     public const DOMAIN = 'guard';

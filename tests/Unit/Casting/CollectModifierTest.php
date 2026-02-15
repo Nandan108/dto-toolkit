@@ -86,8 +86,7 @@ final class CollectModifierTest extends TestCase
                 Mod\Wrap(2),
                 /* - */ CastTo\Split(' '),
                 /* - */ Mod\PerItem,
-                /* --- */ CastTo\Boolean
-            ] // fails: PerItem cannot be used on a string
+                /* --- */ CastTo\Boolean] // fails: PerItem cannot be used on a string
             public string | array | null $identifier = null;
         };
 

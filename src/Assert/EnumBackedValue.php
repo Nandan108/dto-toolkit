@@ -19,6 +19,7 @@ final class EnumBackedValue extends ValidatorBase
      *
      * @param class-string<\BackedEnum> $enumClass
      **/
+    /** @api */
     public function __construct(string $enumClass)
     {
         if (!is_subclass_of($enumClass, \BackedEnum::class)) {
@@ -29,6 +30,7 @@ final class EnumBackedValue extends ValidatorBase
     }
 
     #[\Override]
+    /** @internal */
     public function validate(mixed $value, array $args = []): void
     {
         /** @var class-string<\BackedEnum> */

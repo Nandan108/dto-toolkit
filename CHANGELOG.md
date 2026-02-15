@@ -3,6 +3,44 @@
 All notable changes to this project will be documented in this file.
 
 ---
+## [1.4.2] - 2026-02-14
+
+### Added
+
+- New API-surface audit tool: `scripts/phpdoc-api-surface-audit` (internal implementation under `dev-tools/phpdoc-api-surface-audit/`).
+- New default audit config file: `.phpdoc-api-surface-audit.php`.
+- New composer scripts:
+  - `composer api-audit`
+  - `composer api-audit-strict`
+- New internal shared comparison helper: `Internal\ValueComparator`.
+
+### Changed
+
+- API intent annotations (`@api` / `@internal`) were normalized across audited API surfaces in `src/` (types and declared public methods).
+- `Assert\CompareTo` and `Assert\CompareToExtract` now share comparison behavior via `Internal\ValueComparator`.
+- Extraction-related nodes now use `EvaluationFailureDetails`.
+  - `ExtractionException` now exposes typed evaluator failure details (`$failure`) and reports `failedPath` in message parameters (replacing legacy `ExtractContext` usage).
+- Runtime dependencies were updated:
+  - `nandan108/prop-path` `^0.3.0` -> `^0.4.0`
+  - `nandan108/prop-access` `^0.5.0` -> `^0.6.0`
+- `BaseDto` lifecycle hooks and public entrypoints were explicitly annotated; `BaseDto::__callStatic()` and low-level reflection accessor internals were marked `@internal`.
+- Localized datetime casters resolved trait method conflicts explicitly via `insteadof` rules.
+
+### Internal
+
+- `ProcessingContext` internal stack/path management helpers were explicitly marked `@internal`; bootstrap/runtime config methods remain public API.
+- API audit is now enforced in CI.
+- Local hooks were updated:
+  - `.git-hooks/pre-commit` now supports optional `.git/hooks/pre-commit.local` extension.
+  - `.git-hooks/pre-push` runs API audit, PHPUnit, and Psalm, and supports optional `.git/hooks/pre-push.local` extension.
+
+### Upgrade Notes
+
+- Run `composer update` (or `composer install` with updated lockfile) to pick up `prop-path`/`prop-access` version bumps.
+- To enable repository hooks locally, run `./scripts/setup-hooks.sh`.
+- If you consume extraction exceptions directly, review `ExtractionException` constructor/factory inputs and the updated failure metadata (`$failure`, `failedPath`).
+
+---
 ## [1.4.1] - 2026-02-14
 
 ### Changed

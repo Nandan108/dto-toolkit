@@ -15,7 +15,7 @@ use Nandan108\DtoToolkit\Traits\UsesTimeZoneResolver;
 /**
  * Casts a string to a DateTimeImmutable object.
  *
- * @psalm-api
+ * @api
  *
  * @psalm-suppress UnusedClass
  */
@@ -24,6 +24,7 @@ class DateTime extends CastBase implements CasterInterface, BootsOnDtoInterface
 {
     use UsesTimeZoneResolver;
 
+    /** @api */
     public function __construct(
         public readonly string | \BackedEnum $format = DateTimeFormat::ISO_8601,
         public readonly ?string $timezone = null,
@@ -46,12 +47,14 @@ class DateTime extends CastBase implements CasterInterface, BootsOnDtoInterface
      * This function will be called once per caster+ctorArgs+dto.
      */
     #[\Override]
+    /** @internal */
     public function bootOnDto(): void
     {
         $this->configureTimezoneResolver();
     }
 
     #[\Override]
+    /** @internal */
     public function cast(mixed $value, array $args): mixed
     {
         $this->ensureStringable($value, true);

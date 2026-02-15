@@ -8,10 +8,11 @@ use Nandan108\DtoToolkit\Contracts\CasterInterface;
 use Nandan108\DtoToolkit\Core\CastBase;
 use Nandan108\DtoToolkit\Exception\Process\TransformException;
 
-/** @psalm-api */
+/** @api */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class NumericString extends CastBase implements CasterInterface
 {
+    /** @api */
     public function __construct(
         public readonly int $decimals = 0,
         public readonly string $decimalPoint = '.',
@@ -21,6 +22,7 @@ final class NumericString extends CastBase implements CasterInterface
     }
 
     #[\Override]
+    /** @internal */
     public function cast(mixed $value, array $args): string
     {
         [$decimals, $decimalPoint, $thousandsSeparator] = $args;

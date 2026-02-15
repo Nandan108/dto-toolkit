@@ -15,6 +15,7 @@ use Nandan108\DtoToolkit\Internal\Exporter;
  *
  * @psalm-suppress UnusedClass
  */
+/** @api */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class Entity extends CastBase
 {
@@ -35,6 +36,7 @@ final class Entity extends CastBase
     }
 
     #[\Override]
+    /** @internal */
     public function cast(mixed $value, array $args): mixed
     {
         if (!(\is_array($value) || $value instanceof BaseDto)) {

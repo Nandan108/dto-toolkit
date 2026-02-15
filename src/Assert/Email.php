@@ -14,6 +14,7 @@ use Nandan108\DtoToolkit\Exception\Process\GuardException;
 final class Email extends ValidatorBaseNoArgs
 {
     #[\Override]
+    /** @internal */
     public function validate(mixed $value, array $args = []): void
     {
         if (!is_string($value) || false === filter_var($value, FILTER_VALIDATE_EMAIL)) {

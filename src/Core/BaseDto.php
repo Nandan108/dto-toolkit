@@ -64,23 +64,27 @@ abstract class BaseDto implements ProvidesProcessingNodeNameInterface
      */
     private static array $_dtoMetaCache = [];
 
+    /** @api */
     public static function clearAllCaches(): void
     {
         self::$_dtoMetaCache = [];
         ProcessingNodeBase::_clearNodeMetadata();
     }
 
+    /** @api */
     public static function setDefaultErrorMode(ErrorMode $mode): void
     {
         static::$_defaultErrorMode = $mode;
     }
 
+    /** @api */
     public function getErrorMode(): ErrorMode
     {
         return $this->_errorMode ?? static::$_defaultErrorMode;
     }
 
     /** @psalm-suppress PossiblyUnusedMethod */
+    /** @api */
     public function withErrorMode(ErrorMode $mode): static
     {
         $this->_errorMode = $mode;
@@ -88,11 +92,13 @@ abstract class BaseDto implements ProvidesProcessingNodeNameInterface
         return $this;
     }
 
+    /** @api */
     public function setErrorList(ProcessingErrorList $newErrorList): ProcessingErrorList
     {
         return $this->_errorList = $newErrorList;
     }
 
+    /** @api */
     public function getErrorList(): ProcessingErrorList
     {
         return $this->_errorList ??= new ProcessingErrorList();
@@ -178,13 +184,23 @@ abstract class BaseDto implements ProvidesProcessingNodeNameInterface
         return static::getPropMeta()['propRef'];
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * @return array<string, mixed> a map of default values for the DTO properties
+     *
+     * @api
+     */
     public static function getDefaultValues(): array
     {
         return static::getPropMeta()['defaultValue'];
     }
 
-    /** @return array<string, PresencePolicy> */
+    /**
+     * Get a map of presence policies for the DTO properties.
+     *
+     * @return array<string, PresencePolicy>
+     *
+     * @api
+     */
     public static function getPresencePolicy(): array
     {
         return static::getPropMeta()['presencePolicy'];
@@ -238,6 +254,8 @@ abstract class BaseDto implements ProvidesProcessingNodeNameInterface
      * @param \Closure|class-string|null $filter
      *
      * @return array<string, PhaseAwareInterface|list<PhaseAwareInterface>>
+     *
+     * @api
      */
     public static function getPhaseAwarePropMeta(Phase $phase, string $metaDataName, \Closure | string | null $filter, bool $ignoreEmpty = false): array
     {
@@ -288,6 +306,8 @@ abstract class BaseDto implements ProvidesProcessingNodeNameInterface
      * declared after #[Outbound] will be called to transform the data before returning it.
      *
      * @psalm-suppress PossiblyUnusedMethod, UnusedParam, InvalidReturnType
+     *
+     * @api
      */
     public function toOutboundArray(
         ?ProcessingErrorList $errorList = null,
@@ -329,6 +349,8 @@ abstract class BaseDto implements ProvidesProcessingNodeNameInterface
      * These are public instance properties, excluding those prefixed with "_".
      *
      * @psalm-suppress PossiblyUnusedMethod
+     *
+     * @api
      */
     public function getFillable(): array
     {
@@ -338,6 +360,8 @@ abstract class BaseDto implements ProvidesProcessingNodeNameInterface
 
     /**
      * Check if the given property has been filled.
+     *
+     * @api
      */
     public function isFilled(string $propName): bool
     {
@@ -350,6 +374,8 @@ abstract class BaseDto implements ProvidesProcessingNodeNameInterface
      * The data is returned as-is, without any transformation.
      *
      * @param string[] $propNames
+     *
+     * @api
      */
     public function toArray(?array $propNames = null): array
     {
@@ -370,6 +396,8 @@ abstract class BaseDto implements ProvidesProcessingNodeNameInterface
      * @param bool                 $clearErrors      whether to clear DTO's errorList
      *
      * @psalm-suppress PossiblyUnusedMethod
+     *
+     * @api
      */
     public function clear(array $propNames = [], array $excludedPropsMap = [], bool $clearErrors = true): static
     {
@@ -407,6 +435,8 @@ abstract class BaseDto implements ProvidesProcessingNodeNameInterface
      * Note: '_' prefixed properties are ignored
      *
      * @psalm-suppress PossiblyUnusedMethod
+     *
+     * @api
      */
     public function fill(array $values): static
     {
@@ -426,6 +456,8 @@ abstract class BaseDto implements ProvidesProcessingNodeNameInterface
      * normalization, export, or entity mapping.
      *
      * @psalm-suppress PossiblyUnusedMethod
+     *
+     * @api
      */
     public function unfill(?array $props = null): static
     {
@@ -449,6 +481,8 @@ abstract class BaseDto implements ProvidesProcessingNodeNameInterface
      * @return void
      *
      * @psalm-suppress PossiblyUnusedMethod
+     *
+     * @api
      */
     public function postLoad()
     {
@@ -465,6 +499,8 @@ abstract class BaseDto implements ProvidesProcessingNodeNameInterface
      *
      * @psalm-suppress PossiblyUnusedMethod
      * @psalm-suppress PossiblyUnusedParam
+     *
+     * @api
      */
     public function preOutput(array | object &$outputData)
     {
@@ -473,6 +509,8 @@ abstract class BaseDto implements ProvidesProcessingNodeNameInterface
 
     /**
      * @psalm-suppress PossiblyUnusedMethod, PossiblyUnusedParam
+     *
+     * @internal
      **/
     public static function __callStatic(string $method, array $arguments): static
     {
@@ -511,6 +549,8 @@ abstract class BaseDto implements ProvidesProcessingNodeNameInterface
      *
      * This method will also call the `inject()` method if the class implements Injectable,
      * and the `boot()` method if the class implements Bootable.
+     *
+     * @api
      */
     public static function new(): static
     {
@@ -549,6 +589,7 @@ abstract class BaseDto implements ProvidesProcessingNodeNameInterface
         return $instance;
     }
 
+    /** @internal */
     public static function getClassRef(): \ReflectionClass
     {
         /** @psalm-suppress PropertyTypeCoercion */
@@ -577,6 +618,7 @@ abstract class BaseDto implements ProvidesProcessingNodeNameInterface
 
     #[\Override]
     /** @return truthy-string */
+    /** @api */
     public function getProcessingNodeName(): string
     {
         // make sure we initialize the prop meta cache

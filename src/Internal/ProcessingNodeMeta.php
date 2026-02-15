@@ -10,6 +10,8 @@ use Nandan108\DtoToolkit\Exception\Process\ProcessingException;
 
 /**
  * Represents metadata for a single processing node (cast/validate/etc.) used in a chain.
+ *
+ * @internal
  */
 final class ProcessingNodeMeta implements ProcessingNodeInterface
 {

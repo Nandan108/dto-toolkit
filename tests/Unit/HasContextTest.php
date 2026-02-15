@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Traits;
+namespace Nandan108\DtoToolkit\Tests\Unit\Traits;
 
 use Nandan108\DtoToolkit\Contracts\HasContextInterface;
 use Nandan108\DtoToolkit\Traits\HasContext;

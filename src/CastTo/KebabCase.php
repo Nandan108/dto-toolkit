@@ -7,10 +7,12 @@ namespace Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Core\CastBaseNoArgs;
 use Nandan108\PropAccess\Support\CaseConverter;
 
+/** @api */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class KebabCase extends CastBaseNoArgs
 {
     #[\Override]
+    /** @internal */
     public function cast(mixed $value, array $args): string
     {
         return CaseConverter::toKebab($this->ensureStringable($value));

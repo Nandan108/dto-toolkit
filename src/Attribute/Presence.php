@@ -13,7 +13,7 @@ use Nandan108\DtoToolkit\Enum\PresencePolicy;
  * NullMeansMissing: When input is present but null, prop NOT marked as filled.
  * MissingMeansDefault: When missing input, prop is marked as filled with default value left intact.
  *
- * @psalm-api
+ * @api
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::TARGET_CLASS)]
 class Presence

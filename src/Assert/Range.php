@@ -15,6 +15,7 @@ use Nandan108\DtoToolkit\Exception\Process\GuardException;
 final class Range extends ValidatorBase
 {
     /** psalm-suppress PossiblyUnusedMethod */
+    /** @api */
     public function __construct(?float $min = null, ?float $max = null, bool $inclusive = true)
     {
         if (null === $min && null === $max) {
@@ -27,6 +28,7 @@ final class Range extends ValidatorBase
     }
 
     #[\Override]
+    /** @internal */
     public function validate(mixed $value, array $args = []): void
     {
         if (!\is_int($value) && !\is_float($value)) {

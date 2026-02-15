@@ -13,15 +13,18 @@ use Nandan108\DtoToolkit\Internal\Exporter;
  *
  * @psalm-suppress UnusedClass
  */
+/** @api */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class AsArray extends CastBase
 {
+    /** @api */
     public function __construct(array $supplementalProps = [], bool $recursive = false)
     {
         parent::__construct([$supplementalProps, $recursive]);
     }
 
     #[\Override]
+    /** @internal */
     public function cast(mixed $value, array $args): mixed
     {
         if (!\is_object($value)) {

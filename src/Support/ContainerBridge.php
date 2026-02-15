@@ -14,6 +14,8 @@ use Psr\Container\ContainerInterface;
  * But since DTOT is a package meant to adapt to any host, this pattern
  * - Let us opt into DI if available
  * - Keeps DTOs usable even in non-containerized code (e.g., CLI tools, microservices)
+ *
+ * @api
  */
 final class ContainerBridge
 {

@@ -16,7 +16,7 @@ use Nandan108\DtoToolkit\Traits\UsesParamResolver;
  *
  * $condition is resolved at processing time, via the UsesParamResolver trait.
  *
- * @psalm-api
+ * @api
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 class ApplyNextIf extends ChainModifierBase

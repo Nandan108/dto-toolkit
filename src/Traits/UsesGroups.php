@@ -5,12 +5,17 @@ declare(strict_types=1);
 namespace Nandan108\DtoToolkit\Traits;
 
 use Nandan108\DtoToolkit\Attribute\PropGroups;
+use Nandan108\DtoToolkit\Contracts\HasGroupsInterface;
 use Nandan108\DtoToolkit\Enum\Phase;
 
 /**
+ * Trait for DTOs that want to use group-based property filtering for processing and validation.
+ *
  * @method static static newWithGroups(array|string $all = [], array|string $inbound = [], array|string $inboundCast = [], array|string $outbound = [], array|string $outboundCast = [], array|string $validation = [])
  *
  * This trait implements the HasGroupsInterface and ScopedPropertyAccessInterface
+ *
+ * @api
  */
 trait UsesGroups // user must implement HasGroupsInterface, ScopedPropertyAccessInterface
 {
@@ -68,7 +73,8 @@ trait UsesGroups // user must implement HasGroupsInterface, ScopedPropertyAccess
 
     /**
      * @return array<string> list of groups in the scope of the given phase
-     *                       implements HasGroupsInterface
+     *
+     * implements HasGroupsInterface
      **/
     #[\Override]
     public function getActiveGroups(Phase $phase): array
@@ -93,7 +99,7 @@ trait UsesGroups // user must implement HasGroupsInterface, ScopedPropertyAccess
      * implements ScopedPropertyAccessInterface.
      *
      * @psalm-suppress LessSpecificImplementedReturnType
-     **/
+     */
     #[\Override]
     public function getPropertiesInScope(Phase $phase): array
     {

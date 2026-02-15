@@ -14,21 +14,21 @@ use Nandan108\DtoToolkit\Exception\Process\ExtractionException;
 use Nandan108\DtoToolkit\Traits\HasPhase;
 use Nandan108\PropPath\Exception\SyntaxError;
 use Nandan108\PropPath\PropPath;
-use Nandan108\PropPath\Support\ExtractContext;
+use Nandan108\PropPath\Support\EvaluationFailureDetails;
 use Nandan108\PropPath\Support\ThrowMode;
 
 /**
- * @psalm-api
+ * @api
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY)]
 class MapFrom implements PhaseAwareInterface
 {
     use HasPhase;
 
-    /** @var \Closure(array, ?\Closure(string, ExtractContext): never): mixed */
+    /** @var \Closure(array, ?\Closure(string, EvaluationFailureDetails): never): mixed */
     private \Closure $extractor;
 
-    /** @var \Closure(string, ExtractContext):never */
+    /** @var \Closure(string, EvaluationFailureDetails):never */
     private \Closure $evalErrorHandler;
 
     public function __construct(string | array $paths, ThrowMode $defaultThrowMode = ThrowMode::MISSING_KEY)
@@ -43,10 +43,10 @@ class MapFrom implements PhaseAwareInterface
             throw new ExtractionSyntaxError(message: "MapFrom: Invalid path provided: $jsonPath.", previous: $e);
         }
 
-        $this->evalErrorHandler = function (string $message, ExtractContext $context): never {
+        $this->evalErrorHandler = function (string $message, EvaluationFailureDetails $failure): never {
             throw ExtractionException::extractFailed(
-                $message,
-                $context,
+                message: $message,
+                failure: $failure,
                 errorCode: 'io.map_from.extract_failure',
             );
         };

@@ -12,7 +12,7 @@ use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
  * This attribute is used to specify the scoping groups for a property.
  * If it is positioned after a #[Outbound] attribute, the groups will be set for the outbound phase.
  *
- * @psalm-api
+ * @api
  */
 #[\Attribute(\Attribute::TARGET_CLASS)]
 class WithDefaultGroups
@@ -28,7 +28,7 @@ class WithDefaultGroups
 
     public function applyToDto(BaseDto $dto): void
     {
-        if (!($dto instanceof HasGroupsInterface)) {
+        if (!$dto instanceof HasGroupsInterface) {
             throw new InvalidConfigException('The WithDefaultGroups attribute can only be used on DTOs that implement the HasGroupsInterface.');
         }
         $dto->withGroups(

@@ -11,11 +11,12 @@ use Nandan108\DtoToolkit\Exception\Process\GuardException;
 /**
  * Validates an IBAN.
  *
- * @psalm-api
+ * @api
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class Iban extends ValidatorBase
 {
+    /** @api */
     public function __construct(?string $countryCode = null)
     {
         if (null !== $countryCode && 1 !== \preg_match('/^[A-Z]{2}$/i', $countryCode)) {
@@ -26,6 +27,7 @@ final class Iban extends ValidatorBase
     }
 
     #[\Override]
+    /** @internal */
     public function validate(mixed $value, array $args = []): void
     {
         $value = $this->ensureStringable($value, true);

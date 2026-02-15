@@ -1,0 +1,19 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+$root = dirname(__DIR__);
+$autoload = $root.'/vendor/autoload.php';
+if (!is_file($autoload)) {
+    fwrite(STDERR, "Missing Composer autoload file: {$autoload}\n");
+    fwrite(STDERR, "Run `composer install` first.\n");
+    exit(2);
+}
+require_once $autoload;
+
+require_once $root.'/dev-tools/phpdoc-api-surface-audit/Config.php';
+require_once $root.'/dev-tools/phpdoc-api-surface-audit/Auditor.php';
+require_once $root.'/dev-tools/phpdoc-api-surface-audit/Cli.php';
+
+exit(Nandan108\DtoToolkit\DevTools\PhpDocApiSurfaceAudit\Cli::run($argv, $root));

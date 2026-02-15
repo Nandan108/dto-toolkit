@@ -8,6 +8,8 @@ use Nandan108\DtoToolkit\Core\ProcessingContext;
 
 /**
  * @method static static newWithContext(array $values)
+ *
+ * @api
  */
 trait HasContext
 {

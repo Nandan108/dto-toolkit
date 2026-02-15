@@ -12,6 +12,7 @@ use Nandan108\DtoToolkit\Assert\Support\SequenceMatcher;
 use Nandan108\DtoToolkit\Core\FullDto;
 use Nandan108\DtoToolkit\Core\ProcessingContext;
 use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
+use Nandan108\DtoToolkit\Internal\ValueComparator;
 use Nandan108\PropPath\PropPath;
 use PHPUnit\Framework\TestCase;
 
@@ -29,10 +30,10 @@ final class ValidatorInternalCoverageTest extends TestCase
 {
     public function testCompareToPrivateHelpers(): void
     {
-        $this->callPrivate(CompareTo::class, 'assertOperator', ['==']);
+        $this->callPrivate(ValueComparator::class, 'assertOperator', ['==']);
 
         try {
-            $this->callPrivate(CompareTo::class, 'assertOperator', ['??']);
+            $this->callPrivate(ValueComparator::class, 'assertOperator', ['??']);
             $this->fail('Expected InvalidArgumentException was not thrown');
         } catch (InvalidArgumentException $e) {
             $this->assertStringContainsString('invalid operator', $e->getMessage());
@@ -40,15 +41,15 @@ final class ValidatorInternalCoverageTest extends TestCase
 
         $this->assertSame(
             'a',
-            $this->callPrivate(CompareTo::class, 'normalizeOperand', [LocalBackedEnum::A, null, true]),
+            $this->callPrivate(ValueComparator::class, 'normalizeOperand', [LocalBackedEnum::A, null, true]),
         );
         $this->assertSame(
             LocalUnitEnum::A,
-            $this->callPrivate(CompareTo::class, 'normalizeOperand', [LocalUnitEnum::A, null, true]),
+            $this->callPrivate(ValueComparator::class, 'normalizeOperand', [LocalUnitEnum::A, null, true]),
         );
 
         $timestamp = $this->callPrivate(
-            CompareTo::class,
+            ValueComparator::class,
             'normalizeOperand',
             [new \DateTimeImmutable('2020-01-01'), null, true],
         );

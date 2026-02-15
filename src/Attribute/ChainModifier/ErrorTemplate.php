@@ -11,7 +11,7 @@ use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
 use Nandan108\DtoToolkit\Internal\ProcessingChain;
 
 /**
- * @psalm-api
+ * @api
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 class ErrorTemplate extends ChainModifierBase

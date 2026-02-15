@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nandan108\DtoToolkit\Enum;
 
+/** @api */
 enum DateTimeFormat: string
 {
     /** Same as \DateTime::ATOM, \DateTime::RFC3339, \DateTime::W3C */

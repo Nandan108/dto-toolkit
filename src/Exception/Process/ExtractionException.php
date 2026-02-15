@@ -4,25 +4,47 @@ declare(strict_types=1);
 
 namespace Nandan108\DtoToolkit\Exception\Process;
 
-use Nandan108\PropPath\Support\ExtractContext;
+use Nandan108\PropPath\Support\EvaluationFailureDetails;
 
+/**
+ * @internal internal processing exception; not part of public API
+ *
+ * @psalm-internal Nandan108\DtoToolkit
+ *
+ * @phpstan-internal Nandan108\DtoToolkit
+ */
 final class ExtractionException extends ProcessingException
 {
+    public readonly EvaluationFailureDetails $failure;
+
+    public function __construct(
+        string $message,
+        EvaluationFailureDetails $failure,
+        string $errorCode = 'processing.extract_failure',
+    ) {
+        $this->failure = $failure;
+
+        parent::__construct(
+            template_suffix: 'extract.failed',
+            parameters: [
+                'message'    => $message,
+                'failedPath' => $failure->getPropertyPath(),
+            ],
+            debug: [
+                'failure'    => $failure,
+            ],
+            errorCode: $errorCode,
+        );
+    }
+
     public static function extractFailed(
         string $message,
-        ?ExtractContext $context = null,
+        EvaluationFailureDetails $failure,
         string $errorCode = 'processing.extract_failure',
     ): self {
-        $value = $context->roots['value'] ?? null;
-
-        return new static(
-            template_suffix: 'extract.failed',
-            debug: [
-                'message'    => $message,
-                'value'      => self::normalizeValueForDebug($value),
-                'orig_value' => $value,
-                'context'    => $context?->getEvalErrorMessage($message) ?? $message,
-            ],
+        return new self(
+            message: $message,
+            failure: $failure,
             errorCode: $errorCode,
         );
     }

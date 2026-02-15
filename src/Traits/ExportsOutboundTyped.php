@@ -14,6 +14,8 @@ use Nandan108\DtoToolkit\Internal\Exporter;
  * @psalm-require-extends BaseDto
  *
  * @template TEntity
+ *
+ * @api
  **/
 trait ExportsOutboundTyped
 {

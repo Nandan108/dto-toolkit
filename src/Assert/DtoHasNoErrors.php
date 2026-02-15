@@ -16,6 +16,7 @@ use Nandan108\DtoToolkit\Exception\Process\InnerDtoErrorsException;
 final class DtoHasNoErrors extends ValidatorBase
 {
     #[\Override]
+    /** @internal */
     public function validate(mixed $value, array $args = []): void
     {
         if (!$value instanceof BaseDto) {

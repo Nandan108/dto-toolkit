@@ -2,8 +2,6 @@
 
 declare(strict_types=1);
 
-echo "We're in the .php-cs-fixer.php file.\n";
-
 $finder = (new PhpCsFixer\Finder())
     ->in(__DIR__)
 ;

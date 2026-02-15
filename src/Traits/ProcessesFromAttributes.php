@@ -11,7 +11,11 @@ use Nandan108\DtoToolkit\Core\ProcessingFrame;
 use Nandan108\DtoToolkit\Enum\ErrorMode;
 use Nandan108\DtoToolkit\Exception\Process\ProcessingException;
 
-/** @psalm-require-extends \Nandan108\DtoToolkit\Core\BaseDto */
+/**
+ * @psalm-require-extends \Nandan108\DtoToolkit\Core\BaseDto
+ *
+ * @internal
+ */
 trait ProcessesFromAttributes // implements ProcessesInterface
 {
     // will be used if using class implements NormalizesInboundInterface

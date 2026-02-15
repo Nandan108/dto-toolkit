@@ -28,7 +28,7 @@ use Nandan108\DtoToolkit\Exception\Process\ProcessingException;
  *
  * @psalm-type nodeCache = array<string, array{nodes: array<string, ProcessingNodeMeta>, instance?: ProcessingNodeInterface}>
  *
- * @psalm-api
+ * @internal
  */
 abstract class ProcessingNodeBase implements PhaseAwareInterface, ProcessingNodeProducerInterface
 {

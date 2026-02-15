@@ -14,6 +14,7 @@ use Nandan108\DtoToolkit\Exception\Process\GuardException;
 final class IsNumericString extends ValidatorBaseNoArgs
 {
     #[\Override]
+    /** @internal */
     public function validate(mixed $value, array $args = []): void
     {
         if (!is_string($value) || !is_numeric($value)) {

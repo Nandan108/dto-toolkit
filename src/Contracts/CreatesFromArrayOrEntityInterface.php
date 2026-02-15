@@ -11,6 +11,8 @@ use Nandan108\DtoToolkit\Enum\ErrorMode;
  * @method static static newFromArray(array $input, bool $ignoreUnknownProps = false, ?ProcessingErrorList $errorList = null, ?ErrorMode $errorMode = null)
  * @method static static newFromArrayLoose(array $input, bool $ignoreUnknownProps = false, ?ProcessingErrorList $errorList = null, ?ErrorMode $errorMode = null)
  * @method static static newFromEntity(object $entity, bool $ignoreInaccessibleProps = true, ?ProcessingErrorList $errorList = null, ?ErrorMode $errorMode = null)
+ *
+ * @api
  */
 interface CreatesFromArrayOrEntityInterface
 {

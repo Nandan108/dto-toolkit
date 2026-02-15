@@ -9,6 +9,11 @@ use Nandan108\DtoToolkit\Contracts\ProcessingNodeProducerInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
 
+/**
+ * Represents a chain of processing nodes (casting, validation, etc.) that can be applied sequentially to a value.
+ *
+ * @internal
+ */
 final class ProcessingChain implements ProcessingNodeInterface
 {
     /** @var ProcessingNodeInterface[] */

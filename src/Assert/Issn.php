@@ -10,12 +10,13 @@ use Nandan108\DtoToolkit\Exception\Process\GuardException;
 /**
  * Validates an ISSN.
  *
- * @psalm-api
+ * @api
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class Issn extends ValidatorBase
 {
     #[\Override]
+    /** @internal */
     public function validate(mixed $value, array $args = []): void
     {
         $value = $this->ensureStringable($value, true);

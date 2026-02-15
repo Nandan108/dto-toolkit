@@ -14,12 +14,14 @@ use Nandan108\DtoToolkit\Exception\Process\GuardException;
 final class IsBlank extends ValidatorBase
 {
     /** @psalm-suppress PossiblyUnusedMethod */
+    /** @api */
     public function __construct(bool $expect = true)
     {
         parent::__construct([$expect]);
     }
 
     #[\Override]
+    /** @internal */
     public function validate(mixed $value, array $args = []): void
     {
         [$expect] = $args;

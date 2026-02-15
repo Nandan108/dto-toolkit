@@ -10,6 +10,8 @@ use Nandan108\DtoToolkit\Core\ProcessingContext;
 use Nandan108\DtoToolkit\Exception\Process\ExtractionException;
 use Nandan108\DtoToolkit\Tests\Traits\CanTestCasterClassesAndMethods;
 use Nandan108\PropAccess\PropAccess;
+use Nandan108\PropPath\Exception\EvaluationErrorCode;
+use Nandan108\PropPath\Support\EvaluationFailureDetails;
 use PHPUnit\Framework\TestCase;
 
 final class ExtractTest extends TestCase
@@ -60,6 +62,24 @@ final class ExtractTest extends TestCase
             $this->assertInstanceOf(\Nandan108\DtoToolkit\Exception\Config\ExtractionSyntaxError::class, $e);
             $this->assertStringContainsString('Invalid path provided', $e->getMessage());
         }
+    }
+
+    public function testExtractFailureExposesTypedFailureDetails(): void
+    {
+        $dto = ExtractTestFixture::new()->loadArray([
+            'propVal' => ['A', 'B', ['C']],
+        ]);
+
+        ProcessingContext::wrapProcessing($dto, function () use ($dto): void {
+            try {
+                (new CastTo\Extract('propVal[2].!3.0'))->getProcessingNode($dto)($dto);
+                $this->fail('Expected ExtractionException was not thrown.');
+            } catch (ExtractionException $e) {
+                $this->assertInstanceOf(EvaluationFailureDetails::class, $e->failure);
+                $this->assertSame(EvaluationErrorCode::KEY_NOT_FOUND_ARRAY, $e->failure->code);
+                $this->assertSame('$value.propVal.[2].3', $e->failure->getPropertyPath());
+            }
+        });
     }
 }
 

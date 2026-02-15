@@ -13,7 +13,7 @@ use Nandan108\DtoToolkit\Support\CardSchemeDetector;
 /**
  * Detects and returns the card scheme for a card number.
  *
- * @psalm-api
+ * @api
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class CardScheme extends CastBase
@@ -51,6 +51,7 @@ final class CardScheme extends CastBase
     }
 
     #[\Override]
+    /** @internal */
     public function cast(mixed $value, array $args): string
     {
         /** @var list<truthy-string>|null $schemes */

@@ -10,17 +10,20 @@ use Nandan108\DtoToolkit\Traits\UsesDiacriticSanitizer;
 /**
  * Converts string into $separator separated groups of lowercase letters.
  **/
+/** @api */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class Slug extends CastBase
 {
     use UsesDiacriticSanitizer;
 
+    /** @api */
     public function __construct(string $separator = '-')
     {
         parent::__construct([$separator]);
     }
 
     #[\Override]
+    /** @internal */
     public function cast(mixed $value, array $args): string
     {
         [$separator] = $args;

@@ -6,9 +6,11 @@ namespace Nandan108\DtoToolkit\CastTo;
 
 use Nandan108\DtoToolkit\Core\CastBase;
 
+/** @api */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class Trimmed extends CastBase
 {
+    /** @api */
     public function __construct(
         string $characters = " \n\r\t\v\x00",
         string $where = 'both',
@@ -17,6 +19,7 @@ final class Trimmed extends CastBase
     }
 
     #[\Override]
+    /** @internal */
     public function cast(mixed $value, array $args): string
     {
         [$characters, $where] = $args;

@@ -52,3 +52,7 @@ jobs:
       - name: Run Psalm
         if: matrix.run-psalm == 'true'
         run: vendor/bin/psalm
+
+      - name: Run API annotation audit
+        if: matrix.run-psalm == 'true'
+        run: composer api-audit-strict

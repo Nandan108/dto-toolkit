@@ -24,6 +24,8 @@ final class IsType extends ValidatorBase
      *                   |'countable'|'callable'|'object'|'resource'|'null'
      *
      * @param TType|non-empty-list<TType> $type
+     *
+     * @api
      */
     public function __construct(string | array $type)
     {
@@ -66,6 +68,7 @@ final class IsType extends ValidatorBase
     }
 
     #[\Override]
+    /** @internal */
     public function validate(mixed $value, array $args = []): void
     {
         $types = $args[0];

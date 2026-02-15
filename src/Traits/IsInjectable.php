@@ -10,6 +10,8 @@ use Nandan108\DtoToolkit\Support\ContainerBridge;
 
 /**
  * Basic implementation of the Injectable interface.
+ *
+ * @api
  */
 trait IsInjectable
 {

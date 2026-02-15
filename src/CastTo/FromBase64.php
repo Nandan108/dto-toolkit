@@ -7,11 +7,12 @@ namespace Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Core\CastBaseNoArgs;
 use Nandan108\DtoToolkit\Exception\Process\TransformException;
 
-/** @psalm-api */
+/** @api */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class FromBase64 extends CastBaseNoArgs
 {
     #[\Override]
+    /** @internal */
     public function cast(mixed $value, array $args): string
     {
         $value = $this->ensureStringable($value);

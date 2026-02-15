@@ -10,13 +10,14 @@ use Nandan108\DtoToolkit\Exception\Process\TransformException;
 /**
  * Returns the first value not in the ignore list.
  *
- * @psalm-api
+ * @api
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class Coalesce extends CastBase
 {
     private const NO_FALLBACK = '__dtot_no_fallback__';
 
+    /** @api */
     public function __construct(
         array | \Traversable $ignore = [null],
         mixed $fallback = self::NO_FALLBACK,
@@ -25,6 +26,7 @@ final class Coalesce extends CastBase
     }
 
     #[\Override]
+    /** @internal */
     public function cast(mixed $value, array $args): mixed
     {
         /** @var array|\Traversable $ignore */

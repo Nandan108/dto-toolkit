@@ -8,6 +8,7 @@ use Nandan108\DtoToolkit\Core\CastBase;
 use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
 use Nandan108\DtoToolkit\Exception\Process\TransformException;
 
+/** @api */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class Floating extends CastBase
 {
@@ -32,6 +33,7 @@ final class Floating extends CastBase
 
     /** @psalm-suppress PossiblyUnusedReturnValue */
     #[\Override]
+    /** @internal */
     public function cast(mixed $value, array $args): ?float
     {
         if (is_int($value) || is_float($value)) {
@@ -58,7 +60,7 @@ final class Floating extends CastBase
         throw TransformException::expected($value, 'type.numeric');
     }
 
-    public function normalizeNumberString(string $input, string $decimalPoint): string
+    private function normalizeNumberString(string $input, string $decimalPoint): string
     {
         // Escape the decimal point for safe regex embedding
         $escaped = preg_quote($decimalPoint, '/');

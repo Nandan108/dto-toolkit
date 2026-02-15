@@ -6,6 +6,8 @@ namespace Nandan108\DtoToolkit\Support;
 
 /**
  * Detects card schemes based on number patterns.
+ *
+ * @api
  */
 final class CardSchemeDetector
 {
@@ -89,7 +91,7 @@ final class CardSchemeDetector
         // TROY cards begin with 9792 and have 16 digits.
         // This scheme was added manually (not part of Symfony 8.0)
         self::TROY => [
-            '/^9792[0-9]{12}$/D',
+            '/^9792|65\d\d|36|2205\d{12}$/',
         ],
         // All UATP card numbers start with a 1 and have a length of 15 digits.
         self::UATP => [

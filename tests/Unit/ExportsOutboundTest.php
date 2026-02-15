@@ -255,7 +255,7 @@ final class ExportsOutboundTest extends TestCase
         };
 
         $this->expectException(AccessorException::class);
-        $this->expectExceptionMessage('No public setter or property found');
+        $this->expectExceptionMessage('prop_access.setter_access_not_found');
 
         /** @psalm-suppress UnusedMethodCall */
         $dto->fill(['fooProp' => 'someVal', 'email' => 'foo@bar.baz']);

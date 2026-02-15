@@ -6,6 +6,7 @@ namespace Nandan108\DtoToolkit\Traits;
 
 use Nandan108\DtoToolkit\CastTo;
 
+/** @api */
 trait UsesLocaleResolver
 {
     use UsesParamResolver;

@@ -6,6 +6,8 @@ namespace Nandan108\DtoToolkit\Support;
 
 /**
  * Luhn checksum helper.
+ *
+ * @api
  */
 final class Luhn
 {

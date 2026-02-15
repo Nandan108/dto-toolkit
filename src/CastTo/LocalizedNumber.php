@@ -27,13 +27,14 @@ use Nandan108\DtoToolkit\Traits\UsesLocaleResolver;
  *
  * @see https://www.php.net/manual/en/class.numberformatter.php
  *
- * @psalm-api
+ * @api
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class LocalizedNumber extends CastBase implements CasterInterface, BootsOnDtoInterface
 {
     use UsesLocaleResolver;
 
+    /** @api */
     public function __construct(
         int $style = \NumberFormatter::DECIMAL,
         int $precision = 2,
@@ -52,12 +53,14 @@ final class LocalizedNumber extends CastBase implements CasterInterface, BootsOn
      * This function will be called once per caster+ctorArgs+dto.
      */
     #[\Override]
+    /** @internal */
     public function bootOnDto(): void
     {
         $this->configureLocaleResolver();
     }
 
     #[\Override]
+    /** @internal */
     public function cast(mixed $value, array $args): string
     {
         /** @psalm-suppress UnnecessaryVarAnnotation */

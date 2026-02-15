@@ -12,8 +12,10 @@ use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
 use Nandan108\DtoToolkit\Internal\ProcessingChain;
 
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
+/** @api */
 final class Groups extends ChainModifierBase
 {
+    /** @api */
     /** @psalm-suppress PossiblyUnusedProperty */
     public function __construct(
         public array | string $groups,
@@ -26,6 +28,8 @@ final class Groups extends ChainModifierBase
      * Summary of getProcessingNode.
      *
      * @param ?\ArrayIterator<int, ProcessingNodeProducerInterface> $queue
+     *
+     * @internal
      *
      * @throws InvalidConfigException
      */
@@ -57,6 +61,7 @@ final class Groups extends ChainModifierBase
         );
     }
 
+    /** @internal */
     protected function inPhase(HasGroupsInterface $dto): bool
     {
         return $dto->groupsAreInScope($this->getPhase(), (array) $this->groups);

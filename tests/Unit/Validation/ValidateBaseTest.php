@@ -8,6 +8,7 @@ use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Core\ProcessingContext;
 use Nandan108\DtoToolkit\Core\ProcessingFrame;
 use Nandan108\DtoToolkit\Core\ValidatorBase;
+use Nandan108\DtoToolkit\Exception\Process\GuardException;
 use PHPUnit\Framework\TestCase;
 
 final class ValidateBaseTest extends TestCase
@@ -18,7 +19,7 @@ final class ValidateBaseTest extends TestCase
             #[\Override]
             public function validate(mixed $value, array $args = []): void
             {
-                $this->fail('dummy_failure');
+                throw GuardException::failed('dummy_failure');
             }
         };
 
@@ -27,7 +28,7 @@ final class ValidateBaseTest extends TestCase
         $frame = new ProcessingFrame($dto, $dto->getErrorList(), $dto->getErrorMode());
         ProcessingContext::pushFrame($frame);
         try {
-            $this->expectException(\Nandan108\DtoToolkit\Exception\Process\GuardException::class);
+            $this->expectException(GuardException::class);
             $this->expectExceptionMessage('processing.guard.dummy_failure');
             $validator->validate('anything');
         } finally {

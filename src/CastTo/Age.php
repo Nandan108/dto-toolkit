@@ -15,6 +15,8 @@ use Nandan108\DtoToolkit\Exception\Process\TransformException;
  * Accepts values as either DateTimeInterface instances or ISO datetime strings,
  * and computes the difference from a reference datetime (defaulting to now in UTC).
  *
+ * @api
+ *
  * @template TUnit of 'seconds'|'hours'|'days'|'years'
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]

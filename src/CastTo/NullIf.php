@@ -6,10 +6,11 @@ namespace Nandan108\DtoToolkit\CastTo;
 
 use Nandan108\DtoToolkit\Contracts\CasterInterface;
 
-/** @psalm-api */
+/** @api */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 class NullIf extends ReplaceWhen implements CasterInterface
 {
+    /** @api */
     public function __construct(mixed $when, bool $strict = true)
     {
         parent::__construct($when, null, $strict);

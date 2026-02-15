@@ -21,7 +21,7 @@ use Nandan108\DtoToolkit\Internal\ProcessingChain;
  * Use when you need independent validations on the same input
  * without altering its value.
  *
- * @psalm-api
+ * @api
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 class Assert extends ChainModifierBase

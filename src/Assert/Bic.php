@@ -10,12 +10,13 @@ use Nandan108\DtoToolkit\Exception\Process\GuardException;
 /**
  * Validates a BIC (SWIFT) code.
  *
- * @psalm-api
+ * @api
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class Bic extends ValidatorBase
 {
     #[\Override]
+    /** @internal */
     public function validate(mixed $value, array $args = []): void
     {
         $value = strtoupper($this->ensureStringable($value, true));

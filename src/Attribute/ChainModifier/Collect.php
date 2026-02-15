@@ -15,7 +15,7 @@ use Nandan108\DtoToolkit\Internal\ProcessingChain;
  * The Collect attribute is used to run input through multiple parallel subchains and collects their outputs.
  * If keys are provided, returns an associative array.
  *
- * @psalm-api
+ * @api
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 class Collect extends ChainModifierBase

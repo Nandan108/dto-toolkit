@@ -15,6 +15,7 @@ final class ProcessingContext
     private static ?bool $devMode = null;
     private static ?bool $includeProcessingTraceInErrors = null;
 
+    /** @api */
     public static function setDevMode(bool $devMode): void
     {
         if (self::$devMode !== $devMode) {
@@ -24,6 +25,7 @@ final class ProcessingContext
         }
     }
 
+    /** @api */
     public static function isDevMode(): bool
     {
         if (null === self::$devMode) {
@@ -35,11 +37,13 @@ final class ProcessingContext
         return self::$devMode;
     }
 
+    /** @api */
     public static function includeProcessingTraceInErrors(): bool
     {
         return self::$includeProcessingTraceInErrors ?? self::isDevMode();
     }
 
+    /** @api */
     public static function setIncludeProcessingTraceInErrors(?bool $include): void
     {
         if (self::$includeProcessingTraceInErrors !== $include) {
@@ -54,6 +58,7 @@ final class ProcessingContext
     /**
      * Set a custom context storage implementation.
      */
+    /** @api */
     public static function setStorage(ContextStorageInterface $storage): void
     {
         self::$storage = $storage;
@@ -61,6 +66,8 @@ final class ProcessingContext
 
     /**
      * Push a processing frame onto the context stack.
+     *
+     * @internal
      */
     public static function pushFrame(ProcessingFrame $frame): void
     {
@@ -69,6 +76,8 @@ final class ProcessingContext
 
     /**
      * Pop the current processing frame from the context stack.
+     *
+     * @internal
      */
     public static function popFrame(): void
     {
@@ -77,12 +86,15 @@ final class ProcessingContext
 
     /**
      * Get the current processing frame.
+     *
+     * @internal
      */
     public static function current(): ProcessingFrame
     {
         return self::storage()->currentFrame();
     }
 
+    /** @internal */
     public static function tryCurrent(): ?ProcessingFrame
     {
         return self::storage()->hasFrames()
@@ -93,6 +105,7 @@ final class ProcessingContext
     /**
      * Get the current DTO from the top frame.
      */
+    /** @api */
     public static function dto(): BaseDto
     {
         return self::current()->dto;
@@ -101,6 +114,7 @@ final class ProcessingContext
     /**
      * Get the current error list from the active DTO.
      */
+    /** @api */
     public static function errorList(): ProcessingErrorList
     {
         return self::dto()->getErrorList();
@@ -109,6 +123,7 @@ final class ProcessingContext
     /**
      * Get the current error mode from the top frame.
      */
+    /** @api */
     public static function errorMode(): ErrorMode
     {
         return self::current()->errorMode;
@@ -118,6 +133,8 @@ final class ProcessingContext
      * Push a property name onto the current frame's property path stack.
      *
      * @param int|non-empty-string $segment
+     *
+     * @internal
      */
     public static function pushPropPath(int | string $segment): void
     {
@@ -134,23 +151,16 @@ final class ProcessingContext
      *
      * @param non-empty-string $name
      *
-     * @return false|int false if processing traces are disabled and the node was not added to the path
-     *                   or the original stack size before adding the node if processing traces are enabled (can be used to conditionally pop the node later)
+     * @internal
      */
-    public static function pushPropPathNode(string $name): bool | int
+    public static function pushPropPathNode(string $name): void
     {
-        $frame = self::current();
-        $originalStackSize = count($frame->propPathSegments);
-
         if (ProcessingContext::includeProcessingTraceInErrors()) {
-            $frame->propPathSegments[] = "#$name";
-
-            return $originalStackSize;
+            self::current()->propPathSegments[] = "#$name";
         }
-
-        return false;
     }
 
+    /** @internal */
     public static function popPropPathNode(): void
     {
         if (ProcessingContext::includeProcessingTraceInErrors()) {
@@ -169,18 +179,20 @@ final class ProcessingContext
      * Pop the last property path segment from the current frame.
      *
      * @psalm-suppress PossiblyUnusedReturnValue
+     *
+     * @internal
      */
-    public static function popPropPath(): int | string | null
+    public static function popPropPath(): void
     {
         do {
             $segment = array_pop(self::current()->propPathSegments);
         } while (\is_string($segment) && '#' === $segment[0]); // skip node names
-
-        return $segment;
     }
 
     /**
      * Build and return the current, full property path.
+     *
+     * @internal
      */
     public static function propPath(): ?string
     {
@@ -229,6 +241,10 @@ final class ProcessingContext
      * @param \Closure(ProcessingFrame): T $callback
      *
      * @return T
+     *
+     * @internal
+     *
+     * @psalm-internal Nandan108\DtoToolkit
      */
     public static function wrapProcessing(
         BaseDto $dto,

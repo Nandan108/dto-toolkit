@@ -1,0 +1,66 @@
+#!/bin/sh
+
+set -eu
+
+echo "Running API annotation audit..."
+composer api-audit-strict
+echo "✓ API annotation audit passed."
+
+PHP_BIN="${PHP_BIN:-php}"
+PHP_VERSION="$("$PHP_BIN" -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION.".".PHP_RELEASE_VERSION;')"
+
+echo "Running PHPUnit (PHP $PHP_VERSION)..."
+set +e
+PHPUNIT_OUTPUT="$("$PHP_BIN" ./vendor/bin/phpunit --colors=never 2>&1)"
+PHPUNIT_STATUS=$?
+set -e
+
+TESTS_TOTAL=""
+TESTS_PASSED=""
+
+if printf '%s\n' "$PHPUNIT_OUTPUT" | grep -Eq '^OK \([0-9]+ tests?,'; then
+    TESTS_TOTAL="$(printf '%s\n' "$PHPUNIT_OUTPUT" | sed -nE 's/^OK \(([0-9]+) tests?.*/\1/p' | head -n1)"
+    TESTS_PASSED="$TESTS_TOTAL"
+elif printf '%s\n' "$PHPUNIT_OUTPUT" | grep -Eq '^Tests: [0-9]+'; then
+    TESTS_TOTAL="$(printf '%s\n' "$PHPUNIT_OUTPUT" | sed -nE 's/^Tests: ([0-9]+).*/\1/p' | head -n1)"
+fi
+
+if [ "$PHPUNIT_STATUS" -eq 0 ]; then
+    if [ -n "$TESTS_PASSED" ] && [ -n "$TESTS_TOTAL" ]; then
+        echo "✓ PHPUnit (PHP $PHP_VERSION): PASS ($TESTS_PASSED/$TESTS_TOTAL)"
+    elif [ -n "$TESTS_TOTAL" ]; then
+        echo "✓ PHPUnit (PHP $PHP_VERSION): PASS ($TESTS_TOTAL tests)"
+    else
+        echo "✓ PHPUnit (PHP $PHP_VERSION): PASS"
+    fi
+else
+    if [ -n "$TESTS_TOTAL" ]; then
+        echo "✘ PHPUnit (PHP $PHP_VERSION): FAIL (completed $TESTS_TOTAL tests)"
+    else
+        echo "✘ PHPUnit (PHP $PHP_VERSION): FAIL"
+    fi
+    printf '%s\n' "$PHPUNIT_OUTPUT"
+    exit "$PHPUNIT_STATUS"
+fi
+
+echo "Running Psalm..."
+set +e
+PSALM_OUTPUT="$("$PHP_BIN" ./vendor/bin/psalm --no-progress 2>&1)"
+PSALM_STATUS=$?
+set -e
+
+if [ "$PSALM_STATUS" -eq 0 ]; then
+    echo "✓ Psalm: PASS"
+else
+    echo "✘ Psalm: FAIL"
+    printf '%s\n' "$PSALM_OUTPUT"
+    exit "$PSALM_STATUS"
+fi
+
+# Optional local extension hook (not stored in repo)
+if [ -x .git/hooks/pre-push.local ]; then
+    echo "Running local pre-push extension..."
+    .git/hooks/pre-push.local
+fi
+
+echo "✓ Pre-push checks passed."

@@ -12,7 +12,7 @@ use Nandan108\DtoToolkit\Internal\ProcessingNodeBase;
 /**
  * Base class for all caster attributes.
  *
- * @psalm-api
+ * @api
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 class CastTo extends ProcessingNodeBase

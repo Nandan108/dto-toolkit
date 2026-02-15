@@ -13,7 +13,7 @@ use Nandan108\DtoToolkit\Exception\Process\GuardException;
  *
  * @psalm-type JsonType = 'object'|'array'|'number'|'string'|'bool'|'null'
  *
- * @psalm-api
+ * @api
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class Json extends ValidatorBase
@@ -38,6 +38,7 @@ final class Json extends ValidatorBase
     }
 
     #[\Override]
+    /** @internal */
     public function validate(mixed $value, array $args = []): void
     {
         $value = $this->ensureStringable($value);
@@ -77,6 +78,7 @@ final class Json extends ValidatorBase
         }
     }
 
+    /** @psalm-suppress UnusedReturnValue */
     private static function polyfillJsonValidate(string $value): bool
     {
         /** @psalm-suppress UnusedFunctionCall */

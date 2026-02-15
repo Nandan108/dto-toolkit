@@ -11,7 +11,7 @@ use Nandan108\DtoToolkit\Exception\Process\GuardException;
 /**
  * Validates an ISBN (10 or 13).
  *
- * @psalm-api
+ * @api
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class Isbn extends ValidatorBase
@@ -19,6 +19,7 @@ final class Isbn extends ValidatorBase
     public const ISBN_10 = 'isbn10';
     public const ISBN_13 = 'isbn13';
 
+    /** @api */
     public function __construct(?string $type = null)
     {
         if (null !== $type && !\in_array($type, [self::ISBN_10, self::ISBN_13], true)) {
@@ -29,6 +30,7 @@ final class Isbn extends ValidatorBase
     }
 
     #[\Override]
+    /** @internal */
     public function validate(mixed $value, array $args = []): void
     {
         $value = $this->ensureStringable($value, true);

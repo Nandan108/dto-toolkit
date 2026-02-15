@@ -23,7 +23,9 @@ use Nandan108\PropAccess\PropAccess;
  *
  * These methods are dynamically routed via __callStatic() to their corresponding instance methods.
  * Static analyzers require the above annotations to avoid false positives.
- **/
+ *
+ * @api
+ */
 trait CreatesFromArrayOrEntity
 {
     /**

@@ -173,7 +173,7 @@ final class CreatesFromArrayTest extends TestCase
         };
 
         $this->expectException(AccessorException::class);
-        $this->expectExceptionMessage('No public getter or property found for: itemId, name in '.get_class($entity));
+        $this->expectExceptionMessage('prop_access.getter_access_not_found');
 
         // attempts to create a new FromArrayTestDto from data (itemId, name, email) taken from the entity
         // but itemId and name do not exist on the entity, so it should throw an exception

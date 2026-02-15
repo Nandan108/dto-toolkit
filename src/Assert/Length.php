@@ -15,6 +15,7 @@ use Nandan108\DtoToolkit\Exception\Process\GuardException;
 final class Length extends ValidatorBase
 {
     /** @psalm-suppress PossiblyUnusedMethod */
+    /** @api */
     public function __construct(?int $min = null, ?int $max = null)
     {
         if (null === $min && null === $max) {
@@ -27,6 +28,7 @@ final class Length extends ValidatorBase
     }
 
     #[\Override]
+    /** @internal */
     public function validate(mixed $value, array $args = []): void
     {
         /** @var ?int $min */

@@ -11,12 +11,13 @@ use Nandan108\DtoToolkit\Support\Luhn as LuhnSupport;
 /**
  * Validates a value using the Luhn checksum algorithm.
  *
- * @psalm-api
+ * @api
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class Luhn extends ValidatorBase
 {
     #[\Override]
+    /** @internal */
     public function validate(mixed $value, array $args = []): void
     {
         $value = $this->ensureStringable($value, true);

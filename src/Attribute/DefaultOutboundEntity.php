@@ -19,7 +19,7 @@ use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
  * @psalm-type OutboundEntityData = array{class: class-string, construct: ConstructMode}
  * @psalm-type OutboundEntityClassMap = array<class-string, array{groups: list<string>, construct: ConstructMode}>
  *
- * @psalm-api
+ * @api
  */
 #[\Attribute(\Attribute::TARGET_CLASS | \Attribute::IS_REPEATABLE)]
 class DefaultOutboundEntity

@@ -15,7 +15,7 @@ use Nandan108\DtoToolkit\Internal\ProcessingChain;
  * By default ($count = -1), all remaining nodes in the processing chain
  * are skipped and the input value is returned unchanged.
  *
- * @psalm-api
+ * @api
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class SkipIfMatch extends ChainModifierBase

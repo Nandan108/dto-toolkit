@@ -20,6 +20,7 @@ final class IsInstanceOf extends ValidatorBase
      *
      * @param class-string $className
      **/
+    /** @api */
     public function __construct(string $className)
     {
         /** @psalm-suppress DocblockTypeContradiction */
@@ -40,6 +41,7 @@ final class IsInstanceOf extends ValidatorBase
     }
 
     #[\Override]
+    /** @internal */
     public function validate(mixed $value, array $args = []): void
     {
         [$className, $shortClassName] = $args;

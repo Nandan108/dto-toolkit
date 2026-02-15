@@ -19,6 +19,8 @@ final class Regex extends ValidatorBase
     /** @psalm-suppress PossiblyUnusedMethod
      *
      * @param non-empty-string $pattern
+     *
+     * @api
      */
     public function __construct(string $pattern, bool $negate = false)
     {
@@ -39,6 +41,7 @@ final class Regex extends ValidatorBase
     }
 
     #[\Override]
+    /** @internal */
     public function validate(mixed $value, array $args = []): void
     {
         $value = $this->ensureStringable($value, false);

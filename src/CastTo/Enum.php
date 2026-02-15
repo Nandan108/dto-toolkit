@@ -9,6 +9,7 @@ use Nandan108\DtoToolkit\Core\ProcessingContext;
 use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
 use Nandan108\DtoToolkit\Exception\Process\TransformException;
 
+/** @api */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class Enum extends CastBase
 {
@@ -33,6 +34,7 @@ final class Enum extends CastBase
     }
 
     #[\Override]
+    /** @internal */
     public function cast(mixed $value, array $args): \BackedEnum
     {
         [$enumClass, $shortClassName] = $args;

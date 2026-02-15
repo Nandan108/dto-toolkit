@@ -11,7 +11,7 @@ use Nandan108\DtoToolkit\Internal\ProcessingChain;
  * The Wrap attribute is used only to wrap zero or more nodes in the chain.
  * It applies no chain transformation beyond simple composition of the subchain.
  *
- * @psalm-api
+ * @api
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 class Wrap extends ChainModifierBase

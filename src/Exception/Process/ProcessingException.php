@@ -14,6 +14,8 @@ use Nandan108\DtoToolkit\Support\DefaultErrorMessageRenderer;
 
 /**
  * Base exception for processing nodes (casting + validation).
+ *
+ * @api
  */
 class ProcessingException extends \RuntimeException implements DtoToolkitException, ProcessingExceptionInterface
 {
@@ -194,6 +196,11 @@ class ProcessingException extends \RuntimeException implements DtoToolkitExcepti
         return static::$messageRenderer = new DefaultErrorMessageRenderer();
     }
 
+    /**
+     * Set the name of the processing node that threw this exception, if not already set.
+     *
+     * @internal
+     */
     public function setThrowerNodeNameIfMissing(string $throwerNodeName): void
     {
         if (null === $this->throwerNodeName) {
@@ -216,7 +223,7 @@ class ProcessingException extends \RuntimeException implements DtoToolkitExcepti
         return $this->debug[$key] ?? [];
     }
 
-    public static function normalizeTypeForParams(mixed $operand): string
+    protected static function normalizeTypeForParams(mixed $operand): string
     {
         if (is_object($operand)) {
             if ($operand instanceof \Stringable) {

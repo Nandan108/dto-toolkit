@@ -6,6 +6,7 @@ namespace Nandan108\DtoToolkit\Core;
 
 use Nandan108\DtoToolkit\Enum\ErrorMode;
 
+/** @internal */
 final class ProcessingFrame
 {
     public BaseDto $dto;

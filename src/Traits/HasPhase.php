@@ -8,6 +8,8 @@ use Nandan108\DtoToolkit\Enum\Phase;
 
 /**
  * This trait implements PhaseAwareInterface.
+ *
+ * @api
  */
 trait HasPhase
 {

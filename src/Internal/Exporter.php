@@ -10,12 +10,14 @@ use Nandan108\DtoToolkit\Contracts\PreparesEntityInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Core\ProcessingContext;
 use Nandan108\DtoToolkit\Core\ProcessingErrorList;
+use Nandan108\DtoToolkit\Core\ProcessingFrame;
 use Nandan108\DtoToolkit\Enum\ConstructMode;
 use Nandan108\DtoToolkit\Enum\ErrorMode;
 use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
 use Nandan108\DtoToolkit\Support\ContainerBridge;
 use Nandan108\PropAccess\PropAccess;
 
+/** @internal */
 final class Exporter
 {
     /**
@@ -115,7 +117,7 @@ final class Exporter
             $normalizedProps = ProcessingContext::wrapProcessing(
                 dto: $source,
                 errorMode: $errorMode,
-                callback: function ($frame) use ($source, $recursive, $exportsAsArray): array {
+                callback: function (ProcessingFrame $frame) use ($source, $recursive, $exportsAsArray): array {
                     // Get properties already cast, ready to be set on entity
                     /** @psalm-suppress UndefinedMethod */
                     $normalizedProps = $source->toOutboundArray(
@@ -165,11 +167,11 @@ final class Exporter
             }
 
             return new OutboundProps($normalizedProps, $supplementalProps, false);
-        } else {
-            $normalizedProps = PropAccess::getValueMap($source) ?? [];
-
-            return new OutboundProps($normalizedProps, $supplementalProps, false);
         }
+        $normalizedProps = PropAccess::getValueMap($source) ?? [];
+
+        return new OutboundProps($normalizedProps, $supplementalProps, false);
+
     }
 
     /**
@@ -301,6 +303,7 @@ final class Exporter
     }
 }
 
+/** @internal */
 final class OutboundProps
 {
     /**

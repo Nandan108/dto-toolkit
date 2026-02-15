@@ -15,6 +15,8 @@ use Nandan108\DtoToolkit\Traits\IsInjectable;
 
 /**
  * Base class for validator attributes.
+ *
+ * @api
  */
 abstract class ValidatorBase extends Assert implements ValidatorInterface, Injectable, ProvidesProcessingNodeNameInterface
 {
@@ -40,19 +42,17 @@ abstract class ValidatorBase extends Assert implements ValidatorInterface, Injec
     }
 
     #[\Override]
+    protected function ensureStringable(
+        mixed $value,
+        bool $expectNonEmpty = false,
+    ): string {
+        return parent::ensureStringable($value, $expectNonEmpty);
+    }
+
+    #[\Override]
     public function getProcessingNodeName(): string
     {
         return static::$nodeName ?: ProcessingNodeBase::getNodeNameFromClass(static::class);
-    }
-
-    /**
-     * Convenience helper to throw a validation exception.
-     *
-     * @param non-empty-string $reason
-     */
-    protected function fail(string $reason): never
-    {
-        throw GuardException::failed($reason);
     }
 
     #[\Override]

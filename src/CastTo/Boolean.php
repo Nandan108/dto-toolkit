@@ -7,10 +7,12 @@ namespace Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Core\CastBaseNoArgs;
 use Nandan108\DtoToolkit\Exception\Process\TransformException;
 
+/** @api */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class Boolean extends CastBaseNoArgs
 {
     #[\Override]
+    /** @internal */
     public function cast(mixed $value, array $args): ?bool
     {
         // bool is returned as-is

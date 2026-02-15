@@ -15,11 +15,13 @@ use Nandan108\DtoToolkit\Exception\Process\TransformException;
  *
  * @psalm-suppress UnusedClass
  */
+/** @api */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class DateTimeString extends DateTime
 {
     /** @psalm-suppress PossiblyUnusedReturnValue */
     #[\Override]
+    /** @internal */
     public function cast(mixed $value, array $args): string
     {
         if (!$value instanceof \DateTimeInterface

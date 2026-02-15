@@ -7,6 +7,7 @@ namespace Nandan108\DtoToolkit\Core;
 use Nandan108\DtoToolkit\Contracts\ContextStorageInterface;
 use Nandan108\DtoToolkit\Exception\Context\ContextException;
 
+/** @api */
 class DefaultContextStorage implements ContextStorageInterface
 {
     /** @var list<ProcessingFrame> */

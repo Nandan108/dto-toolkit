@@ -20,6 +20,7 @@ final class Url extends ValidatorBase
      * @param list<"scheme"|"host"|"path"|"query">    $require An array indicating which URL parts are required ("scheme" | "host" | "path" | "query")
      *
      **/
+    /** @api */
     public function __construct(
         string | array $scheme = ['http', 'https'],
         array $require = ['scheme', 'host'],
@@ -35,6 +36,7 @@ final class Url extends ValidatorBase
     }
 
     #[\Override]
+    /** @internal */
     public function validate(mixed $value, array $args = []): void
     {
         /** @var string[] $allowedSchemes */

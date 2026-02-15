@@ -6,6 +6,8 @@ namespace Nandan108\DtoToolkit\Contracts;
 
 /**
  * This interface is used to check if a DTO is valid.
+ *
+ * @api
  */
 interface BootsOnDtoInterface
 {

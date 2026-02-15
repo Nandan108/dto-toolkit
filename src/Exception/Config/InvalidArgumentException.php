@@ -6,6 +6,8 @@ namespace Nandan108\DtoToolkit\Exception\Config;
 
 /**
  * Exception thrown when there is a syntax error in the extraction path.
+ *
+ * @api
  */
 final class InvalidArgumentException extends ConfigException
 {

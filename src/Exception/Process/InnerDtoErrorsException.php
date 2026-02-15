@@ -6,7 +6,14 @@ namespace Nandan108\DtoToolkit\Exception\Process;
 
 use Nandan108\DtoToolkit\Core\ProcessingErrorList;
 
-/** @psalm-suppress PossiblyUnusedProperty */
+/**
+ * Exception thrown when a nested DTO has validation errors during processing.
+ * The exception contains a list of the validation errors that occurred in the inner DTO.
+ *
+ * @psalm-suppress PossiblyUnusedProperty
+ *
+ * @api
+ */
 final class InnerDtoErrorsException extends GuardException
 {
     /** @psalm-suppress PossiblyUnusedProperty */

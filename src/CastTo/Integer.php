@@ -8,15 +8,18 @@ use Nandan108\DtoToolkit\Core\CastBase;
 use Nandan108\DtoToolkit\Enum\IntCastMode;
 use Nandan108\DtoToolkit\Exception\Process\TransformException;
 
+/** @api */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class Integer extends CastBase
 {
+    /** @api */
     public function __construct(IntCastMode $mode = IntCastMode::Trunc)
     {
         parent::__construct(args: [$mode]);
     }
 
     #[\Override]
+    /** @internal */
     public function cast(mixed $value, array $args): int
     {
         /** @var IntCastMode $mode */

@@ -6,6 +6,8 @@ namespace Nandan108\DtoToolkit\Core;
 
 /**
  * @deprecated 1.3.0 Use DefaultContextStorage instead.
+ *
+ * @psalm-suppress UnusedClass
  */
 final class GlobalContextStorage extends DefaultContextStorage
 {

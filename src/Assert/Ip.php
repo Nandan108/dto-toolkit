@@ -11,7 +11,7 @@ use Nandan108\DtoToolkit\Exception\Process\GuardException;
 /**
  * Validates an IP address.
  *
- * @psalm-api
+ * @api
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class Ip extends ValidatorBase
@@ -58,6 +58,7 @@ final class Ip extends ValidatorBase
     }
 
     #[\Override]
+    /** @internal */
     public function validate(mixed $value, array $args = []): void
     {
         /** @var list<string> $versions */

@@ -26,6 +26,8 @@ final class Contains extends ValidatorBase
      * @param 'start'|'end'|int|null $at
      *
      * @psalm-suppress PossiblyUnusedMethod
+     *
+     * @api
      */
     public function __construct(string | iterable $needle, string | int | null $at = null, bool $caseSensitive = true)
     {
@@ -39,6 +41,7 @@ final class Contains extends ValidatorBase
     }
 
     #[\Override]
+    /** @internal */
     public function validate(mixed $value, array $args = []): void
     {
         [$needle, $at, $caseSensitive] = $args;

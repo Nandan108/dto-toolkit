@@ -26,7 +26,7 @@ use Nandan108\DtoToolkit\Internal\ProcessingChain;
  * fail, the modifier throws a single ProcessingException describing the
  * aggregated failure.
  *
- * @psalm-api
+ * @api
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 class Any extends ChainModifierBase

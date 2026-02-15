@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nandan108\DtoToolkit\Enum;
 
+/** @api */
 enum ErrorMode: string
 {
     /** Default. Exceptions are thrown immediately and processing stops. */

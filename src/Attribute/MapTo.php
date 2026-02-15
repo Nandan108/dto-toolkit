@@ -14,7 +14,7 @@ use Nandan108\PropAccess\PropAccess;
  * Use `MapTo` to rename or discard properties during outbound transformation (DTO → array or entity),
  * or to specify a custom setter method to use when hydrating an entity.
  *
- * @psalm-api
+ * @api
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY)]
 class MapTo implements PhaseAwareInterface

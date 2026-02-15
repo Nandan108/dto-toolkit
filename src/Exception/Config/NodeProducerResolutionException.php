@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace Nandan108\DtoToolkit\Exception\Config;
 
+/**
+ * Exception thrown when a processing node producer cannot be resolved from the configuration.
+ *
+ * @api
+ */
 final class NodeProducerResolutionException extends ConfigException
 {
     public function __construct(string $reference, ?string $reason = null)

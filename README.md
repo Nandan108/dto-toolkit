@@ -133,8 +133,35 @@ Adapters will provide support for:
 - Code style enforced with [PHP-CS-Fixer](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer):
   - Based on the `@Symfony` rule set
   - Aligned `=>` for better readability
-  - Disallows implicit loose comparisons (`==`, `!=`)
+  - Disallows implicit loose comparisons (`==`, `!=`) except in explicit operator-semantics helpers
 - Commit message style: conventional, with details if any
+
+### CI Checks
+
+GitHub Actions (`.github/workflows/ci.yml`) runs:
+
+- `phpunit` on PHP `8.1` to `8.5`
+- `php-cs-fixer --dry-run` (on one matrix leg)
+- `psalm` (on one matrix leg)
+- `composer api-audit-strict` (on one matrix leg)
+
+### Run Locally Before Push
+
+```bash
+composer test
+composer psalm
+composer cs-fix
+composer api-audit-strict
+```
+
+Optional: install repository Git hooks (pre-commit + pre-push):
+
+```bash
+./scripts/setup-hooks.sh
+```
+
+Installed `pre-commit` runs staged-file PHP-CS-Fixer checks and then optional local extension hook `.git/hooks/pre-commit.local` if present.
+Installed `pre-push` runs `composer api-audit-strict`, PHPUnit, Psalm, and then optional local extension hook `.git/hooks/pre-push.local` if present.
 
 ---
 

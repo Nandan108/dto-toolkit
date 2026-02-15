@@ -12,7 +12,7 @@ use Nandan108\DtoToolkit\Support\CardSchemeDetector;
 /**
  * Validates that a card number matches a given scheme.
  *
- * @psalm-api
+ * @api
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class CardScheme extends ValidatorBase
@@ -50,6 +50,7 @@ final class CardScheme extends ValidatorBase
     }
 
     #[\Override]
+    /** @internal */
     public function validate(mixed $value, array $args = []): void
     {
         /** @var non-empty-list<truthy-string> $schemes */

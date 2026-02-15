@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace Nandan108\DtoToolkit\Exception\Config;
 
+/**
+ * Exception thrown when there is an invalid configuration detected.
+ *
+ * @api
+ */
 final class InvalidConfigException extends ConfigException
 {
     public function __construct(

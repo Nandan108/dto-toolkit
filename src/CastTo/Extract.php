@@ -11,24 +11,26 @@ use Nandan108\DtoToolkit\Exception\Config\ExtractionSyntaxError;
 use Nandan108\DtoToolkit\Exception\Process\ExtractionException;
 use Nandan108\PropPath\Exception\SyntaxError;
 use Nandan108\PropPath\PropPath;
-use Nandan108\PropPath\Support\ExtractContext;
+use Nandan108\PropPath\Support\EvaluationFailureDetails;
 
 /**
  * Extracts a nested value from an array/object structure using a dot-delimited path.
  */
+/** @api */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class Extract extends CastBase
 {
     /**
      * The extractor closure that will be used to extract the value from the data structure.
      *
-     * @var \Closure(array, ?\Closure(string, ExtractContext): never): mixed
+     * @var \Closure(array, ?\Closure(string, EvaluationFailureDetails): never): mixed
      */
     private \Closure $extractor;
 
-    /** @var \Closure(string, ExtractContext):never */
+    /** @var \Closure(string, EvaluationFailureDetails):never */
     private \Closure $evalErrorHandler;
 
+    /** @api */
     public function __construct(string | array $paths)
     {
         parent::__construct(constructorArgs: [$paths]);
@@ -41,16 +43,17 @@ final class Extract extends CastBase
             throw new ExtractionSyntaxError("Invalid path provided: $jsonPath.", previous: $e);
         }
 
-        $this->evalErrorHandler = function (string $message, ExtractContext $context): never {
+        $this->evalErrorHandler = function (string $message, EvaluationFailureDetails $failure): never {
             throw ExtractionException::extractFailed(
                 message: $message,
-                context: $context,
+                failure: $failure,
                 errorCode: 'transform.extract_failure',
             );
         };
     }
 
     #[\Override]
+    /** @internal */
     public function cast(mixed $value, array $args): mixed
     {
         $dto = ProcessingContext::dto();

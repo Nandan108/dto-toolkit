@@ -14,6 +14,7 @@ use Nandan108\DtoToolkit\Exception\Process\TransformException;
 /**
  * Casts nested DTO values from array/object input.
  */
+/** @api */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class Dto extends CastBase
 {
@@ -36,6 +37,7 @@ final class Dto extends CastBase
     }
 
     #[\Override]
+    /** @internal */
     public function cast(mixed $value, array $args): mixed
     {
         if (!\is_array($value) && !\is_object($value)) {

@@ -53,8 +53,7 @@ final class AssertModifierTest extends TestCase
 
             #[Mod\Assert(2),
                 CastTo('first'),
-                CastTo\Boolean
-            ]
+                CastTo\Boolean]
             public mixed $value = null;
 
             /** @psalm-suppress PossiblyUnusedMethod */

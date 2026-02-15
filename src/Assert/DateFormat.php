@@ -15,6 +15,7 @@ use Nandan108\DtoToolkit\Exception\Process\GuardException;
 final class DateFormat extends ValidatorBase
 {
     /** @psalm-suppress PossiblyUnusedMethod */
+    /** @api */
     public function __construct(string $format)
     {
         if ('' === $format) {
@@ -24,6 +25,7 @@ final class DateFormat extends ValidatorBase
     }
 
     #[\Override]
+    /** @internal */
     public function validate(mixed $value, array $args = []): void
     {
         $format = $args[0];

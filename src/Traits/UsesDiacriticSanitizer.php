@@ -9,6 +9,8 @@ use Nandan108\DtoToolkit\Exception\Process\TransformException;
 
 /**
  * To be used by casters that need to remove diacritics (i.e. accents and other marks) from a string's characters.
+ *
+ * @api
  */
 trait UsesDiacriticSanitizer
 {

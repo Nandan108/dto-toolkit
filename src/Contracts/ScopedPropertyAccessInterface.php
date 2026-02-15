@@ -6,6 +6,7 @@ namespace Nandan108\DtoToolkit\Contracts;
 
 use Nandan108\DtoToolkit\Enum\Phase;
 
+/** @api */
 interface ScopedPropertyAccessInterface
 {
     /**

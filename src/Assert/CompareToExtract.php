@@ -10,9 +10,10 @@ use Nandan108\DtoToolkit\Core\ValidatorBase;
 use Nandan108\DtoToolkit\Exception\Config\ExtractionSyntaxError;
 use Nandan108\DtoToolkit\Exception\Process\ExtractionException;
 use Nandan108\DtoToolkit\Exception\Process\GuardException;
+use Nandan108\DtoToolkit\Internal\ValueComparator;
 use Nandan108\PropPath\Exception\SyntaxError;
 use Nandan108\PropPath\PropPath;
-use Nandan108\PropPath\Support\ExtractContext;
+use Nandan108\PropPath\Support\EvaluationFailureDetails;
 
 /**
  * Validates that a value compares to data extracted via prop-paths using the given operator.
@@ -34,24 +35,24 @@ use Nandan108\PropPath\Support\ExtractContext;
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class CompareToExtract extends ValidatorBase
 {
-    /** @var \Closure(array, ?\Closure(string, ExtractContext): never): mixed */
+    /** @var \Closure(array, ?\Closure(string, EvaluationFailureDetails): never): mixed */
     private \Closure $rightExtractor;
 
-    /** @var \Closure(array, ?\Closure(string, ExtractContext): never)|null */
+    /** @var \Closure(array, ?\Closure(string, EvaluationFailureDetails): never)|null */
     private ?\Closure $leftExtractor;
 
-    /** @var \Closure(string, ExtractContext):never */
+    /** @var \Closure(string, EvaluationFailureDetails):never */
     private \Closure $evalErrorHandler;
 
     /**
      * @param '=='|'==='|'!='|'!=='|'<'|'<='|'>'|'>=' $op
      *
      * @psalm-suppress PossiblyUnusedMethod
+     *
+     * @api
      */
     public function __construct(string $op, string $rightPath, ?string $leftPath = null)
     {
-        parent::__construct(constructorArgs: [$op, $rightPath, $leftPath]);
-
         try {
             $this->rightExtractor = PropPath::compile($rightPath);
             $this->leftExtractor = null !== $leftPath ? PropPath::compile($leftPath) : null;
@@ -67,40 +68,47 @@ final class CompareToExtract extends ValidatorBase
             throw new ExtractionSyntaxError("CompareToExtract: Invalid path provided: {$jsonPath}.", previous: $e);
         }
 
-        $this->evalErrorHandler = function (string $message, ExtractContext $context): never {
+        $this->evalErrorHandler = function (string $message, EvaluationFailureDetails $failure): never {
             throw ExtractionException::extractFailed(
                 message: $message,
-                context: $context,
+                failure: $failure,
                 errorCode: 'guard.compare_to.extract_failure',
             );
         };
+
+        parent::__construct(constructorArgs: [$op, $rightPath, $leftPath]);
     }
 
-    #[\Override]
-    public function validate(mixed $value, array $args = []): void
+    /**
+     * Helper method to perform extraction using the given extractor closure and roots.
+     * The roots array is prepared with the necessary data before calling the extractor.
+     *
+     * @param array<string, mixed> $roots
+     */
+    private function extract(\Closure $extractor, array $roots = []): mixed
     {
-        [$op, $rightPath, $leftPath] = $this->constructorArgs ?? [];
-
+        // prepare roots for extraction closure
         $dto = ProcessingContext::dto();
-        $roots = ['dto' => $dto];
+        $roots['dto'] = $dto;
         if ($dto instanceof HasContextInterface) {
             $roots['context'] = $dto->getContext();
         }
 
-        $rightValue = ($this->rightExtractor)($roots, $this->evalErrorHandler);
+        return $extractor($roots, $this->evalErrorHandler);
+    }
 
-        if (null === $this->leftExtractor) {
-            $leftValue = $value;
-        } else {
-            $leftRoots = ['value' => $value, 'dto' => $dto];
-            if ($dto instanceof HasContextInterface) {
-                $leftRoots['context'] = $dto->getContext();
-            }
+    #[\Override]
+    /** @internal */
+    public function validate(mixed $value, array $args = []): void
+    {
+        [$op, $rightPath, $leftPath] = $this->constructorArgs ?? [];
 
-            $leftValue = ($this->leftExtractor)($leftRoots, $this->evalErrorHandler);
-        }
+        $rightValue = $this->extract($this->rightExtractor);
+        $leftValue = (null === $this->leftExtractor)
+            ? $value
+            : $this->extract($this->leftExtractor, ['value' => $value]);
 
-        $matches = CompareTo::compareValues(
+        $matches = ValueComparator::compare(
             left: $leftValue,
             right: $rightValue,
             op: $op,

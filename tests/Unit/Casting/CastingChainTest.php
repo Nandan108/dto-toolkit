@@ -50,8 +50,7 @@ final class CastingChainTest extends TestCase
                 CastTo\Trimmed('X '),
                 CastTo\Rounded(2),
                 Assert\Range(2, 7),
-                RegexReplace('/^/', '$'),
-            ]
+                RegexReplace('/^/', '$'),]
             #[CastTo\Join(', ')] // (default separator is ',')
             public string | array | null $prices = null; // default value provided for the example
         };

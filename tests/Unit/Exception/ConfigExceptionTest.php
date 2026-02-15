@@ -38,7 +38,7 @@ final class ConfigExceptionTest extends TestCase
         $exception = new MissingDependencyException('intl', \stdClass::class);
 
         $this->assertSame(
-            "The PHP extension 'intl' is required to use the caster class 'stdClass'.",
+            "The PHP extension 'intl' is required to use the caster or validator class 'stdClass'.",
             $exception->getMessage(),
         );
     }

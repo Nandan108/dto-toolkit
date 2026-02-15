@@ -6,6 +6,8 @@ namespace Nandan108\DtoToolkit\Contracts;
 
 /**
  * Optional contract for node producers that want a custom display/origin name.
+ *
+ * @api
  */
 interface ProvidesProcessingNodeNameInterface
 {

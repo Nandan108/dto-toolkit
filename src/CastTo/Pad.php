@@ -15,11 +15,12 @@ use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
  * @param string       $char    The character to use for padding. Default is a space.
  * @param int          $padType The type of padding. Can be STR_PAD_LEFT, STR_PAD_RIGHT, or STR_PAD_BOTH. Default is STR_PAD_RIGHT.
  *
- * @psalm-api
+ * @api
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class Pad extends CastBase
 {
+    /** @api */
     public function __construct(
         int $length,
         string $char = ' ',
@@ -36,6 +37,7 @@ final class Pad extends CastBase
     }
 
     #[\Override]
+    /** @internal */
     public function cast(mixed $value, array $args): string
     {
         /** @var int $length */

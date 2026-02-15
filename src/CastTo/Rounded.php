@@ -10,15 +10,18 @@ use Nandan108\DtoToolkit\Exception\Process\TransformException;
 /**
  * Converts a numeric value to a rounded float.
  */
+/** @api */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class Rounded extends CastBase
 {
+    /** @api */
     public function __construct(int $precision = 0)
     {
         parent::__construct([$precision]);
     }
 
     #[\Override]
+    /** @internal */
     public function cast(mixed $value, array $args): mixed
     {
         [$precision] = $args;

@@ -19,6 +19,7 @@ final class EnumCase extends ValidatorBase
      *
      * @param class-string<\BackedEnum> $class
      **/
+    /** @api */
     public function __construct(string $class)
     {
         if (!enum_exists($class)) {
@@ -28,6 +29,7 @@ final class EnumCase extends ValidatorBase
     }
 
     #[\Override]
+    /** @internal */
     public function validate(mixed $value, array $args = []): void
     {
         $enumClass = $args[0];

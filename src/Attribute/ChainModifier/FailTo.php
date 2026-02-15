@@ -15,7 +15,7 @@ use Nandan108\DtoToolkit\Internal\ProcessingChain;
  * The FailTo attribute is used to catch and handle exceptions
  * thrown by any caster declared earlier in the chain.
  *
- * @psalm-api
+ * @api
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 class FailTo extends ChainModifierBase

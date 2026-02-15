@@ -8,6 +8,8 @@ use Nandan108\DtoToolkit\Exception\Process\ProcessingException;
 
 /**
  * @implements \IteratorAggregate<int, ProcessingException>
+ *
+ * @api
  */
 final class ProcessingErrorList implements \Countable, \IteratorAggregate
 {

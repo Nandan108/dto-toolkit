@@ -18,6 +18,8 @@ final class In extends ValidatorBase
      * @param array<int|string, mixed> $choices
      *
      * @psalm-suppress PossiblyUnusedMethod
+     *
+     * @api
      */
     public function __construct(array $choices, bool $strict = true)
     {
@@ -28,6 +30,7 @@ final class In extends ValidatorBase
     }
 
     #[\Override]
+    /** @internal */
     public function validate(mixed $value, array $args = []): void
     {
         [$choices, $strict] = $args;

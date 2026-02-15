@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nandan108\DtoToolkit\Enum;
 
+/** @api */
 enum Phase: string
 {
     case InboundLoad = 'inbound.io';      // loading raw data

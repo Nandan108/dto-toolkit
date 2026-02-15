@@ -7,16 +7,18 @@ namespace Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Core\CastBase;
 use Nandan108\DtoToolkit\Exception\Process\TransformException;
 
-/** @psalm-api */
+/** @api */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class Json extends CastBase
 {
+    /** @api */
     public function __construct(int $flags = 0, int $depth = 512)
     {
         parent::__construct([$flags, $depth]);
     }
 
     #[\Override]
+    /** @internal */
     public function cast(mixed $value, array $args): string
     {
         /** @psalm-suppress UnnecessaryVarAnnotation */

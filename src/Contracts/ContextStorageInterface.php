@@ -7,6 +7,7 @@ namespace Nandan108\DtoToolkit\Contracts;
 use Nandan108\DtoToolkit\Core\ProcessingFrame;
 use Nandan108\DtoToolkit\Exception\Context\ContextException;
 
+/** @api */
 interface ContextStorageInterface
 {
     public function pushFrame(ProcessingFrame $frame): void;

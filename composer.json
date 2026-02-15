@@ -4,8 +4,8 @@
     "type": "library",
     "require": {
         "php": ">=8.1 <8.6",
-        "nandan108/prop-path": "^0.3.0",
-        "nandan108/prop-access": "^0.5.0"
+        "nandan108/prop-path": "^0.4.0",
+        "nandan108/prop-access": "^0.6.0"
     },
     "require-dev": {
         "php": ">=8.1 <8.6",
@@ -48,7 +48,9 @@
         "cs-fix": "./vendor/bin/php-cs-fixer fix --allow-risky=yes --diff",
         "psalm": "./vendor/bin/psalm",
         "test": "./vendor/bin/phpunit",
-        "testAndCover": "./vendor/bin/phpunit --coverage-text --coverage-html coverage"
+        "testAndCover": "./vendor/bin/phpunit --coverage-text --coverage-html coverage",
+        "api-audit": "php ./scripts/phpdoc-api-surface-audit",
+        "api-audit-strict": "php ./scripts/phpdoc-api-surface-audit --strict"
     },
     "minimum-stability": "stable",
     "merge-plugin": {

@@ -13,7 +13,7 @@ use Nandan108\DtoToolkit\Internal\ProcessingChain;
  * The PerItem attribute is used to apply the next $count CastTo attributes
  * on each element of the passed array value instead of the whole value.
  *
- * @psalm-api
+ * @api
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 class PerItem extends ChainModifierBase

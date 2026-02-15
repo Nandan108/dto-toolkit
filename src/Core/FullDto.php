@@ -8,7 +8,7 @@ use Nandan108\DtoToolkit\Contracts;
 use Nandan108\DtoToolkit\Traits;
 
 /**
- * @psalm-api
+ * @api
  */
 class FullDto extends BaseDto implements // -- --- IGNORE ---
     Contracts\ProcessesInterface, // enables normalization/casting

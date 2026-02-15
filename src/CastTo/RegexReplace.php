@@ -8,9 +8,10 @@ use Nandan108\DtoToolkit\Core\CastBase;
 use Nandan108\DtoToolkit\Exception\Process\TransformException;
 
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
-/** @psalm-api */
+/** @api */
 final class RegexReplace extends CastBase
 {
+    /** @api */
     public function __construct(public readonly string $pattern, public readonly string $replacement = '', public readonly int $limit = -1)
     {
         parent::__construct([$pattern, $replacement, $limit]);
@@ -23,6 +24,7 @@ final class RegexReplace extends CastBase
      * @psalm-suppress PossiblyUnusedMethod, PossiblyUnusedParam
      */
     #[\Override]
+    /** @internal */
     public function cast(mixed $value, array $args): string
     {
         [$pattern, $replacement, $limit] = $args;

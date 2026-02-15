@@ -14,7 +14,7 @@ use Nandan108\DtoToolkit\Internal\ProcessingChain;
  * The FailNextTo attribute is used to catch and handle exceptions potentially
  * thrown by the next CastTo attribute in the chain.
  *
- * @psalm-api
+ * @api
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 class FailNextTo extends FailTo

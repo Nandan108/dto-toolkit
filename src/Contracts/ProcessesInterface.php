@@ -14,6 +14,8 @@ use Nandan108\DtoToolkit\Enum\ErrorMode;
  * to DTO properties after validation.
  *
  * @psalm-suppress UnusedClass
+ *
+ * @api
  */
 interface ProcessesInterface
 {

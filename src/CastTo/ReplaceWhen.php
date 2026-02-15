@@ -6,16 +6,18 @@ namespace Nandan108\DtoToolkit\CastTo;
 
 use Nandan108\DtoToolkit\Core\CastBase;
 
-/** @psalm-api */
+/** @api */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 class ReplaceWhen extends CastBase
 {
+    /** @api */
     public function __construct(mixed $when, mixed $then = null, bool $strict = true)
     {
         parent::__construct([$when, $then, $strict]);
     }
 
     #[\Override]
+    /** @internal */
     public function cast(mixed $value, array $args): mixed
     {
         [$when, $then, $strict] = $args;

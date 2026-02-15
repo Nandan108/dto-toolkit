@@ -13,11 +13,17 @@ use Nandan108\DtoToolkit\Traits\UsesLocaleResolver;
 use Nandan108\DtoToolkit\Traits\UsesTimeZoneResolver;
 
 /** @psalm-suppress UnusedClass */
+/** @api */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class DateTimeFromLocalized extends CastBase implements CasterInterface, BootsOnDtoInterface
 {
-    use UsesLocaleResolver;
-    use UsesTimeZoneResolver;
+    use UsesLocaleResolver, UsesTimeZoneResolver {
+        // Both resolver traits import UsesParamResolver; keep a single canonical implementation.
+        UsesLocaleResolver::configureParamResolver insteadof UsesTimeZoneResolver;
+        UsesLocaleResolver::getParamResolverConfig insteadof UsesTimeZoneResolver;
+        UsesLocaleResolver::resolveParam insteadof UsesTimeZoneResolver;
+        UsesLocaleResolver::resolveParamProvider insteadof UsesTimeZoneResolver;
+    }
 
     /**
      * Caster to transform a localized date string into a DateTimeImmutable object.
@@ -47,6 +53,7 @@ final class DateTimeFromLocalized extends CastBase implements CasterInterface, B
      * This function will be called once per caster+ctorArgs+dto.
      */
     #[\Override]
+    /** @internal */
     public function bootOnDto(): void
     {
         $this->configureLocaleResolver();
@@ -54,6 +61,7 @@ final class DateTimeFromLocalized extends CastBase implements CasterInterface, B
     }
 
     #[\Override]
+    /** @internal */
     public function cast(mixed $value, array $args): \DateTimeInterface
     {
         $value = $this->ensureStringable($value, true);

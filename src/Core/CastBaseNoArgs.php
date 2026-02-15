@@ -6,6 +6,8 @@ namespace Nandan108\DtoToolkit\Core;
 
 /**
  * Base class for Casters that take no arguments and don't need a constructor.
+ *
+ * @api
  */
 abstract class CastBaseNoArgs extends CastBase
 {

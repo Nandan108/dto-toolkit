@@ -13,12 +13,19 @@ use Nandan108\DtoToolkit\Traits\UsesLocaleResolver;
 use Nandan108\DtoToolkit\Traits\UsesTimeZoneResolver;
 
 /** @psalm-suppress UnusedClass */
+/** @api */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class LocalizedDateTime extends CastBase implements CasterInterface, BootsOnDtoInterface
 {
-    use UsesLocaleResolver;
-    use UsesTimeZoneResolver;
+    use UsesLocaleResolver, UsesTimeZoneResolver {
+        // Both resolver traits import UsesParamResolver; keep a single canonical implementation.
+        UsesLocaleResolver::configureParamResolver insteadof UsesTimeZoneResolver;
+        UsesLocaleResolver::getParamResolverConfig insteadof UsesTimeZoneResolver;
+        UsesLocaleResolver::resolveParam insteadof UsesTimeZoneResolver;
+        UsesLocaleResolver::resolveParamProvider insteadof UsesTimeZoneResolver;
+    }
 
+    /** @api */
     public function __construct(
         ?string $locale = null,
         int $dateStyle = \IntlDateFormatter::SHORT,
@@ -35,6 +42,7 @@ final class LocalizedDateTime extends CastBase implements CasterInterface, Boots
      * This function will be called once per caster+ctorArgs+dto.
      */
     #[\Override]
+    /** @internal */
     public function bootOnDto(): void
     {
         $this->configureLocaleResolver();
@@ -42,6 +50,7 @@ final class LocalizedDateTime extends CastBase implements CasterInterface, Boots
     }
 
     #[\Override]
+    /** @internal */
     public function cast(mixed $value, array $args): string
     {
         /** @psalm-suppress UnnecessaryVarAnnotation */
