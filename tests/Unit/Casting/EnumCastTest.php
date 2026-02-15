@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
 use Nandan108\DtoToolkit\CastTo;
+use Nandan108\DtoToolkit\Core\FullDto;
+use Nandan108\DtoToolkit\Core\ProcessingContext;
 use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException as ConfigInvalidArgumentException;
 use Nandan108\DtoToolkit\Exception\Process\TransformException;
 use Nandan108\DtoToolkit\Tests\Traits\CanTestCasterClassesAndMethods;
@@ -47,14 +49,10 @@ final class EnumCastTest extends TestCase
 
     public function testInstantiationWithInvalidEnum(): void
     {
-        // this line only here to have full coverage on caster constructor
-        // otherwise, the parent::__construct([$enumClass]); line is not covered for buggy reasons.
-        new CastTo\Enum(Status::class);
-
         $this->expectException(ConfigInvalidArgumentException::class);
-        $this->expectExceptionMessage('Enum caster: \'Invalid\' is not a valid enum.');
-        /** @psalm-suppress ArgumentTypeCoercion, UndefinedClass */
-        new CastTo\Enum('Invalid');
+        $this->expectExceptionMessage("Enum caster: 'NonExistentEnum' is not a valid enum.");
+        /** @psalm-suppress UndefinedClass, ArgumentTypeCoercion */
+        new CastTo\Enum('NonExistentEnum');
     }
 
     public function testInstantiationWithInvalidEnumClass(): void
@@ -63,6 +61,31 @@ final class EnumCastTest extends TestCase
         $this->expectExceptionMessage('Enum caster: \''.NotBacked::class.'\' is not a backed enum.');
         /** @psalm-suppress InvalidArgument */
         new CastTo\Enum(NotBacked::class);
+    }
+
+    public function testInvalidEnumErrorMessageInProductionModeDoesNotLeakNamespace(): void
+    {
+        $originalDevMode = ProcessingContext::isDevMode();
+        $dto = new class extends FullDto {
+            #[CastTo\Enum(Status::class)]
+            public ?string $status = null;
+        };
+        try {
+            foreach ([
+                ['devMode' => false, 'expectedClassName' => 'Status'],
+                ['devMode' => true, 'expectedClassName' => Status::class],
+            ] as $case) {
+                ProcessingContext::setDevMode($case['devMode']);
+                try {
+                    $dto->loadArray(['status' => 'invalid']);
+                } catch (TransformException $e) {
+                    $this->assertSame('processing.transform.enum.invalid_value', $e->getMessageTemplate());
+                    $this->assertSame($case['expectedClassName'], $e->getMessageParameters()['enum']);
+                }
+            }
+        } finally {
+            ProcessingContext::setDevMode($originalDevMode);
+        }
     }
 }
 

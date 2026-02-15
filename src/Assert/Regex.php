@@ -7,6 +7,7 @@ namespace Nandan108\DtoToolkit\Assert;
 use Nandan108\DtoToolkit\Core\ValidatorBase;
 use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
 use Nandan108\DtoToolkit\Exception\Process\GuardException;
+use RuntimeException as RtEx;
 
 // use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
 
@@ -29,12 +30,19 @@ final class Regex extends ValidatorBase
             throw new InvalidArgumentException('Regex validator requires a pattern.');
         }
 
-        @preg_match($pattern, '', $matches);
+        try {
+            set_error_handler(function ($_, $msg): never { throw new RtEx($msg); }, E_WARNING);
 
-        $error = preg_last_error();
-        if (\PREG_NO_ERROR !== $error) {
-            $errorMessage = function_exists('preg_last_error_msg') ? preg_last_error_msg() : $error;
-            throw new InvalidArgumentException("Regex validator: invalid pattern /{$pattern}/", ['error' => $errorMessage]);
+            if (false === preg_match($pattern, '')) {
+                throw new RtEx(preg_last_error_msg());
+            }
+        } catch (\Throwable $e) {
+            throw new InvalidArgumentException(
+                message: "Regex validator: invalid pattern /{$pattern}/",
+                debug: ['error' => $e->getMessage()],
+            );
+        } finally {
+            restore_error_handler();
         }
 
         parent::__construct([$pattern, $negate]);
@@ -50,7 +58,26 @@ final class Regex extends ValidatorBase
         /** @var array{0: non-empty-string, 1: bool} $args */
         [$pattern, $negate] = $args;
 
-        $matched = 1 === preg_match($pattern, $value, $matches);
+        try {
+            set_error_handler(function ($_, $msg): never { throw new RtEx($msg); }, E_WARNING);
+
+            $matchedRaw = preg_match($pattern, $value);
+            if (false === $matchedRaw) {
+                throw new RtEx(preg_last_error_msg());
+            }
+
+            $matched = 1 === $matchedRaw;
+        } catch (\Throwable $e) {
+            throw GuardException::reason(
+                value: $value,
+                template_suffix: 'regex.matching_failed',
+                parameters: ['pattern' => $pattern, 'error' => $e->getMessage()],
+                errorCode: 'guard.regex',
+            );
+        } finally {
+            restore_error_handler();
+        }
+
         if (!$matched xor $negate) {
             throw GuardException::reason(
                 value: $value,

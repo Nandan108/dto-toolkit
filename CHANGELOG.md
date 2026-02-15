@@ -3,7 +3,7 @@
 All notable changes to this project will be documented in this file.
 
 ---
-## [1.4.2] - 2026-02-14
+## [1.4.2] - 2026-02-15
 
 ### Added
 
@@ -23,8 +23,19 @@ All notable changes to this project will be documented in this file.
 - Runtime dependencies were updated:
   - `nandan108/prop-path` `^0.3.0` -> `^0.4.0`
   - `nandan108/prop-access` `^0.5.0` -> `^0.6.0`
-- `BaseDto` lifecycle hooks and public entrypoints were explicitly annotated; `BaseDto::__callStatic()` and low-level reflection accessor internals were marked `@internal`.
+
+### Fixed
 - Localized datetime casters resolved trait method conflicts explicitly via `insteadof` rules.
+- Fixed regex casters/validator behavior:
+  - `RegexReplace`/`RegexSplit` now validate patterns at construction time and throw `InvalidArgumentException` for invalid patterns.
+  - Runtime `preg_*` failures (`null`/`false`) are now explicitly converted into domain exceptions with `preg_last_error_msg()` context.
+  - `Assert\Regex` now reports regex engine failures as `regex.matching_failed` instead of treating them as regular no-match outcomes.
+
+### Tests
+
+- Added coverage for runtime regex engine failure paths in `RegexReplace`, `RegexSplit`, and `Assert\Regex`.
+- Added coverage for clearing locale resolvers via `DefaultErrorMessageRenderer::setLocaleResolver(null)`.
+- Expanded enum error-message tests to verify production mode does not leak fully-qualified enum class names.
 
 ### Internal
 

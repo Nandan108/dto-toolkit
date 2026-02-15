@@ -261,6 +261,41 @@ final class ProcessingExceptionTest extends TestCase
         $this->assertSame('Attendu une chaine numerique, obtenu une chaine.', $exception->getMessage());
     }
 
+    public function testDefaultRendererLocaleResolverCanBeClearedWithNull(): void
+    {
+        ProcessingException::setMessageRenderer(null);
+
+        DefaultErrorMessageRenderer::setLocale('en');
+        DefaultErrorMessageRenderer::setLocaleResolver(
+            static fn (): string => 'fr_FR',
+        );
+        DefaultErrorMessageRenderer::setLocaleResolver(null);
+        DefaultErrorMessageRenderer::registerCatalog(
+            locale: 'fr',
+            messages: [
+                'processing.custom.reason' => 'FR message.',
+            ],
+        );
+        DefaultErrorMessageRenderer::registerCatalog(
+            locale: 'en',
+            messages: [
+                'processing.custom.reason' => 'EN message.',
+            ],
+        );
+
+        $dto = new class extends BaseDto {
+        };
+        $frame = new ProcessingFrame($dto, $dto->getErrorList(), $dto->getErrorMode());
+        ProcessingContext::pushFrame($frame);
+        try {
+            $exception = ProcessingException::failed('custom.reason');
+        } finally {
+            ProcessingContext::popFrame();
+        }
+
+        $this->assertSame('EN message.', $exception->getMessage());
+    }
+
     public function testRegisterCatalogSupportsNonOverrideMerges(): void
     {
         ProcessingException::setMessageRenderer(null);

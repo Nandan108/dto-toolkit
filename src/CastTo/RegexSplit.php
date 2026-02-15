@@ -5,49 +5,69 @@ declare(strict_types=1);
 namespace Nandan108\DtoToolkit\CastTo;
 
 use Nandan108\DtoToolkit\Core\CastBase;
+use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
 use Nandan108\DtoToolkit\Exception\Process\TransformException;
+use RuntimeException as RtEx;
 
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
-/** @api */
+/** @psalm-api */
 final class RegexSplit extends CastBase
 {
-    /** @api */
+    /**
+     * @param non-empty-string $pattern the regex pattern to split by
+     * @param int<-1, max>     $limit   the maximum number of splits (0 or -1 for no limit)
+     */
     public function __construct(public readonly string $pattern, public readonly int $limit = -1)
     {
-        parent::__construct([$pattern, $limit]);
+        // Validate pattern and limit at construction time to fail fast on invalid config
+        try {
+            set_error_handler(function ($_, $msg): never { throw new RtEx($msg); }, E_WARNING);
 
-        // Force Psalm to acknowledge these properties are used
-        [$this->pattern, $this->limit];
+            if (false === preg_match($pattern, '')) {
+                throw new RtEx(preg_last_error_msg());
+            }
+        } catch (\Throwable $e) {
+            throw new InvalidArgumentException(
+                message: "Regex validator: invalid pattern /{$pattern}/",
+                debug: ['error' => $e->getMessage()],
+            );
+        } finally {
+            restore_error_handler();
+        }
+
+        parent::__construct([$pattern, $limit]);
     }
 
     /**
-     * @psalm-suppress PossiblyUnusedMethod, PossiblyUnusedParam
+     * @psalm-suppress PossiblyUnusedMethod, PossiblyUnusedParam, PossiblyUnusedReturnValue
      */
     #[\Override]
-    /** @internal */
     public function cast(mixed $value, array $args): array
     {
         [$pattern, $limit] = $args;
 
         $value = $this->ensureStringable($value);
 
-        /** @psalm-suppress InvalidArgument */
-        $result = @preg_split($pattern, $value, $limit);
+        try {
+            set_error_handler(function ($_, $msg): never { throw new RtEx($msg); }, E_WARNING);
 
-        if (\PREG_NO_ERROR !== preg_last_error()) {
+            $result = preg_split($pattern, $value, $limit);
+            if (false === $result) {
+                throw new RtEx(preg_last_error_msg());
+            }
+
+            return $result;
+        } catch (\Throwable $e) {
+            // since invalid patterns are already caught in the constructor, any error here must be due to
+            // the value, such as invalid UTF-8 sequences, etc.
             throw TransformException::reason(
                 value: $value,
-                // Failed to split string with regex
                 template_suffix: 'regex.split_failed',
-                parameters: [
-                    'pattern' => $pattern,
-                    'error'   => function_exists('preg_last_error_msg') ? preg_last_error_msg() : preg_last_error(),
-                ],
+                parameters: ['pattern' => $pattern, 'error' => $e->getMessage()],
                 errorCode: 'transform.regex',
             );
+        } finally {
+            restore_error_handler();
         }
-
-        /** @var list<string> */
-        return $result;
     }
 }

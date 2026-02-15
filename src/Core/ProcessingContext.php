@@ -28,13 +28,10 @@ final class ProcessingContext
     /** @api */
     public static function isDevMode(): bool
     {
-        if (null === self::$devMode) {
-            self::$devMode = 'dev' === getenv('APP_ENV')
-                || '1' === getenv('DEBUG')
-                || 'cli' === php_sapi_name() && 'prod' !== getenv('APP_ENV');
-        }
-
-        return self::$devMode;
+        return self::$devMode ??=
+            'dev' === getenv('APP_ENV')
+            || '1' === getenv('DEBUG')
+            || 'cli' === php_sapi_name() && 'prod' !== getenv('APP_ENV');
     }
 
     /** @api */
