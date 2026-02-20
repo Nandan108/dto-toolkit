@@ -74,7 +74,6 @@ final class EntityCastTest extends TestCase
     }
 }
 
-/** @psalm-suppress PossiblyUnusedProperty */
 final class UserEntityFromArray
 {
     public int $id = 0;
@@ -92,7 +91,6 @@ final class SpecialNamedEntity extends NamedEntity
 {
 }
 
-/** @psalm-suppress PossiblyUnusedProperty */
 final class EntityCastTest_PublicProfileDto extends FullDto
 {
     public string $name = '';
@@ -106,7 +104,6 @@ final class EntityCastTest_PublicProfileDto extends FullDto
     public EntityCastTest_InterestsDto | array | null $interests = null;
 }
 
-/** @psalm-suppress PossiblyUnusedProperty */
 final class EntityCastTest_InterestsDto extends FullDto
 {
     #[CastTo\Split]
@@ -126,7 +123,6 @@ final class EntityCastTest_PublicProfileEntity
     public EntityCastTest_InterestsEntity | array | null $interests = null;
 }
 
-/** @psalm-suppress PossiblyUnusedProperty */
 final class EntityCastTest_InterestsEntity
 {
     public array $categories = [];

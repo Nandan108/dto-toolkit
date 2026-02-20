@@ -10,9 +10,18 @@ use Nandan108\DtoToolkit\Core\CastBase;
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class Split extends CastBase
 {
-    /** @api */
+    /**
+     * @param non-empty-string $separator The separator to split the string by (default: ',')
+     *
+     * @api
+     */
     public function __construct(string $separator = ',')
     {
+        /** @psalm-suppress TypeDoesNotContainType */
+        if ('' === $separator) {
+            throw new \InvalidArgumentException('Separator cannot be an empty string.');
+        }
+
         parent::__construct([$separator]);
     }
 
@@ -20,6 +29,7 @@ final class Split extends CastBase
     /** @internal */
     public function cast(mixed $value, array $args): array
     {
+        /** @var non-empty-string $separator */
         [$separator] = $args;
 
         $value = $this->ensureStringable($value);

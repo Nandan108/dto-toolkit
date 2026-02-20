@@ -22,7 +22,6 @@ final class AssertModifierTest extends TestCase
             #[CastTo('second')]
             public mixed $value = null;
 
-            /** @psalm-suppress PossiblyUnusedMethod */
             public function castToFirst(string $value): string
             {
                 $this->calls[] = "first:$value";
@@ -30,7 +29,6 @@ final class AssertModifierTest extends TestCase
                 return $value.'-first';
             }
 
-            /** @psalm-suppress PossiblyUnusedMethod */
             public function castToSecond(string $value): string
             {
                 $this->calls[] = "second:$value";
@@ -56,7 +54,6 @@ final class AssertModifierTest extends TestCase
                 CastTo\Boolean]
             public mixed $value = null;
 
-            /** @psalm-suppress PossiblyUnusedMethod */
             public function castToFirst(string $value): string
             {
                 $this->calls[] = "first:$value";

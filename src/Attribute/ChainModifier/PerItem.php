@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nandan108\DtoToolkit\Attribute\ChainModifier;
 
+use Nandan108\DtoToolkit\Contracts\ProcessingNodeProducerInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Core\ProcessingContext;
 use Nandan108\DtoToolkit\Exception\Process\ProcessingException;
@@ -23,8 +24,8 @@ class PerItem extends ChainModifierBase
     }
 
     /**
-     * @param \ArrayIterator $queue The queue of attributes to be processed
-     * @param BaseDto        $dto   The DTO instance
+     * @param BaseDto                                               $dto   The DTO instance
+     * @param ?\ArrayIterator<int, ProcessingNodeProducerInterface> $queue The queue of attributes to be processed
      *
      * @return ProcessingChain A closure that applies the composed caster on each element of the passed array value
      */
@@ -44,10 +45,9 @@ class PerItem extends ChainModifierBase
                 // apply the composed caster ($subchain) on each element of the array value we
                 // receive from earlier transformations by $chain().
                 return function (mixed $value) use ($upstreamChain, $subchain): array {
-                    // get value from upstream
-                    if (null !== $upstreamChain) {
-                        $value = $upstreamChain($value);
-                    }
+                    /** @psalm-var mixed $value */
+                    $value = $upstreamChain ? $upstreamChain($value) : $value;
+
                     ProcessingContext::pushPropPathNode('Mod\PerItem');
 
                     // If the value is not an array, we throw!
@@ -60,9 +60,11 @@ class PerItem extends ChainModifierBase
                     }
                     $result = [];
                     try {
+                        /** @psalm-var mixed $v */
                         foreach ($value as $k => $v) {
                             ProcessingContext::pushPropPath($k);
                             try {
+                                /** @psalm-var mixed */
                                 $result[$k] = $subchain($v);
                             } finally {
                                 ProcessingContext::popPropPath();

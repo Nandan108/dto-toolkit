@@ -28,6 +28,7 @@ final class DateFormat extends ValidatorBase
     /** @internal */
     public function validate(mixed $value, array $args = []): void
     {
+        /** @var non-empty-string $format */
         $format = $args[0];
 
         $value = $this->ensureStringable($value, false);

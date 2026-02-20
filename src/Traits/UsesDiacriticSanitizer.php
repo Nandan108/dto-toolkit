@@ -69,6 +69,7 @@ trait UsesDiacriticSanitizer
     public static function sanitizeWithStrtr(string $value): string
     {
         // Rudimentary fallback for common accents (incomplete but helpful)
+        /** @var array<string, string> */
         static $map = [
             'à'=> 'a', 'á'=>'a', 'â'=>'a', 'ã'=>'a', 'ä'=>'a', 'å'=>'a',
             'è'=> 'e', 'é'=>'e', 'ê'=>'e', 'ë'=>'e',

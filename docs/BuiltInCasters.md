@@ -178,8 +178,9 @@ Exports a DTO or other object into an array.
 
 - When the source is a DTO, outbound processing is applied before export.
 - When the source is a plain object, public properties/accessors are read directly.
+- When the source is `\Traversable`, it is materialized with keys preserved.
 
-Extra props are merged into the output.
+Supplemental props are merged into the output. On key collisions, source values take precedence.
 
 When `$recursive` is true, nested DTOs encountered during export are converted to arrays using the same execution context.
 
@@ -190,6 +191,7 @@ This caster is useful when fine-grained, property-level control is needed, as an
 ```php
 #[CastTo\AsArray(['role' => 'admin'], recursive: true)]
 public array $user_export = [];
+```
 
 
 ---

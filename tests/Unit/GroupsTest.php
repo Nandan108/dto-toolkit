@@ -17,21 +17,17 @@ use PHPUnit\Framework\TestCase;
 
 final class GroupsTestFooBarDto extends FullDto
 {
-    /** @psalm-suppress PossiblyUnusedProperty */
     #[CastTo\Lowercase] // trim dashes
     public ?string $qux = null; // default value provided for the example
 
-    /** @psalm-suppress PossiblyUnusedProperty */
     #[PropGroups('foo')]
     #[CastTo\Trimmed('-')] // trim dashes
     public ?string $foo = null; // default value provided for the example
 
-    /** @psalm-suppress PossiblyUnusedProperty */
     #[PropGroups('bar')]
     #[CastTo\Lowercase]
     public ?string $bar = null; // default value provided for the example
 
-    /** @psalm-suppress PossiblyUnusedProperty */
     #[Outbound]
     #[CastTo\Uppercase]
     #[PropGroups('bar')]
@@ -40,10 +36,8 @@ final class GroupsTestFooBarDto extends FullDto
 
 final class CasterGroupsTestDto extends FullDto
 {
-    /** @psalm-suppress PossiblyUnusedProperty */
     public ?string $notCast = null; // default value provided for the example
 
-    /** @psalm-suppress PossiblyUnusedProperty */
     #[CastTo\Trimmed('- ')] // trim dashes
     // if in group 'foo', make it uppercase and add 'foo:' prefix
     #[Groups('bar'), CastTo\RegexReplace('/^/', 'Bar:')]
@@ -56,7 +50,6 @@ final class CasterGroupsTestDto extends FullDto
 final class NotImplmementingUsesGroupsDto extends BaseDto implements ProcessesInterface
 {
     use ProcessesFromAttributes;
-    /** @psalm-suppress PossiblyUnusedProperty */
     #[Groups('foo')]
     #[CastTo\Lowercase]
     public ?string $qux = null;

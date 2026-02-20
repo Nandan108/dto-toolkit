@@ -9,6 +9,7 @@ return [
     'type.blank'                => 'a blank value',
     'type.bool'                 => 'a boolean',
     'type.class_name'           => 'a valid class name',
+    'type.countable'            => 'a countable',
     'type.empty_array'          => 'an empty array',
     'type.empty_countable'      => 'an empty countable',
     'type.empty_iterable'       => 'an empty iterable',

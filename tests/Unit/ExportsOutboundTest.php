@@ -171,7 +171,7 @@ final class ExportsOutboundTest extends TestCase
             $dto->exportToEntity();
             $this->fail('Expected InvalidConfigException was not thrown');
         } catch (InvalidConfigException $e) {
-            $this->assertStringContainsString('Class "NonExistentFooClass" not found', $e->getMessage());
+            $this->assertStringContainsString('Target entity class \'NonExistentFooClass\' does not exist.', $e->getMessage());
         }
 
         // test when param is given, overrides DefaultOutboundEntity
@@ -179,7 +179,7 @@ final class ExportsOutboundTest extends TestCase
             $dto->exportToEntity(entity: 'NonExistentBarClass');
             $this->fail('Expected InvalidConfigException was not thrown');
         } catch (InvalidConfigException $e) {
-            $this->assertStringContainsString('Class "NonExistentBarClass" not found', $e->getMessage());
+            $this->assertStringContainsString('Target entity class \'NonExistentBarClass\' does not exist.', $e->getMessage());
         }
     }
 
@@ -399,11 +399,9 @@ final class EntityClassToInstanciateFromName
 {
     public ?string $doop = null;
 
-    /** @psalm-suppress PossiblyUnusedProperty */
     public ?string $fooProp = null;
     public ?string $barProp = null;
 
-    /** @psalm-suppress PossiblyUnusedMethod */
     public function setBarProp(string $bar): void
     {
         $this->barProp = strtoupper($bar);
@@ -411,14 +409,12 @@ final class EntityClassToInstanciateFromName
 
     public ?string $bazProp = null;
 
-    /** @psalm-suppress PossiblyUnusedMethod */
     public function assignBazProp(string $baz): void
     {
         $this->bazProp = strtolower($baz);
     }
 }
 
-/** @psalm-suppress PossiblyUnusedProperty */
 final class RecursiveUserEntity
 {
     public int $id = 0;
@@ -427,7 +423,6 @@ final class RecursiveUserEntity
     public RecursiveAddressEntity | array | null $address = null;
 }
 
-/** @psalm-suppress PossiblyUnusedProperty */
 final class RecursivePublicProfileEntity
 {
     public string $name = '';
@@ -436,14 +431,12 @@ final class RecursivePublicProfileEntity
     public RecursiveInterestsEntity | array | null $interests = null;
 }
 
-/** @psalm-suppress PossiblyUnusedProperty */
 final class RecursiveInterestsEntity
 {
     public array $categories = [];
     public array $book = [];
 }
 
-/** @psalm-suppress PossiblyUnusedProperty */
 final class RecursiveAddressEntity
 {
     public string $street = '';
@@ -453,7 +446,6 @@ final class RecursiveAddressEntity
     public string $ctry_code = '';
 }
 
-/** @psalm-suppress PossiblyUnusedProperty */
 #[DefaultOutboundEntity(RecursiveUserEntity::class)]
 final class RecursiveUserDto extends FullDto
 {
@@ -468,7 +460,6 @@ final class RecursiveUserDto extends FullDto
 
 }
 
-/** @psalm-suppress PossiblyUnusedProperty */
 #[DefaultOutboundEntity(RecursivePublicProfileEntity::class)]
 final class RecursivePublicProfileDto extends FullDto
 {
@@ -483,7 +474,6 @@ final class RecursivePublicProfileDto extends FullDto
     public RecursiveInterestsDto | array | null $interests = null;
 }
 
-/** @psalm-suppress PossiblyUnusedProperty */
 #[DefaultOutboundEntity(RecursiveInterestsEntity::class)]
 final class RecursiveInterestsDto extends FullDto
 {
@@ -496,7 +486,6 @@ final class RecursiveInterestsDto extends FullDto
     public string | array $book = [];
 }
 
-/** @psalm-suppress PossiblyUnusedProperty */
 #[DefaultOutboundEntity(RecursiveAddressEntity::class)]
 final class RecursiveAddressDto extends FullDto
 {
@@ -507,7 +496,6 @@ final class RecursiveAddressDto extends FullDto
     public string $ctry_code = '';
 }
 
-/** @psalm-suppress PossiblyUnusedProperty */
 final class ImmutableAddressVoArrayConstructor
 {
     public readonly ?string $street;
@@ -527,10 +515,8 @@ final class ImmutableAddressVoArrayConstructor
     }
 }
 
-/** @psalm-suppress PossiblyUnusedProperty */
 final class ImmutableAddressVoPropPromoConstructor
 {
-    /** @psalm-suppress PossiblyUnusedMethod */
     public function __construct(
         public ?string $ctryCode, // note: ctryCode is first to test param order independence
         public ?string $street,

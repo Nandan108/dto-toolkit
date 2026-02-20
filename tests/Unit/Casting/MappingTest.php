@@ -9,6 +9,7 @@ use Nandan108\DtoToolkit\Attribute\MapFrom;
 use Nandan108\DtoToolkit\Attribute\MapTo;
 use Nandan108\DtoToolkit\Attribute\Outbound;
 use Nandan108\DtoToolkit\Core\FullDto;
+use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
 use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
 use Nandan108\DtoToolkit\Exception\Process\GuardException;
 use Nandan108\DtoToolkit\Tests\Traits\CanTestCasterClassesAndMethods;
@@ -145,5 +146,17 @@ final class MappingTest extends TestCase
             $this->assertInstanceOf(\Nandan108\DtoToolkit\Exception\Config\ExtractionSyntaxError::class, $e);
             $this->assertStringContainsString('Invalid path provided', $e->getMessage());
         }
+    }
+
+    public function testMapToRejectsEmptyOutboundName(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        new MapTo('');
+    }
+
+    public function testMapToRejectsEmptyCustomSetter(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        new MapTo('foo', '');
     }
 }

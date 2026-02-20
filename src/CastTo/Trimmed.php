@@ -10,11 +10,21 @@ use Nandan108\DtoToolkit\Core\CastBase;
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class Trimmed extends CastBase
 {
-    /** @api */
+    /**
+     * @param string                $characters The characters to trim (default: " \n\r\t\v\x00")
+     * @param 'left'|'right'|'both' $where      Where to trim: 'left', 'right', or 'both'
+     *
+     * @api
+     */
     public function __construct(
         string $characters = " \n\r\t\v\x00",
         string $where = 'both',
     ) {
+        /** @psalm-suppress DocblockTypeContradiction, InvalidCast */
+        if (!in_array($where, ['left', 'right', 'both'], true)) {
+            throw new \InvalidArgumentException("Invalid value for 'where' parameter: '$where'. Allowed values are 'left', 'right', or 'both'.");
+        }
+
         parent::__construct([$characters, $where]);
     }
 
@@ -22,6 +32,7 @@ final class Trimmed extends CastBase
     /** @internal */
     public function cast(mixed $value, array $args): string
     {
+        /** @var string $characters */
         [$characters, $where] = $args;
 
         $v = $this->ensureStringable($value);

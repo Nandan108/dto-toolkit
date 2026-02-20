@@ -7,6 +7,7 @@ namespace Nandan108\DtoToolkit\Attribute;
 use Nandan108\DtoToolkit\Contracts\PhaseAwareInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Enum\Phase;
+use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
 use Nandan108\DtoToolkit\Traits\HasPhase;
 use Nandan108\PropAccess\PropAccess;
 
@@ -23,10 +24,30 @@ class MapTo implements PhaseAwareInterface
 
     public bool $nullOutboundName = false;
 
+    /**
+     * @var ?truthy-string The name to map the property to during outbound transformation.
+     *                     If null, the property will be excluded from the output, unless a custom setter is specified.
+     */
+    public ?string $outboundName;
+
+    /**
+     * @var ?truthy-string the name of a custom setter method to use when hydrating an entity
+     */
+    public ?string $customSetter;
+
     public function __construct(
-        public ?string $outboundName,
-        public ?string $customSetter = null,
+        ?string $outboundName,
+        ?string $customSetter = null,
     ) {
+        if (is_string($outboundName) && !(bool) $outboundName) {
+            throw new InvalidArgumentException("MapTo: invalid \$outboundName '$outboundName'; must be a truthy string or null");
+        }
+        $this->outboundName = $outboundName;
+        if (is_string($customSetter) && !(bool) $customSetter) {
+            throw new InvalidArgumentException("MapTo: invalid \$customSetter '$customSetter'; must be a truthy string or null");
+        }
+        $this->customSetter = $customSetter;
+
         $this->isOutbound = true;
         $this->isIoBound = true;
     }
@@ -37,7 +58,7 @@ class MapTo implements PhaseAwareInterface
         // This attribute is only used in the outbound-export phase,
         // so calls to setOutbound() are a no-op.
 
-        // Note: We don't throw an exception here even if $isOutbound is false,
+        // Note: We don't throw an InvalidConfigException here even if $isOutbound is false,
         // so as to not force the use of #[Outbound] on top of #[MapTo] attributes, which would be redundant.
     }
 
@@ -47,7 +68,7 @@ class MapTo implements PhaseAwareInterface
      * @param BaseDto           $dto   the DTO instance
      * @param ?array<array-key> $props the properties to return a mapper for
      *
-     * @return array<string, self> an array of MapFrom instances, indexed by property name
+     * @return array<string, self> an array of MapTo instances, indexed by property name
      */
     public static function getMappers(BaseDto $dto, ?array $props = null): array
     {
@@ -66,8 +87,10 @@ class MapTo implements PhaseAwareInterface
     /**
      * Return $output with keys mapped to the outbound names defined by #[MapTo] attributes on the DTO properties.
      *
-     * @param array<array-key, mixed> $output
-     * @param array<self>             $mappers
+     * @param array<truthy-string, mixed> $output
+     * @param array<self>                 $mappers
+     *
+     * @return array<truthy-string, mixed>
      */
     public static function applyOutboundKeys(array $output, BaseDto $dto, ?array $mappers = null): array
     {
@@ -97,7 +120,10 @@ class MapTo implements PhaseAwareInterface
     /**
      * Get the setters for the properties of a DTO that has been filled.
      *
-     * @param list<string> $propNames the property names to get setters for
+     * @param list<truthy-string> $propNames    the property names to get setters for
+     * @param object              $targetEntity the target entity to set properties on
+     *
+     * @return array<non-falsy-string, Closure(mixed, mixed):void> an array of closures that set the given value on the target entity, indexed by the original DTO property name. The closure signature is either `function(mixed $value, mixed $dto): void` for mappers with a custom setter or `function(object $entity, mixed $value): void` for standard setters.
      */
     public static function getSetters(BaseDto $dto, array $propNames, object $targetEntity): array
     {
@@ -143,7 +169,9 @@ class MapTo implements PhaseAwareInterface
      * Get the map of outbound names per property.
      * Setters are not included.
      *
-     * @param list<string> $propNames the property names to get outbound names for
+     * @param list<truthy-string> $propNames the property names to get outbound names for
+     *
+     * @return array<truthy-string, ?truthy-string> map of property name to outbound name, only for properties with #[MapTo] attributes that do not specify a custom setter
      */
     public static function getOutboundNamesMap(BaseDto $dto, array $propNames): array
     {

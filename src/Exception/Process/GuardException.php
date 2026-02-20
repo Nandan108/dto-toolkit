@@ -24,7 +24,9 @@ class GuardException extends ProcessingException
      * - AND the validator is value-specific
      * - AND the rule applies to any Validator (string length, numeric range, email, etc.).
      *
-     * @param non-empty-string $template_suffix
+     * @param array<non-empty-string, mixed> $parameters
+     * @param array<non-empty-string, mixed> $debug
+     * @param non-empty-string               $template_suffix
      */
     public static function invalidValue(
         mixed $value,

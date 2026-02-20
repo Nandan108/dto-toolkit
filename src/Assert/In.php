@@ -15,8 +15,6 @@ use Nandan108\DtoToolkit\Exception\Process\GuardException;
 final class In extends ValidatorBase
 {
     /**
-     * @param array<int|string, mixed> $choices
-     *
      * @psalm-suppress PossiblyUnusedMethod
      *
      * @api
@@ -33,6 +31,8 @@ final class In extends ValidatorBase
     /** @internal */
     public function validate(mixed $value, array $args = []): void
     {
+        /** @psalm-suppress UnnecessaryVarAnnotation */
+        /** @var array{0: array, 1: bool} $args */
         [$choices, $strict] = $args;
 
         if (!in_array($value, $choices, $strict)) {

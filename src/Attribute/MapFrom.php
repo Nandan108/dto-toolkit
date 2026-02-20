@@ -53,6 +53,8 @@ class MapFrom implements PhaseAwareInterface
     }
 
     /**
+     * @return mixed the value extracted from the input using the provided path(s)
+     *
      * @throws \Nandan108\PropPath\Exception\EvaluationError
      */
     public function __invoke(array $input, BaseDto $dto): mixed

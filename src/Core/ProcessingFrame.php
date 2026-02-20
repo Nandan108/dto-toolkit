@@ -16,7 +16,7 @@ final class ProcessingFrame
 
     public ErrorMode $errorMode;
 
-    /** @var array<string, mixed> */
+    /** @var array<non-empty-string, mixed> */
     public array $context;
 
     /** @var list<int|non-empty-string> */
@@ -58,7 +58,7 @@ final class ProcessingFrame
     public array $errorTemplateOverrides;
 
     /**
-     * @param array<string, mixed> $context
+     * @param array<non-empty-string, mixed> $context
      */
     public function __construct(
         BaseDto $dto,

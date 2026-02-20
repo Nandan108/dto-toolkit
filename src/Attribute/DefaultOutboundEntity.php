@@ -71,7 +71,7 @@ class DefaultOutboundEntity
                 }
                 // throw if entity class does not exist
                 if (!class_exists($attrInstance->entityClass)) {
-                    throw new InvalidConfigException("Class \"$attrInstance->entityClass\" not found");
+                    throw new InvalidConfigException("Target entity class '$attrInstance->entityClass' does not exist.");
                 }
                 $meta[$attrInstance->entityClass] = [
                     'groups'    => (array) $attrInstance->groups,

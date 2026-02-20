@@ -84,4 +84,14 @@ final class UsesTimezoneResolverTest extends TestCase
             $this->assertStringContainsString('Cannot resolve timezone from "not-a-timezone"', $e->getMessage());
         }
     }
+
+    public function testTimezoneResolverRejectsInvalidConstructorArgType(): void
+    {
+        $caster = new DateTime();
+        $caster->constructorArgs = ['timezone' => 123];
+
+        $this->expectException(InvalidConfigException::class);
+        $this->expectExceptionMessage("Parameter 'timezone' constructorArg must resolve to string|callable|null");
+        $caster->bootOnDto();
+    }
 }

@@ -44,7 +44,8 @@ class FailNextTo extends FailTo
 
                 return function (mixed $value) use ($upstreamChain, $subchain, $handler, $dto): mixed {
                     // get the value from upstream (exceptions thrown there are not the concern of this modifier)
-                    $upstreamChain && $value = $upstreamChain($value);
+                    /** @psalm-var mixed $value */
+                    $value = $upstreamChain ? $upstreamChain($value) : $value;
 
                     // Wrap downstream subchain execution in a try-catch block
                     try {

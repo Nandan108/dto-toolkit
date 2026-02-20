@@ -60,22 +60,28 @@ trait ProcessesFromAttributes // implements ProcessesInterface
         ProcessingContext::wrapProcessing($this, $callback, $errorMode);
     }
 
-    // will be used if using class implements NormalizesOutboundInterface
+    /**
+     * @param array<non-empty-string, mixed> $props
+     *
+     * @return array<non-empty-string, mixed>
+     */
     #[\Override]
     public function processOutbound(
         array $props,
         ?ProcessingErrorList $errorList = null,
         ?ErrorMode $errorMode = null,
     ): array {
-        $errorList and $this->setErrorList($errorList);
+        $errorList && $this->setErrorList($errorList);
 
         $callback = function (ProcessingFrame $frame) use ($props): array {
             $processorMap = CastTo::getProcessingNodeClosureMap(dto: $this, outbound: true);
             $normalized = [];
+            /** @psalm-var mixed $value */
             foreach ($props as $prop => $value) {
                 if (isset($processorMap[$prop])) {
                     ProcessingContext::pushPropPath($prop);
                     try {
+                        /** @psalm-var mixed */
                         $normalized[$prop] = $processorMap[$prop]($value);
                     } catch (ProcessingException $e) {
                         if (ErrorMode::FailFast === $frame->errorMode) {
@@ -85,6 +91,7 @@ trait ProcessesFromAttributes // implements ProcessesInterface
                         $frame->errorList->add($e);
                         switch ($frame->errorMode) {
                             case ErrorMode::CollectFailToInput:
+                                /** @psalm-var mixed */
                                 $normalized[$prop] = $value;
                                 break;
                             case ErrorMode::CollectFailToNull:
@@ -98,6 +105,7 @@ trait ProcessesFromAttributes // implements ProcessesInterface
                         ProcessingContext::popPropPath();
                     }
                 } else {
+                    /** @psalm-var mixed */
                     $normalized[$prop] = $value;
                 }
             }

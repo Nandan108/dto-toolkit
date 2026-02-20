@@ -10,9 +10,9 @@ interface PreparesEntityInterface
     /**
      * Prepare and return an outbound entity instance for this DTO.
      *
-     * @param array<string, mixed> $outboundProps the properties to be hydrated on the new entity
-     *                                            If the entity requires certain properties to be set via constructor,
-     *                                            they can be extracted from here
+     * @param array<array-key, mixed> $outboundProps the properties to be hydrated on the new entity.
+     *                                               If the entity requires certain properties to be set via constructor,
+     *                                               they can be extracted from here.
      *
      * @return array{entity: object, hydrated: bool} if the second element is false, Exporter will attempt hydrating the
      *                                               properties on the entity automatically after receiving the entity instance

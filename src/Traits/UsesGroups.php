@@ -50,7 +50,7 @@ trait UsesGroups // user must implement HasGroupsInterface, ScopedPropertyAccess
     /**
      * Get the per-property list of groups defined for the given phase.
      *
-     * @return array [propName => [groups]]
+     * @return array<string, array<array-key, PropGroups>>
      */
     public function getPropGroups(Phase $phase): array
     {

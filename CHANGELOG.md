@@ -3,6 +3,46 @@
 All notable changes to this project will be documented in this file.
 
 ---
+## [1.4.3] - 2026-02-20
+
+### Added
+
+- New internal cache-key helper: `Support\CacheKeySerializer` (used by processing-node memoization).
+- New token: `type.countable`.
+- New/updated message templates:
+  - `processing.guard.invalid_value.compare_to_extract`
+  - `processing.guard.array_length.above_max`
+
+### Changed
+
+- Psalm now enforced at errorLevel="1" (maximum strictness) in `psalm.xml`.
+- `Assert\EnumCase` now supports both backed and unit enums explicitly:
+  - backed enums accept case instances or backing values,
+  - unit enums accept case instances or case names.
+- `Assert\Length` now accepts any countable input in addition to strings/arrays.
+- `Assert\CompareTo` and `Assert\CompareToExtract` now validate operators at construction time via `Internal\ValueComparator::assertOperator()`.
+- `CastTo\AsArray` now handles `\Traversable` inputs directly, preserving source-key precedence over supplemental props, with optional recursive normalization of nested DTOs.
+- Outbound export internals were hardened:
+  - explicit target-class existence validation during entity instantiation,
+  - nested DTO normalization extracted into a dedicated helper,
+  - outbound-property key handling unified for hydration/remapping paths.
+- `BaseDto::getClassRef()` now rejects DTO classes with constructors requiring mandatory parameters.
+- CI Psalm invocation now runs with `--no-cache --no-progress`, and `psalm.xml` was tightened (max error level with targeted test-directory suppressions).
+
+### Fixed
+
+- `Exporter` outbound array merge semantics were corrected in `OutboundProps::toArray()` so source/exported properties reliably take precedence over supplemental properties on key collisions.
+- `Assert\CompareToExtract` now uses dedicated error code/template suffix (`guard.compare_to_extract` / `compare_to_extract`) and clearer default left-path rendering (`$value` when omitted).
+- `Assert\EnumBackedValue` now reports non-scalar operand types via standard expected-type messaging (`string|int`) instead of relying on `TypeError` flow.
+- Export-to-entity errors for missing target classes now emit explicit domain messaging (`Target entity class '...' does not exist.`).
+
+### Tests
+
+- Added `tests/Unit/Support/CacheKeySerializerTest.php`.
+- Expanded validator coverage for enum handling, countable length checks, compare-to operator validation, and URL edge cases.
+- Updated compare-to-extract assertion messaging expectations.
+
+---
 ## [1.4.2] - 2026-02-15
 
 ### Added

@@ -41,11 +41,9 @@ final class MethodValidatedDto extends BaseDto implements ProcessesInterface
     use CreatesFromArrayOrEntity;
     use ProcessesFromAttributes;
 
-    /** @psalm-suppress PossiblyUnusedProperty */
     #[Assert('notEmpty')]
     public ?string $name = null;
 
-    /** @psalm-suppress PossiblyUnusedMethod */
     public function assertNotEmpty(?string $value): void
     {
         if ('' === $value) {

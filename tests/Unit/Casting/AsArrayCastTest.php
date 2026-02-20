@@ -75,11 +75,60 @@ final class AsArrayCastTest extends TestCase
         $this->assertSame(123, $result['id']);
         $this->assertSame('Bob', $result['username']);
     }
+
+    public function testCastFromTraversableNonRecursiveKeepsNestedDtoAndSourceWinsOnConflicts(): void
+    {
+        $dto = UserDto::newFromArray(DtoCastTest::getStandardInput());
+        $traversable = new AsArrayCastTest_Traversable([
+            'id'      => 123,
+            'profile' => $dto->public_profile,
+            'role'    => 'user',
+        ]);
+
+        $caster = new CastTo\AsArray(['id' => 999, 'role' => 'admin']);
+        $result = $caster->cast($traversable, [['id' => 999, 'role' => 'admin'], false]);
+
+        $this->assertSame(123, $result['id']);
+        $this->assertSame('user', $result['role']);
+        $this->assertInstanceOf(PublicProfileDto::class, $result['profile']);
+    }
+
+    public function testCastFromTraversableRecursiveConvertsNestedDtos(): void
+    {
+        $dto = UserDto::newFromArray(DtoCastTest::getStandardInput());
+        $traversable = new AsArrayCastTest_Traversable([
+            'profile' => $dto->public_profile,
+        ]);
+
+        $caster = new CastTo\AsArray();
+        $result = $caster->cast($traversable, [[], true]);
+
+        $this->assertIsArray($result['profile']);
+        $this->assertIsArray($result['profile']['interests']);
+        $this->assertSame([1, 2, 3], $result['profile']['interests']['categories']);
+    }
 }
 
-/** @psalm-suppress PossiblyUnusedProperty */
 final class AsArrayCastTest_Entity
 {
     public int $id = 123;
     public ?string $username = 'Bob';
+}
+
+/**
+ * @implements \IteratorAggregate<mixed>
+ */
+final class AsArrayCastTest_Traversable implements \IteratorAggregate
+{
+    /** @param array<array-key, mixed> $items */
+    public function __construct(
+        private array $items,
+    ) {
+    }
+
+    #[\Override]
+    public function getIterator(): \Traversable
+    {
+        return new \ArrayIterator($this->items);
+    }
 }

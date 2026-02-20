@@ -27,6 +27,7 @@ final class RemoveDiacritics extends CastBase
     /** @internal */
     public function cast(mixed $value, array $args): string
     {
+        /** @var ?bool $useIntlExtension */
         [$useIntlExtension] = $args;
 
         return static::removeDiacritics($this->ensureStringable($value), $useIntlExtension);

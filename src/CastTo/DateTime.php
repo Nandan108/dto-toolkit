@@ -57,10 +57,10 @@ class DateTime extends CastBase implements CasterInterface, BootsOnDtoInterface
     /** @internal */
     public function cast(mixed $value, array $args): mixed
     {
-        $this->ensureStringable($value, true);
+        $value = $this->ensureStringable($value, true);
 
         /** @var string $format */
-        [$format] = $args;
+        $format = $args[0];
 
         /** @var ?\DateTimeZone $tz */
         $tz = $this->resolveParam('timezone', $value);

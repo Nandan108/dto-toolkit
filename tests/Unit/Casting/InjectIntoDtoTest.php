@@ -51,7 +51,6 @@ final class FooBarDto1 extends FullDto implements Injectable, Bootable
         }
     }
 
-    /** @psalm-suppress PossiblyUnusedMethod */
     public function castToSlug(string $value): string
     {
         if (null === $this->slugger) {
@@ -122,13 +121,12 @@ final class DtoWithInjectedDummySlugger extends FullDto
     ) {
     }
 
-    /** @psalm-suppress PossiblyUnusedMethod */
     public function castToSlug(mixed $value): ?string
     {
         return $this->_slugger?->slugify($value);
     }
 
-    /** @psalm-suppress PossiblyUnusedReturnValue, PossiblyUnusedMethod */
+    /** @psalm-suppress PossiblyUnusedReturnValue, */
     protected function getSlugger(): ?DummySluggerForDtoInjection
     {
         return $this->_slugger;

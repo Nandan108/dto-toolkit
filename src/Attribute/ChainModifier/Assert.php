@@ -46,19 +46,21 @@ class Assert extends ChainModifierBase
     public function getProcessingNode(BaseDto $dto, ?\ArrayIterator $queue): ProcessingChain
     {
         /**
-         * @param ProcessingNodeInterface[] $chainElements The elements of the chain
-         * @param \Closure|null             $upstreamChain The upstream chain closure
+         * @param array<ProcessingNodeInterface> $chainElements The elements of the chain
+         * @param \Closure|null                  $upstreamChain The upstream chain closure
          *
          * @return \Closure A closure that applies the composed caster on each element of the passed array value
          */
         $builder = function (array $chainElements, ?\Closure $upstreamChain): \Closure {
             // get the closure for each node wrapped by Assert
             $closures = [];
+            /** @var ProcessingNodeInterface $node */
             foreach ($chainElements as $node) {
                 $closures[] = $node->getBuiltClosure(null);
             }
 
             return function (mixed $value) use ($closures, $upstreamChain): mixed {
+                /** @psalm-var mixed */
                 $upstreamValue = $upstreamChain ? $upstreamChain($value) : $value;
 
                 ProcessingContext::pushPropPathNode('Mod\Assert');

@@ -24,18 +24,26 @@ final class Rounded extends CastBase
     /** @internal */
     public function cast(mixed $value, array $args): mixed
     {
+        /** @var int $precision */
         [$precision] = $args;
+
+        $floatValue = null;
 
         if (is_numeric($value)) {
             $floatValue = (float) $value;
         } elseif (is_object($value) && method_exists($value, '__toString')) {
-            $string = (string) $value;
-            if (is_numeric($string)) {
-                $floatValue = (float) $string;
+            try {
+                $string = (string) $value;
+                if (is_numeric($string)) {
+                    $floatValue = (float) $string;
+                }
+            } catch (\Throwable) {
+                // If __toString or (float) conversion throws an exception, we will
+                // handle it below by throwing a TransformException.
             }
         }
 
-        if (!isset($floatValue)) {
+        if (null === $floatValue) {
             throw TransformException::expected($value, 'type.numeric');
         }
 

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Nandan108\DtoToolkit\CastTo;
 
+use Nandan108\DtoToolkit\Attribute\DefaultOutboundEntity;
+use Nandan108\DtoToolkit\Attribute\MapTo;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Core\CastBase;
 use Nandan108\DtoToolkit\Exception\Process\TransformException;
@@ -13,9 +15,14 @@ use Nandan108\DtoToolkit\Internal\Exporter;
  * Casts arrays or nested DTO to a specified Entity class
  * Actual export is delegated to Exporter::export method.
  *
- * @psalm-suppress UnusedClass
+ * Note: `$entityClass` is intentionally not validated in the constructor.
+ * Entity resolution happens at cast time in `Exporter::export()`, which may use
+ * a DI container and can support types that are not directly instantiable
+ * (for example, interfaces or abstract classes).
+ * If resolution/instantiation fails, an `InvalidConfigException` is thrown at cast time.
+ *
+ * @api
  */
-/** @api */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class Entity extends CastBase
 {
@@ -39,6 +46,10 @@ final class Entity extends CastBase
     /** @internal */
     public function cast(mixed $value, array $args): mixed
     {
+        /** @psalm-suppress UnnecessaryVarAnnotation  */
+        /** @var array{0: ?class-string, 1: array<string, mixed>, 2: bool} $args */
+        [$entity, $supplementalProps, $recursive] = $args;
+
         if (!(\is_array($value) || $value instanceof BaseDto)) {
             throw TransformException::expected(
                 operand: $value,
@@ -49,9 +60,9 @@ final class Entity extends CastBase
         return Exporter::export(
             source: $value,
             as: 'entity',
-            entity: $args[0],
-            supplementalProps: $args[1],
-            recursive: $args[2],
+            entity: $entity,
+            supplementalProps: $supplementalProps,
+            recursive: $recursive,
         );
     }
 }

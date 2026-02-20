@@ -44,7 +44,7 @@ trait CreatesFromArrayOrEntity
         ?ErrorMode $errorMode = null,
         bool $clear = true,
     ): static {
-        $errorList and $this->setErrorList($errorList);
+        $errorList && $this->setErrorList($errorList);
 
         $callback = function () use ($input, $ignoreUnknownProps, $clear): mixed {
             // check for unknown properties
@@ -82,25 +82,31 @@ trait CreatesFromArrayOrEntity
         return ProcessingContext::wrapProcessing($this, $callback, $errorMode);
     }
 
+    /**
+     * This method determines which input values should be used to fill the DTO properties,
+     * based on the fillable properties, presence policy, default values, and any mappers defined via #[MapFrom].
+     *
+     * @return array<truthy-string, mixed>
+     */
     protected function getInputToBeFilled(array $input): array
     {
         /** @psalm-suppress InaccessibleMethod */
         $fillables = $this->getFillable();
 
         // If needed, restrict properties to current scope
-        if ($this instanceof ScopedPropertyAccessInterface) {
-            $propsInScope = $this->getPropertiesInScope(Phase::InboundLoad);
-            $toBeFilled = array_intersect($fillables, $propsInScope);
-        } else {
-            $toBeFilled = $fillables;
-        }
+        /** @var list<truthy-string> $toBeFilled */
+        $toBeFilled = $this instanceof ScopedPropertyAccessInterface
+            ? array_intersect($fillables, $this->getPropertiesInScope(Phase::InboundLoad))
+            : $fillables;
 
         $presencePolicy = static::getPresencePolicy();
         $defaultValues = static::getDefaultValues();
 
         // get mappers ($[MapFrom] attribute) for the properties to be filled
+        /** @var array<truthy-string, MapFrom> $mappers */
         $mappers = MapFrom::getMappers($this, $toBeFilled);
 
+        /** @var array<truthy-string, mixed> $inputToBeFilled */
         $inputToBeFilled = array_intersect_key($input, array_flip($toBeFilled));
 
         // PresencePolicy determine which props are marked as "filled" :
@@ -110,17 +116,12 @@ trait CreatesFromArrayOrEntity
 
         // Get data from mappers. Only fill if we actually get a value.
         foreach ($presencePolicy as $prop => $policy) {
-            if ($mapper = $mappers[$prop] ?? null) {
+            if ($mapper = $mappers[$prop] ?? false) {
                 try {
                     // get value from mapper
+                    /** @psalm-var mixed */
                     $inputToBeFilled[$prop] = $mapper($input, $this);
                 } catch (ExtractionException $e) {
-                    // Currently, extraction failures will be treated as missing input, and #[MapFrom(path)] fails
-                    // immediately (by default) on missing input, even as part of a multi-path expression.
-                    // This can be adjusted via ThrowMode passed to MapFrom attribute: #[MapFrom(paths, ThrowMode::NEVER)],
-                    // but in this case, we lose distinction between "missing input" vs. "null input", which is not ideal.
-                    // TODO: refine prop-path exception handling, so that we can
-                    // distinguish between "missing input" vs. "null input" and handle accordingly.
                     unset($inputToBeFilled[$prop]);
                     continue;
                 }
@@ -128,8 +129,8 @@ trait CreatesFromArrayOrEntity
             // handle MissingMeansDefault policy
             if (!array_key_exists($prop, $inputToBeFilled)) {
                 if (PresencePolicy::MissingMeansDefault === $policy) {
+                    /** @psalm-var mixed */
                     $inputToBeFilled[$prop] = $defaultValues[$prop];
-                    continue;
                 }
             }
             // handle NullMeansMissing policy

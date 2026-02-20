@@ -43,6 +43,8 @@ final class ContainedIn extends ValidatorBase
     /** @internal */
     public function validate(mixed $value, array $args = []): void
     {
+        /** @psalm-suppress UnnecessaryVarAnnotation */
+        /** @var array{0: string|iterable, 1: string|int|null} $args */
         [$haystack, $at] = $args;
         $this->assertValidPosition($at, 'ContainedIn');
 

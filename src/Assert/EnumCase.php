@@ -9,7 +9,10 @@ use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
 use Nandan108\DtoToolkit\Exception\Process\GuardException;
 
 /**
- * Validates that a value matches an enum case (by name or instance).
+ * Validates that a value matches an enum case.
+ *
+ * Backed enums accept a case instance or backing value.
+ * Unit enums accept a case instance or case name.
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class EnumCase extends ValidatorBase
@@ -17,41 +20,71 @@ final class EnumCase extends ValidatorBase
     /**
      * @psalm-suppress PossiblyUnusedMethod
      *
-     * @param class-string<\BackedEnum> $class
-     **/
-    /** @api */
+     * @param class-string<\BackedEnum|\UnitEnum> $class
+     *
+     * @api
+     */
     public function __construct(string $class)
     {
         if (!enum_exists($class)) {
             throw new InvalidArgumentException("EnumCase validator expects an enum class, got {$class}.");
         }
-        parent::__construct([$class]);
+        $isBacked = is_subclass_of($class, \BackedEnum::class);
+        parent::__construct([$class, $isBacked]);
     }
 
     #[\Override]
     /** @internal */
     public function validate(mixed $value, array $args = []): void
     {
+        /** @var class-string<\BackedEnum|\UnitEnum> $enumClass */
         $enumClass = $args[0];
+        /** @var bool $isBacked */
+        $isBacked = $args[1];
+        $enumShortName = (new \ReflectionClass($enumClass))->getShortName();
 
         if ($value instanceof $enumClass) {
             return;
         }
 
-        if (method_exists($enumClass, 'tryFrom')) {
-            $case = $enumClass::tryFrom($value);
-            if ($case instanceof $enumClass) {
-                return;
+        if (!$isBacked) {
+            if (\is_string($value)) {
+                foreach ($enumClass::cases() as $case) {
+                    if ($case->name === $value) {
+                        return;
+                    }
+                }
+                throw GuardException::invalidValue(
+                    value: $value,
+                    template_suffix: 'enum.case',
+                    parameters: [
+                        'enumClass' => $enumShortName,
+                    ],
+                );
+            } else {
+                throw GuardException::expected(
+                    operand: $value,
+                    expected: 'type.string',
+                );
             }
         }
 
-        throw GuardException::invalidValue(
-            value: $value,
-            template_suffix: 'enum.case',
-            parameters: [
-                // Using short name for error message, but including full class in debug info for better diagnostics
-                'enumClass' => (new \ReflectionClass($enumClass))->getShortName(),
-            ],
-        );
+        /** @var class-string<\BackedEnum> $enumClass */
+        if (!\is_int($value) && !\is_string($value)) {
+            throw GuardException::expected(
+                operand: $value,
+                expected: ['type.string', 'type.int'],
+            );
+        }
+
+        if (!$enumClass::tryFrom($value)) {
+            throw GuardException::invalidValue(
+                value: $value,
+                template_suffix: 'enum.case',
+                parameters: [
+                    'enumClass' => $enumShortName,
+                ],
+            );
+        }
     }
 }

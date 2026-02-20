@@ -31,11 +31,15 @@ trait IsInjectable
         );
         foreach ($injectableProps as $prop) {
             /** @psalm-suppress UndefinedMethod */
+            /** @var string $type */
             $type = $prop->getType()?->getName();
             if (!$type) {
                 throw new InvalidConfigException("Cannot inject untyped property {$prop->getName()}");
             }
+
+            /** @psalm-var mixed $value */
             $value = ContainerBridge::get($type);
+
             /** @psalm-suppress UnusedMethodCall */
             $prop->setAccessible(true);
             $prop->setValue($this, $value);

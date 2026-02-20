@@ -20,8 +20,28 @@ use Psr\Container\ContainerInterface;
 final class ContainerBridge
 {
     private static ?ContainerInterface $container = null;
+
+    /**
+     * Manual bindings for types that cannot be resolved via the container, or for simple singletons.
+     *
+     * @var array<string, string|object>
+     */
     private static array $manualBindings = [];
 
+    /**
+     * Registers a manual binding for a type. This is useful in various situations:
+     * - When no DI container is available, and you want to specify how certain types should be resolved (e.g.,
+     *   interfaces to concrete classes, or simple singletons).
+     * - When you want to override the container's resolution for specific types.
+     * - During testing, to mock certain dependencies without needing a full container setup.
+     *
+     * @param string        $abstract The abstract type or identifier to bind. This is the key used to resolve the type later.
+     * @param string|object $concrete The concrete implementation or value to return when the type is resolved. This can be:
+     *                                - An object instance: the same instance will be returned for every resolution (singleton).
+     *                                - A closure: the closure will be invoked each time the type is resolved, allowing for dynamic resolution or factory behavior.
+     *                                - A string: treated as a class name to be resolved via the container or reflection. This is useful for simple cases where you just want to specify a class to instantiate without needing a full container configuration. If the class constructor has required parameters, you must provide a factory Closure or a singleton instance instead.
+     *                                Note on string values: since strings are also used as class names for container resolution, if you want to register a simple string value (not a class name), you must wrap it in a closure that returns the string. E.g.: ContainerBridge::register('app.locale', fn() => 'fr_CA');
+     */
     public static function register(string $abstract, string | object $concrete): void
     {
         self::$manualBindings[$abstract] = $concrete;
@@ -47,9 +67,14 @@ final class ContainerBridge
             return $concrete instanceof \Closure ? $concrete() : $concrete;
         }
 
-        // Try DI container, if it's set, let it resolve the type
+        // Try DI container first (prefer abstract id, then mapped concrete id)
         if (null !== self::$container) {
-            return self::$container->get($id);
+            if (self::$container->has($id)) {
+                return self::$container->get($id);
+            }
+            if ($concrete !== $id && self::$container->has($concrete)) {
+                return self::$container->get($concrete);
+            }
         }
 
         // Fallback to reflection if no container is available.
@@ -58,9 +83,9 @@ final class ContainerBridge
         if (class_exists($concrete)) {
             $ref = new \ReflectionClass($concrete);
             if ($ref->isInstantiable() && 0 === ($ref->getConstructor()?->getNumberOfRequiredParameters() ?? 0)) {
-                self::$manualBindings[$id] = fn (): object => new $concrete();
+                self::$manualBindings[$id] = fn (): object => $ref->newInstance();
 
-                return new $concrete();
+                return $ref->newInstance();
             }
         }
 

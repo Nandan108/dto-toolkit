@@ -33,6 +33,8 @@ final class CompareTo extends ValidatorBase
      */
     public function __construct(string $op, mixed $scalar)
     {
+        ValueComparator::assertOperator($op);
+
         parent::__construct([$op, $scalar]);
     }
 
@@ -40,6 +42,8 @@ final class CompareTo extends ValidatorBase
     /** @internal */
     public function validate(mixed $value, array $args = []): void
     {
+        /** @psalm-suppress UnnecessaryVarAnnotation, MixedAssignment */
+        /** @var array{0: non-empty-string, 1: mixed} $args */
         [$op, $scalar] = $args;
 
         $matches = ValueComparator::compare(

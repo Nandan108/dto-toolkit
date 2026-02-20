@@ -117,7 +117,7 @@ final class ProcessesFromAttributesTest extends TestCase
         };
 
         $this->expectException(InvalidConfigException::class);
-        $this->expectExceptionMessage('must be declared with #[Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)].');
+        $this->expectExceptionMessage('must be declared with #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)].');
 
         /** @psalm-suppress UnusedMethodCall */
         $dto->processInbound();

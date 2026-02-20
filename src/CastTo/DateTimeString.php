@@ -13,12 +13,16 @@ use Nandan108\DtoToolkit\Exception\Process\TransformException;
  *
  * @see https://secure.php.net/manual/en/datetime.format.php
  *
- * @psalm-suppress UnusedClass
+ * @api
  */
-/** @api */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class DateTimeString extends DateTime
 {
+    // Note: This class inherits from DateTime caster to reuse:
+    // - constructor arguments ($format and $timezone) and their handling (validation of $format enum)
+    // - timezone resolution logic using UsesTimeZoneResolver
+    // - bootOnDto(), which calls $this->configureTimezoneResolver();
+
     /** @psalm-suppress PossiblyUnusedReturnValue */
     #[\Override]
     /** @internal */
@@ -35,6 +39,7 @@ final class DateTimeString extends DateTime
 
         // if the timezone different, we need to adjust it
         if ($tz && $value->getTimezone()->getName() !== $tz->getName()) {
+            /** @var \DateTimeInterface */
             $value = $value->setTimezone($tz);
         }
 

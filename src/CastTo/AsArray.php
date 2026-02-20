@@ -34,9 +34,22 @@ final class AsArray extends CastBase
             );
         }
 
-        /** @var array $supplementalProps */
-        /** @var bool $recursive */
+        /** @psalm-suppress UnnecessaryVarAnnotation */
+        /** @var array{0: array, 1: bool} $args */
         [$supplementalProps, $recursive] = $args;
+
+        if ($value instanceof \Traversable) {
+            // if there are duplicate keys, the ones from $value take precedence over $supplementalProps
+            $array = iterator_to_array($value, true) + $supplementalProps;
+
+            return $recursive
+                ? Exporter::normalizeNestedDtos(
+                    normalizedProps: $array,
+                    exportsAsArray: true,
+                    recursive: true,
+                )
+                : $array;
+        }
 
         return Exporter::export(
             source: $value,

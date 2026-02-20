@@ -61,7 +61,7 @@ final class CompareToExtractTest extends TestCase
             $dto->processInbound();
             $this->fail('Expected GuardException was not thrown.');
         } catch (GuardException $e) {
-            $this->assertSame("check{Assert\CompareToExtract}: '==' comparison failed.", $e->getMessage());
+            $this->assertSame("check{Assert\CompareToExtract}: '==' comparison failed after extraction.", $e->getMessage());
         }
     }
 

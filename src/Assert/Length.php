@@ -9,7 +9,7 @@ use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
 use Nandan108\DtoToolkit\Exception\Process\GuardException;
 
 /**
- * Validates string or array length constraints.
+ * Validates string or countable length constraints.
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class Length extends ValidatorBase
@@ -35,16 +35,19 @@ final class Length extends ValidatorBase
         /** @var ?int $max */
         [$min, $max] = $args + [null, null];
 
-        $type = gettype($value);
-
-        $len = match ($type) {
-            'array'  => \count($value),
-            'string' => \mb_strlen($value),
-            default  => throw GuardException::expected(
+        if (\is_string($value)) {
+            $type = 'string';
+            $len = \mb_strlen($value);
+        } elseif (\is_countable($value)) {
+            // Reuse array length templates for any countable input.
+            $type = 'array';
+            $len = \count($value);
+        } else {
+            throw GuardException::expected(
                 operand: $value,
-                expected: ['type.string', 'type.array'],
-            ),
-        };
+                expected: ['type.string', 'type.array', 'type.countable'],
+            );
+        }
 
         $min_ok = null === $min ? true : $len >= $min;
         $max_ok = null === $max ? true : $len <= $max;

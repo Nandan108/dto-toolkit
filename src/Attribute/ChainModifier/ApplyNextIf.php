@@ -58,10 +58,8 @@ class ApplyNextIf extends ChainModifierBase
                     $condition = $this->resolveParam('condition', $value, $this->condition);
 
                     // get the value from upstream
-                    if (null !== $upstreamChain) {
-                        /** @psalm-var mixed */
-                        $value = $upstreamChain($value);
-                    }
+                    /** @psalm-var mixed $value */
+                    $value = $upstreamChain ? $upstreamChain($value) : $value;
 
                     // apply or skip the subchain based on condition ^ negate
                     if ($condition xor $this->negate) {

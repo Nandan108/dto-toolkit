@@ -240,6 +240,16 @@ final class LocaleAwareTest extends TestCase
         $dtoClass::newFromArray(['number' => 1234.56]);
     }
 
+    public function testLocaleResolverRejectsInvalidConstructorArgType(): void
+    {
+        $caster = new LocalizedNumber();
+        $caster->constructorArgs = ['locale' => 123];
+
+        $this->expectException(InvalidConfigException::class);
+        $this->expectExceptionMessage("Parameter 'locale' constructorArg must resolve to string|callable|null");
+        $caster->bootOnDto();
+    }
+
     private function getMontaryDecimalSeparator(string $locale): string
     {
         $formatter = new \NumberFormatter($locale, \NumberFormatter::CURRENCY);
@@ -297,7 +307,6 @@ final class LocaleAwareTest extends TestCase
 
 final class LocaleAwareTest_DeLocaleProvider
 {
-    /** @psalm-suppress PossiblyUnusedMethod */
     public static function getLocale(): string
     {
         // This is a mock implementation. In a real scenario, you would return the appropriate
@@ -318,7 +327,6 @@ final class LocalAwareTestLocaleProvider_FR
 
 final class LocalAwareTestLocaleProvider_ValueDependent
 {
-    /** @psalm-suppress PossiblyUnusedMethod */
     public static function getLocale(mixed $value): string
     {
         return $value > 10 ? 'fr_FR' : 'en_US';

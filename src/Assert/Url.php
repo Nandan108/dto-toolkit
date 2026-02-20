@@ -48,18 +48,8 @@ final class Url extends ValidatorBase
 
         $parsed = \parse_url($value);
 
-        $throw = /** @param non-empty-string $reason **/
-        function (string $reason, array $params = []) use ($value): never {
-            throw GuardException::reason(
-                value: $value,
-                template_suffix: $reason,
-                errorCode: 'guard.url',
-                parameters: $params,
-            );
-        };
-
         if (false === $parsed) {
-            $throw('invalid_url');
+            $this->throw($value, 'invalid_url');
         }
         /** @var array<string, string> $parsed */
 
@@ -67,7 +57,7 @@ final class Url extends ValidatorBase
 
         foreach ($require as $part) {
             if (!isset($parsed[$part]) || '' === $parsed[$part]) {
-                $throw("url_missing_{$part}");
+                $this->throw($value, "url_missing_{$part}");
             }
         }
 
@@ -75,7 +65,7 @@ final class Url extends ValidatorBase
             $host = $parsed['host'] ?? null;
             /** @psalm-suppress RiskyTruthyFalsyComparison */
             if (null === $host || !filter_var($host, FILTER_VALIDATE_DOMAIN, FILTER_FLAG_HOSTNAME)) {
-                $throw('url_invalid_host');
+                $this->throw($value, 'url_invalid_host');
             }
         }
 
@@ -85,10 +75,24 @@ final class Url extends ValidatorBase
             /** @var string[] $parsed */
             $scheme = strtolower($parsed['scheme']);
             if (!in_array($scheme, $allowedSchemes, true)) {
-                $throw('invalid_url_scheme', [
+                $this->throw($value, 'invalid_url_scheme', [
                     'allowed_schemes' => implode(', ', $allowedSchemes),
                 ]);
             }
         }
+    }
+
+    /**
+     * @param non-empty-string                    $reason
+     * @param array<non-empty-string, string|int> $params
+     */
+    private function throw(mixed $value, string $reason, array $params = []): never
+    {
+        throw GuardException::reason(
+            value: $value,
+            template_suffix: $reason,
+            errorCode: 'guard.url',
+            parameters: $params,
+        );
     }
 }

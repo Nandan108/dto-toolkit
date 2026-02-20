@@ -57,11 +57,40 @@ final class ContainerBridgeTest extends TestCase
         /** @psalm-suppress PossiblyUndefinedMethod */
         $mock = $this->createMock(ContainerInterface::class);
         $mock->expects($this->once())
+             ->method('has')
+             ->with('Service')
+             ->willReturn(true);
+        $mock->expects($this->once())
              ->method('get')
              ->with('Service')
              ->willReturn(new \stdClass());
 
         ContainerBridge::setContainer($mock);
-        $this->assertInstanceOf(\stdClass::class, ContainerBridge::get('Service'));
+        $service = ContainerBridge::get('Service');
+        $this->assertInstanceOf(\stdClass::class, $service);
+    }
+
+    public function testDelegatesToMappedConcreteInContainerWhenAbstractIsMissing(): void
+    {
+        /** @var ContainerInterface|\Mockery\MockInterface $mock */
+        $mock = $this->createMock(ContainerInterface::class);
+        /** @psalm-suppress PossiblyUndefinedMethod */
+        $mock->expects($this->exactly(2))
+            ->method('has')
+            ->willReturnCallback(
+                fn (string $id): bool => 'AliasTarget' === $id,
+            );
+        /** @psalm-suppress PossiblyUndefinedMethod */
+        $mock->expects($this->once())
+            ->method('get')
+            ->with('AliasTarget')
+            ->willReturn(new \stdClass());
+
+        ContainerBridge::register('AliasService', 'AliasTarget');
+        /** @var ContainerInterface $mock */
+        ContainerBridge::setContainer($mock);
+
+        $service = ContainerBridge::get('AliasService');
+        $this->assertInstanceOf(\stdClass::class, $service);
     }
 }

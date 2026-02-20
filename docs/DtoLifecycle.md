@@ -90,7 +90,7 @@ This is done by calling one of:
   - prepares outbound data
   - uses passed entity or instantiates a new one
   - loads result into the entity via public props or setters, then returns entity
-- `exportToArray(array $supplementalProps = [], bool $recursive = false)` *(trait `ExportsOutbound`)*
+- `exportToArray(bool $recursive = false)` *(trait `ExportsOutbound`)*
   - returns outbound-cast DTO content as an array, with optional recursive DTO export
 - `toResponse()` or `toModel()` _(coming soon via adapters)_
 

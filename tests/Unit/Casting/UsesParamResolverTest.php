@@ -214,7 +214,6 @@ final class UsesParamResolverTest extends TestCase
             'de_DE' => ['FOO', 'foo', 'foo', 'foo', 'FOO'],
         ];
         foreach ($locales as $locale => $expected) {
-
             $dto->withContext(['locale' => $locale])->loadArray($input);
             $this->assertSame($expected, array_values($dto->toArray()));
         }
@@ -273,13 +272,55 @@ final class UsesParamResolverTest extends TestCase
 
         // sad path: no fallback - unable to resolve
     }
+
+    public function testCallableProviderFailureIsWrappedAsInvalidConfigException(): void
+    {
+        $dto = new UsesParamResolverCallableProviderFailureDto();
+
+        try {
+            $dto->loadArray([
+                'date' => '2025-10-05T12:34:00+00:00',
+            ]);
+            $this->fail('Expected InvalidConfigException was not thrown');
+        } catch (InvalidConfigException $e) {
+            $this->assertStringContainsString("Callable provider for 'timezone' failed", $e->getMessage());
+            $previous = $e->getPrevious();
+            $this->assertInstanceOf(\RuntimeException::class, $previous);
+            $this->assertSame('boom-provider', $previous->getMessage());
+        }
+    }
+
+    public function testResolveParamRejectsInvalidConstructorArgTypeInResolveFlow(): void
+    {
+        $dto = new class extends BaseDto {
+        };
+        ProcessingContext::wrapProcessing($dto, function () {
+            $caster = new class extends DateTime {
+                public function callResolveTimezone(string $value): mixed
+                {
+                    return $this->resolveParam('timezone', $value);
+                }
+            };
+            $caster->bootOnDto();
+            $caster->constructorArgs = ['timezone' => 123];
+
+            $this->expectException(InvalidConfigException::class);
+            $this->expectExceptionMessage("Parameter 'timezone' constructorArg must resolve to string|callable|null");
+            $caster->callResolveTimezone('2025-10-05 12:34:00');
+        });
+    }
+
+    public function testGetConstructorArgReturnsNullOutsideProcessingNodeBase(): void
+    {
+        $helper = new UsesParamResolverPlainHelper();
+        $this->assertNull($helper->callGetConstructorArg('timezone'));
+    }
 }
 
 final class UsesParamResolverDateTestDto extends FullDto
 {
     private string $defaultLocale = 'fr_FR';
 
-    /** @psalm-suppress PossiblyUnusedProperty */
     #[LocalizedDateTime(locale: '<context')]
     public \DateTimeInterface | string | null $dateContextLocale = null;
 
@@ -291,23 +332,19 @@ final class UsesParamResolverDateTestDto extends FullDto
     #[LocalizedDateTime(locale: '<dto:getFrCHLocale')]
     public \DateTimeInterface | string | null $dateDtoFrCHLocale = null;
 
-    /** @psalm-suppress PossiblyUnusedProperty */
     #[LocalizedDateTime]
     public \DateTimeInterface | string | null $dateDynamicLocale = null;
 
-    /** @psalm-suppress PossiblyUnusedMethod */
     public function getLocale(): string
     {
         return $this->defaultLocale;
     }
 
-    /** @psalm-suppress PossiblyUnusedMethod */
     public function getFrCHLocale(): string
     {
         return 'fr_CH';
     }
 
-    /** @psalm-suppress PossiblyUnusedMethod */
     public function withLocale(string $locale): static
     {
         $this->defaultLocale = $locale;
@@ -318,7 +355,6 @@ final class UsesParamResolverDateTestDto extends FullDto
 
 final class UsesParamResolverDeLocaleProvider
 {
-    /** @psalm-suppress PossiblyUnusedMethod */
     public static function getLocale(): string
     {
         return 'de_DE';
@@ -330,7 +366,6 @@ final class UsesParamResolverDateTestDtoNeedsContextButGotNone extends BaseDto i
     use CreatesFromArrayOrEntity;
     use ProcessesFromAttributes;
 
-    /** @psalm-suppress PossiblyUnusedProperty */
     #[LocalizedDateTime(locale: '<context')]
     public \DateTimeInterface | string | null $dateContextLocale = null;
 }
@@ -342,21 +377,55 @@ final class UsesParamResolverDateTestDtoDynamicLocalResolution extends FullDto
 
     private string $defaultLocale = 'fr_FR';
 
-    /** @psalm-suppress PossiblyUnusedProperty */
     #[LocalizedDateTime]
     public \DateTimeInterface | string | null $date = null;
 
-    /** @psalm-suppress PossiblyUnusedMethod */
     public function getLocale(): string
     {
         return $this->defaultLocale;
     }
 
-    /** @psalm-suppress PossiblyUnusedMethod */
     public function withLocale(string $locale): static
     {
         $this->defaultLocale = $locale;
 
         return $this;
+    }
+}
+
+final class UsesParamResolverThrowsTimezoneProvider extends DateTime
+{
+    public function __construct()
+    {
+        parent::__construct();
+        $this->constructorArgs = [
+            'timezone' => static function (): never {
+                throw new \RuntimeException('boom-provider');
+            },
+        ];
+    }
+
+    #[\Override]
+    public function cast(mixed $value, array $args): mixed
+    {
+        $this->resolveParam('timezone', $value);
+
+        return $value;
+    }
+}
+
+final class UsesParamResolverCallableProviderFailureDto extends FullDto
+{
+    #[CastTo(UsesParamResolverThrowsTimezoneProvider::class)]
+    public ?string $date = null;
+}
+
+final class UsesParamResolverPlainHelper
+{
+    use \Nandan108\DtoToolkit\Traits\UsesParamResolver;
+
+    public function callGetConstructorArg(string $paramName): mixed
+    {
+        return $this->getConstructorArg($paramName);
     }
 }

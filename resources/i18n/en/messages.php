@@ -37,6 +37,7 @@ return [
     /* Guard – comparison */
     'processing.guard.invalid_value.compare_to'          => '\':operator\' comparison failed.',
     'processing.guard.invalid_value.compare_to.datetime' => '\':operator\' date comparison failed.',
+    'processing.guard.invalid_value.compare_to_extract'  => '\':operator\' comparison failed after extraction.',
 
     /* Guard – containment */
     'processing.guard.contained_in.not_contained'  => 'Value is not contained in the allowed set.',
@@ -50,6 +51,7 @@ return [
     'processing.guard.invalid_value.number.below_min' => 'Number must be greater than :min.',
     'processing.guard.invalid_value.number.above_max' => 'Number must be less than :max.',
     'processing.guard.array_length.below_min'         => 'Array must contain at least :min item(s).',
+    'processing.guard.array_length.above_max'         => 'Array must contain at most :max item(s).',
     'processing.guard.string_length.below_min'        => 'String must be at least :min character(s) long.',
     'processing.guard.string_length.above_max'        => 'String must be at most :max character(s) long.',
 
@@ -83,7 +85,6 @@ return [
     'processing.transform.enum.invalid_type'                 => 'Invalid value type for enum :enum.',
     'processing.transform.enum.invalid_value'                => 'Invalid enum value for :enum.',
     'processing.guard.expected.backing_value.instance_given' => 'Expected backing value of :enumClass, got an instance.',
-    'processing.guard.expected.backing_value.invalid_type'   => 'Expected backing value of :enumClass, got :type.',
 
     /* Transform – JSON */
     'processing.transform.json.parsing_failed'  => 'JSON parsing failed: :message.',

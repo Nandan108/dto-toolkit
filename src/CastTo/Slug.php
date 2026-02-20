@@ -19,6 +19,11 @@ final class Slug extends CastBase
     /** @api */
     public function __construct(string $separator = '-')
     {
+        /** @psalm-suppress TypeDoesNotContainType */
+        if ('' === $separator) {
+            throw new \InvalidArgumentException('Separator cannot be an empty string.');
+        }
+
         parent::__construct([$separator]);
     }
 
@@ -26,6 +31,7 @@ final class Slug extends CastBase
     /** @internal */
     public function cast(mixed $value, array $args): string
     {
+        /** @var non-empty-string $separator */
         [$separator] = $args;
 
         $value = $this->ensureStringable($value);

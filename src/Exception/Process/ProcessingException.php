@@ -31,6 +31,8 @@ class ProcessingException extends \RuntimeException implements DtoToolkitExcepti
      * Parameters should contain only public information to be used in messages:
      * - no internal class names, implementation details, stack traces or DTO structure leakage
      * - no sensitive information = no value contents unless sanitized
+     *
+     * @var array<string, mixed>
      */
     protected array $parameters = [];
     protected array $debug = [];
@@ -39,7 +41,9 @@ class ProcessingException extends \RuntimeException implements DtoToolkitExcepti
     protected ?string $throwerNodeName = null;
 
     /**
-     * @param non-empty-string $template_suffix
+     * @param array<non-empty-string, mixed> $parameters
+     * @param array<non-empty-string, mixed> $debug
+     * @param non-empty-string               $template_suffix
      */
     public function __construct(
         string $template_suffix,
@@ -63,7 +67,9 @@ class ProcessingException extends \RuntimeException implements DtoToolkitExcepti
     /**
      * Basic reason builder with value info.
      *
-     * @param non-empty-string $template_suffix
+     * @param array<non-empty-string, mixed> $parameters
+     * @param array<non-empty-string, mixed> $debugExtras
+     * @param non-empty-string               $template_suffix
      */
     final public static function reason(
         mixed $value,
@@ -94,7 +100,9 @@ class ProcessingException extends \RuntimeException implements DtoToolkitExcepti
     /**
      * Basic “validation/transformation failed” builder.
      *
-     * @param non-empty-string $template_suffix
+     * @param array<non-empty-string, mixed> $parameters
+     * @param array<non-empty-string, mixed> $debug
+     * @param non-empty-string               $template_suffix
      */
     public static function failed(
         string $template_suffix,
@@ -116,7 +124,9 @@ class ProcessingException extends \RuntimeException implements DtoToolkitExcepti
     /**
      * Expected $expected, but got type($operand).
      *
-     * @param ?truthy-string $templateSuffix
+     * @param array<non-empty-string, mixed> $parameters
+     * @param array<non-empty-string, mixed> $debug
+     * @param ?truthy-string                 $templateSuffix
      */
     public static function expected(
         mixed $operand,
@@ -125,14 +135,16 @@ class ProcessingException extends \RuntimeException implements DtoToolkitExcepti
         array $parameters = [],
         array $debug = [],
     ): static {
+        // If 'type' is provided in $parameters and looks like a type token, use it;
+        // otherwise, use the normalized type of $operand.
+        /** @psalm-var mixed */
+        $typeParam = $parameters['type'] ?? null;
+        $type = is_string($typeParam) && 'type.' === substr($typeParam, 0, 5)
+            ? $typeParam
+            : self::normalizeTypeForParams($operand);
         $autoParams = [
             'expected' => (array) $expected,
-            // If 'type' is provided in $parameters and looks like a type token, use it;
-            // otherwise, use the normalized type of $operand.
-            'type'     => is_string($parameters['type'] ?? null)
-                && 'type.' === substr($parameters['type'], 0, 5)
-                ? $parameters['type']
-                : self::normalizeTypeForParams($operand),
+            'type'     => $type,
         ];
 
         /** @var static */
@@ -155,6 +167,7 @@ class ProcessingException extends \RuntimeException implements DtoToolkitExcepti
     }
 
     #[\Override]
+    /** @return array<string, mixed> */
     public function getMessageParameters(): array
     {
         return $this->parameters;
@@ -188,6 +201,7 @@ class ProcessingException extends \RuntimeException implements DtoToolkitExcepti
             return static::$messageRenderer;
         }
 
+        /** @var ErrorMessageRendererInterface|null $renderer */
         $renderer = ContainerBridge::tryGet(ErrorMessageRendererInterface::class);
         if ($renderer instanceof ErrorMessageRendererInterface) {
             return static::$messageRenderer = $renderer;
@@ -212,7 +226,7 @@ class ProcessingException extends \RuntimeException implements DtoToolkitExcepti
      * Get debug info for the exception. This can contain any information that might be useful for
      * debugging but should not contain sensitive information or internal implementation details.
      *
-     * @param mixed $key
+     * @param array-key $key
      */
     public function getDebugInfo(?string $key = null): mixed
     {

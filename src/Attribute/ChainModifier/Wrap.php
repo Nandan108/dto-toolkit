@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nandan108\DtoToolkit\Attribute\ChainModifier;
 
+use Nandan108\DtoToolkit\Contracts\ProcessingNodeProducerInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Internal\ProcessingChain;
 
@@ -26,8 +27,8 @@ class Wrap extends ChainModifierBase
     }
 
     /**
-     * @param \ArrayIterator $queue The queue of attributes to be processed
-     * @param BaseDto        $dto   The DTO instance
+     * @param ?\ArrayIterator<int, ProcessingNodeProducerInterface> $queue The queue of attributes to be processed
+     * @param BaseDto                                               $dto   The DTO instance
      *
      * @return ProcessingChain Just wraps the next $this->count CastTo attributes
      */

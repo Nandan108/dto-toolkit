@@ -44,6 +44,8 @@ final class Contains extends ValidatorBase
     /** @internal */
     public function validate(mixed $value, array $args = []): void
     {
+        /** @psalm-suppress UnnecessaryVarAnnotation */
+        /** @var array{0: string|iterable, 1: 'start'|'end'|int|null, 2: bool} $args */
         [$needle, $at, $caseSensitive] = $args;
         $this->assertValidPosition($at, 'Contains');
 
@@ -90,10 +92,12 @@ final class Contains extends ValidatorBase
         $this->throwTypeMismatch($value);
     }
 
+    /** @return lowercase-string */
     private function toLower(string $value): string
     {
         // TODO: Remove this trick when bumping PHP requirement to 8.3+
-        $stringToLower = \function_exists('mb_strtolower') ? '\mb_strtolower' : '\strtolower';
+        /** @var callable(string):lowercase-string */
+        $stringToLower = \function_exists('mb_strtolower') ? \mb_strtolower(...) : \strtolower(...);
 
         return $stringToLower($value);
     }

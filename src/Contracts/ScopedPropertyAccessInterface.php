@@ -10,7 +10,7 @@ use Nandan108\DtoToolkit\Enum\Phase;
 interface ScopedPropertyAccessInterface
 {
     /**
-     * @return string[] List of property names in scope for the given phase
+     * @return list<truthy-string> List of property names in scope for the given phase
      *
      * @psalm-suppress PossiblyUnusedMethod
      */

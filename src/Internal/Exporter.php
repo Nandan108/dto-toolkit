@@ -43,7 +43,7 @@ final class Exporter
      *                                                    Only DTOs participate in this recursion, arrays are treated as terminal values.
      * @param 'array'|'entity'         $as
      *
-     * @return array<non-empty-string, mixed>|object the resulting entity as an array or object
+     * @return array|object the resulting entity as an array or object
      *
      * @throws InvalidConfigException
      */
@@ -98,9 +98,6 @@ final class Exporter
      * Helper method to that:
      * - normalizes outbound props from DTO sources using ->toOutboundArray()
      * - if $recursive, recursively converts nested DTOs to entities or arrays
-     *
-     * @param array<non-empty-string, mixed>|object $source
-     * @param array<non-empty-string, mixed>        $supplementalProps
      */
     private static function buildOutboundProps(
         array | object $source,
@@ -110,8 +107,11 @@ final class Exporter
         ?ProcessingErrorList $errorList,
         ?ErrorMode $errorMode,
     ): OutboundProps {
+        $sourceIsDto = false;
         if ($source instanceof BaseDto) {
-
+            // DTO source: use toOutboundArray() to get normalized props,
+            // if $recursive, further normalize nested DTOs to arrays or entities depending on $exportsAsArray
+            $sourceIsDto = true;
             $errorList && $source->setErrorList($errorList);
 
             $normalizedProps = ProcessingContext::wrapProcessing(
@@ -127,51 +127,66 @@ final class Exporter
 
                     // Then recursively convert nested DTOs if needed
                     if ($recursive) {
-                        foreach ($normalizedProps as $prop => $value) {
-                            if ($value instanceof BaseDto) {
-                                // $value cannot be from a property with a declared #[CastTo\Entity] attribute, as
-                                // it would have already been converted by toOutboundArray().
-
-                                $normalizedProps[$prop] = self::export(
-                                    source: $value,
-                                    as: $exportsAsArray ? 'array' : 'entity',
-                                    errorList: $frame->errorList,
-                                    errorMode: $frame->errorMode,
-                                    recursive: true,
-                                );
-                            }
-                        }
+                        $normalizedProps = self::normalizeNestedDtos(
+                            $normalizedProps,
+                            $exportsAsArray,
+                            true,
+                            $frame->errorList,
+                            $frame->errorMode,
+                        );
                     }
 
                     return $normalizedProps;
                 },
             );
+        } elseif (\is_array($source)) {
+            // Array source: filter and normalize nested DTOs if needed
 
-            return new OutboundProps($normalizedProps, $supplementalProps, true);
+            $normalizedProps = $recursive
+                ? self::normalizeNestedDtos(
+                    $source,
+                    $exportsAsArray,
+                    true,
+                    $errorList,
+                    $errorMode,
+                )
+                : $source;
+        } else {
+            // Non-DTO Object source: use PropAccess to read accessible content
+            // filter and normalize nested DTOs if needed
+            $normalizedProps = PropAccess::getValueMap($source) ?? [];
         }
-        if (\is_array($source)) {
-            $normalizedProps = $source;
-            if ($recursive) {
-                // Recursively convert nested DTOs to entities
-                foreach ($normalizedProps as $prop => $value) {
-                    if ($value instanceof BaseDto) {
-                        $normalizedProps[$prop] = self::export(
-                            source: $value,
-                            as: $exportsAsArray ? 'array' : 'entity',
-                            errorList: $errorList,
-                            errorMode: $errorMode,
-                            recursive: true,
-                        );
-                    }
-                }
+
+        return new OutboundProps($normalizedProps, $supplementalProps, $sourceIsDto);
+    }
+
+    /**
+     * Recursively normalizes nested DTOs to entities or arrays, depending on $exportsAsArray.
+     *
+     * @template TArrayType of array
+     *
+     * @param TArrayType $normalizedProps
+     *
+     * @return TArrayType
+     */
+    public static function normalizeNestedDtos(array $normalizedProps, bool $exportsAsArray, bool $recursive, ?ProcessingErrorList $errorList = null, ?ErrorMode $errorMode = null): array
+    {
+        /** @var mixed $childDto */
+        foreach ($normalizedProps as &$childDto) {
+            if (!$childDto instanceof BaseDto) {
+                continue;
             }
 
-            return new OutboundProps($normalizedProps, $supplementalProps, false);
+            $childDto = self::export(
+                source: $childDto,
+                as: $exportsAsArray ? 'array' : 'entity',
+                errorList: $errorList,
+                errorMode: $errorMode,
+                recursive: $recursive,
+            );
         }
-        $normalizedProps = PropAccess::getValueMap($source) ?? [];
 
-        return new OutboundProps($normalizedProps, $supplementalProps, false);
-
+        return $normalizedProps;
     }
 
     /**
@@ -188,10 +203,18 @@ final class Exporter
         mixed $source,
     ): object {
         try {
+            if (!class_exists($class)) {
+                throw new InvalidConfigException(
+                    message: "Target entity class '$class' does not exist.",
+                    debug: ['source' => $source],
+                );
+            }
+            $ref = new \ReflectionClass($class);
+
             return match ($mode) {
-                ConstructMode::Default   => new $class(),
-                ConstructMode::Array     => new $class($args),
-                ConstructMode::NamedArgs => new $class(...$args),
+                ConstructMode::Default   => $ref->newInstance(),
+                ConstructMode::Array     => $ref->newInstance($args),
+                ConstructMode::NamedArgs => $ref->newInstanceArgs($args),
             };
         } catch (\Throwable $e) {
             throw new InvalidConfigException(
@@ -205,8 +228,8 @@ final class Exporter
     /**
      * Helper method to Prepare Entity Instance.
      *
-     * @param array<non-empty-string, mixed>|object $source
-     * @param class-string|object|null              $entity
+     * @param array<array-key, mixed>|object $source
+     * @param class-string|object|null       $entity
      *
      * @return array{entity: object, hydrated: bool} the prepared entity and whether it was already hydrated
      *
@@ -235,13 +258,13 @@ final class Exporter
         }
 
         if (\is_string($entity)) {
+            $entityClass = $entity;
             // we've got a class string to instantiate
             if (ConstructMode::Default === $constructMode) {
                 /** @var object */
-                // Delegate entity instantiation to container if possible
-                $entity = ContainerBridge::tryGet($entity) ??
-                    // Instantiate entity via no-args constructor
-                    self::instantiate($entity, ConstructMode::Default, [], $source);
+                // Resolve via container when available; otherwise fallback to direct instantiation.
+                $entity = ContainerBridge::tryGet($entityClass)
+                    ?? self::instantiate($entityClass, ConstructMode::Default, [], $source);
                 $hydrated = false;
             } else {
                 /** @var BaseDto $source */
@@ -251,7 +274,7 @@ final class Exporter
                     $outboundProps->applyRemap($outboundNamesMap);
                 }
                 // Instantiate entity via constructor with outbound props
-                $entity = self::instantiate($entity, $constructMode, $outboundProps->toArray(), $source);
+                $entity = self::instantiate($entityClass, $constructMode, $outboundProps->toArray(), $source);
                 $hydrated = true;
             }
 
@@ -271,9 +294,9 @@ final class Exporter
     }
 
     /**
-     * Helper method to Hydrate Entity if needed.
+     * Helper method to hydrate entity if needed.
      *
-     * @param array<non-empty-string, mixed>|object $source
+     * @param array<array-key, mixed>|object $source
      */
     private static function hydrateEntity(
         array | object $source,
@@ -286,14 +309,14 @@ final class Exporter
             // Source is a DTO: use MapTo to set properties (honors #[MapTo] attributes)
             $setters = MapTo::getSetters(
                 dto: $source,
-                propNames: array_keys($props),
+                propNames: $outboundProps->allKeys(),
                 targetEntity: $entity,
             );
         } else {
             // Source is not a DTO: use PropAccess to set properties
             $setters = PropAccess::getSetterMapOrThrow(
                 target: $entity,
-                propNames: array_keys($props),
+                propNames: $outboundProps->allKeys(),
             );
         }
 
@@ -306,12 +329,6 @@ final class Exporter
 /** @internal */
 final class OutboundProps
 {
-    /**
-     * Summary of __construct.
-     *
-     * @param array<non-empty-string, mixed> $props
-     * @param array<non-empty-string, mixed> $supplementalProps
-     */
     public function __construct(
         public array $props,
         public array $supplementalProps,
@@ -319,17 +336,19 @@ final class OutboundProps
     ) {
     }
 
+    /** @return array<array-key, mixed> */
     public function toArray(): array
     {
-        return [...$this->props, ...$this->supplementalProps];
+        return $this->props + $this->supplementalProps;
     }
 
-    /** @param non-empty-array $nameMap */
+    /** @param array<array-key, array-key|null> $nameMap */
     public function applyRemap(array $nameMap): void
     {
         $outboundProps = $this->props;
         foreach ($nameMap as $fromKey => $toKey) {
             if (null !== $toKey) {
+                /** @psalm-var mixed */
                 $outboundProps[$toKey] = $this->props[$fromKey];
             }
             unset($outboundProps[$fromKey]);
@@ -337,9 +356,21 @@ final class OutboundProps
         $this->props = $outboundProps;
     }
 
-    /** @return list<non-empty-string> */
+    /** @return list<truthy-string> */
     public function dtoKeys(): array
     {
-        return array_keys($this->props);
+        return array_values(array_filter(
+            array_keys($this->props),
+            fn ($key) => \is_string($key) && (bool) $key,
+        ));
+    }
+
+    /** @return list<truthy-string> */
+    public function allKeys(): array
+    {
+        return array_values(array_filter(
+            array_keys($this->props + $this->supplementalProps),
+            fn ($key) => \is_string($key) && (bool) $key,
+        ));
     }
 }

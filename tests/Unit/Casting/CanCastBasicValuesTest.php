@@ -9,6 +9,7 @@ namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
 
 use Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Core\FullDto;
+use Nandan108\DtoToolkit\Core\ProcessingContext;
 use Nandan108\DtoToolkit\Enum\DateTimeFormat;
 use Nandan108\DtoToolkit\Enum\IntCastMode;
 use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
@@ -117,8 +118,8 @@ final class CanCastBasicValuesTest extends TestCase
     {
         // parent-constructor call line in caster constructor is not covered
         // if constructor is instanciated within the DataProvider method, for some reason. So test them separately.
-        $this->casterTest(CastTo\NumericString::class, '1234.456', '1 234,46', ['2', ',', ' ']);
-        $this->casterTest(CastTo\NumericString::class, 'not-a-number', TransformException::class, ['2', ',', ' ']);
+        $this->casterTest(CastTo\NumericString::class, '1234.456', '1 234,46', [2, ',', ' ']);
+        $this->casterTest(CastTo\NumericString::class, 'not-a-number', TransformException::class, [2, ',', ' ']);
     }
 
     public function testDateTime(): void
@@ -177,5 +178,61 @@ final class CanCastBasicValuesTest extends TestCase
 
         /** @psalm-suppress InvalidArgument */
         new CastTo\Age('days', relativeTo: 'not-a-date');
+    }
+
+    public function testNumericStringRejectsNonFiniteNumericValues(): void
+    {
+        $caster = new CastTo\NumericString(2, ',', ' ');
+        $dto = new FullDto();
+
+        $this->expectException(TransformException::class);
+        $this->expectExceptionMessage('numeric_string.invalid');
+        ProcessingContext::wrapProcessing($dto, fn (): mixed => $caster->cast('1e10000', [2, ',', ' ']));
+    }
+
+    public function testNumericStringCatchesInternalFormattingThrowable(): void
+    {
+        $caster = new CastTo\NumericString();
+        $dto = new FullDto();
+
+        $this->expectException(TransformException::class);
+        $this->expectExceptionMessage('numeric_string.invalid');
+        /** @psalm-suppress InvalidScalarArgument */
+        ProcessingContext::wrapProcessing($dto, fn (): mixed => $caster->cast('123.45', [[], ',', ' ']));
+    }
+
+    public function testRoundedCatchesThrowableFromStringableObject(): void
+    {
+        $caster = new CastTo\Rounded(2);
+        $value = new class {
+            public function __toString(): string
+            {
+                throw new \RuntimeException('boom-string-cast');
+            }
+        };
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('boom-string-cast');
+        $caster->cast($value, [2]);
+    }
+
+    public function testSplitRejectsEmptySeparatorInConstructor(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        /** @psalm-suppress InvalidArgument */
+        new CastTo\Split('');
+    }
+
+    public function testTrimmedRejectsInvalidWhereInConstructor(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        /** @psalm-suppress InvalidArgument */
+        new CastTo\Trimmed(where: 'middle');
+    }
+
+    public function testSlugRejectsEmptySeparatorInConstructor(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        new CastTo\Slug('');
     }
 }

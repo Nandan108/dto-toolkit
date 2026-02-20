@@ -26,12 +26,12 @@ use Nandan108\DtoToolkit\Support\ContainerBridge;
  * @method static static newWithErrorMode(ErrorMode $mode)
  *
  * @psalm-type DtoPropMetaCache = array{
- *     defaultValue: array<string, mixed>,
- *     propRef: array<string, \ReflectionProperty>,
- *     presencePolicy:  array<string, PresencePolicy>,
+ *     defaultValue: array<truthy-string, mixed>,
+ *     propRef: array<truthy-string, \ReflectionProperty>,
+ *     presencePolicy:  array<truthy-string, PresencePolicy>,
  *     nodeName?: ?truthy-string,
  *     classRef?: \ReflectionClass<static>,
- *     phase?: array<string, array<string, PhaseAwareInterface|list<PhaseAwareInterface>>>,
+ *     phase?: array<non-empty-string, array<truthy-string, PhaseAwareInterface|list<PhaseAwareInterface>>>,
  * }
  */
 abstract class BaseDto implements ProvidesProcessingNodeNameInterface
@@ -43,15 +43,16 @@ abstract class BaseDto implements ProvidesProcessingNodeNameInterface
     /**
      * List of properties that can be filled.
      *
-     * @var string[]
+     * @var list<truthy-string>
      **/
     protected ?array $_fillable = null;
+
     /**
      * List of properties that have been filled.
      * The key is the property name, and the value is ALWAYS true.
      * An unfilled property is simply not present in this array.
      *
-     * @var array<string, true>
+     * @var array<truthy-string, true>
      **/
     public array $_filled = [];
 
@@ -83,7 +84,7 @@ abstract class BaseDto implements ProvidesProcessingNodeNameInterface
         return $this->_errorMode ?? static::$_defaultErrorMode;
     }
 
-    /** @psalm-suppress PossiblyUnusedMethod */
+    // /** @psalm-suppress PossiblyUnusedMethod */
     /** @api */
     public function withErrorMode(ErrorMode $mode): static
     {
@@ -107,7 +108,7 @@ abstract class BaseDto implements ProvidesProcessingNodeNameInterface
     /**
      * Initialize phase-agnostic property metadata for a DTO class.
      * For each prop, gathers :
-     * - ReflectionProperty
+     * - \ReflectionProperty
      * - default value
      * - presence policy.
      *
@@ -122,6 +123,7 @@ abstract class BaseDto implements ProvidesProcessingNodeNameInterface
         $refClass = static::getClassRef();
 
         foreach ($refClass->getProperties(\ReflectionProperty::IS_PUBLIC) as $prop) {
+            /** @var truthy-string */
             $propName = $prop->getName();
 
             // Ignore static properties
@@ -132,6 +134,7 @@ abstract class BaseDto implements ProvidesProcessingNodeNameInterface
             self::$_dtoMetaCache[$class]['propRef'][$propName] = $prop;
 
             if ($prop->hasDefaultValue()) {
+                /** @psalm-var mixed */
                 self::$_dtoMetaCache[$class]['defaultValue'][$propName] = $prop->getDefaultValue();
             } else {
                 throw new InvalidConfigException("Default value missing on DTO property: {$class}::\${$propName}.");
@@ -160,7 +163,7 @@ abstract class BaseDto implements ProvidesProcessingNodeNameInterface
 
             $resolved[$propName] = $policy;
         }
-
+        /** @var array<truthy-string, PresencePolicy> $resolved */
         self::$_dtoMetaCache[$class]['presencePolicy'] = $resolved;
     }
 
@@ -178,14 +181,14 @@ abstract class BaseDto implements ProvidesProcessingNodeNameInterface
         return self::$_dtoMetaCache[$class];
     }
 
-    /** @return array<string, \ReflectionProperty> */
+    /** @return array<truthy-string, \ReflectionProperty> */
     protected static function getPropRefs(): array
     {
         return static::getPropMeta()['propRef'];
     }
 
     /**
-     * @return array<string, mixed> a map of default values for the DTO properties
+     * @return array<truthy-string, mixed> a map of default values for the DTO properties
      *
      * @api
      */
@@ -197,7 +200,7 @@ abstract class BaseDto implements ProvidesProcessingNodeNameInterface
     /**
      * Get a map of presence policies for the DTO properties.
      *
-     * @return array<string, PresencePolicy>
+     * @return array<truthy-string, PresencePolicy>
      *
      * @api
      */
@@ -221,10 +224,10 @@ abstract class BaseDto implements ProvidesProcessingNodeNameInterface
 
             foreach ($attributes as $attributeRef) {
                 $attrInstance = $attributeRef->newInstance();
-
-                /** @psalm-suppress ArgumentTypeCoercion */
+                /** @var class-string $attributeClass */
+                $attributeClass = $attributeRef->getName();
                 /** @var int $flags */
-                $flags = (new \ReflectionClass($attributeRef->getName()))->getAttributes()[0]->newInstance()->flags;
+                $flags = (new \ReflectionClass($attributeClass))->getAttributes()[0]->newInstance()->flags;
                 $isRepeatable = ($flags & \Attribute::IS_REPEATABLE) === \Attribute::IS_REPEATABLE;
 
                 if ($attrInstance instanceof Outbound) {
@@ -235,7 +238,7 @@ abstract class BaseDto implements ProvidesProcessingNodeNameInterface
                 if ($attrInstance instanceof PhaseAwareInterface) {
                     $attrInstance->setOutbound($isOutbound);
                     if ($isRepeatable) {
-                        /** @var array<array<array{attr?: list<PhaseAwareInterface>}>> $cache */
+                        /** @var array<truthy-string, array<truthy-string, array{attr?: list<PhaseAwareInterface>}>> $cache */
                         $cache[$attrInstance->getPhase()->value][$propName]['attr'][] = $attrInstance;
                     } else {
                         $cache[$attrInstance->getPhase()->value][$propName]['attr'] = $attrInstance;
@@ -244,7 +247,7 @@ abstract class BaseDto implements ProvidesProcessingNodeNameInterface
             }
         }
 
-        /** @psalm-var array<string, array<string, PhaseAwareInterface|list<PhaseAwareInterface>>> $cache */
+        /** @psalm-var array<truthy-string, array<truthy-string, PhaseAwareInterface|list<PhaseAwareInterface>>> $cache */
         self::$_dtoMetaCache[static::class]['phase'] = $cache;
     }
 
@@ -253,7 +256,7 @@ abstract class BaseDto implements ProvidesProcessingNodeNameInterface
      *
      * @param \Closure|class-string|null $filter
      *
-     * @return array<string, PhaseAwareInterface|list<PhaseAwareInterface>>
+     * @return array<non-empty-string, PhaseAwareInterface|list<PhaseAwareInterface>>
      *
      * @api
      */
@@ -263,9 +266,12 @@ abstract class BaseDto implements ProvidesProcessingNodeNameInterface
             self::initPhaseAwarePropMeta();
         }
 
-        /** @var array $meta */
+        // get the metadata for the given phase
+        /** @var array<non-empty-string, mixed> $meta */
         $meta = self::$_dtoMetaCache[static::class]['phase'][$phase->value] ?? [];
 
+        // extract the relevant metadata for the given metadata name (e.g. 'attr')
+        /** @var array<non-empty-string, PhaseAwareInterface|list<PhaseAwareInterface>> $metaByName */
         $metaByName = array_map(
             static function (array $propMeta) use ($metaDataName) {
                 return $propMeta[$metaDataName] ?? [];
@@ -283,7 +289,7 @@ abstract class BaseDto implements ProvidesProcessingNodeNameInterface
 
             /** @var mixed $meta */
             foreach ($metaByName as &$meta) {
-                /** @psalm-suppress TooManyArguments */
+                // /** @psalm-suppress TooManyArguments */
                 if (is_array($meta)) {
                     $meta = array_filter($meta, $filterClosure);
                 } elseif (!$filterClosure($meta)) {
@@ -306,6 +312,8 @@ abstract class BaseDto implements ProvidesProcessingNodeNameInterface
      * declared after #[Outbound] will be called to transform the data before returning it.
      *
      * @psalm-suppress PossiblyUnusedMethod, UnusedParam, InvalidReturnType
+     *
+     * @return array<truthy-string, mixed>
      *
      * @api
      */
@@ -340,7 +348,7 @@ abstract class BaseDto implements ProvidesProcessingNodeNameInterface
             $this->preOutput($data);
         }
 
-        /** @psalm-suppress InvalidReturnStatement */
+        /** @var array<truthy-string, mixed> $data */
         return $data;
     }
 
@@ -349,6 +357,8 @@ abstract class BaseDto implements ProvidesProcessingNodeNameInterface
      * These are public instance properties, excluding those prefixed with "_".
      *
      * @psalm-suppress PossiblyUnusedMethod
+     *
+     * @return list<truthy-string>
      *
      * @api
      */
@@ -373,7 +383,9 @@ abstract class BaseDto implements ProvidesProcessingNodeNameInterface
      * If no property names are given, all public, filled properties will be returned.
      * The data is returned as-is, without any transformation.
      *
-     * @param string[] $propNames
+     * @param ?array<non-empty-string> $propNames
+     *
+     * @return array<truthy-string, mixed>
      *
      * @api
      */
@@ -382,6 +394,7 @@ abstract class BaseDto implements ProvidesProcessingNodeNameInterface
         $vars = get_object_vars($this);
         $keys = $propNames ?? array_keys($this->_filled);
 
+        /** @var array<truthy-string, mixed> */
         return array_intersect_key($vars, array_flip($keys));
     }
 
@@ -391,7 +404,7 @@ abstract class BaseDto implements ProvidesProcessingNodeNameInterface
      *
      * This method is useful to prepare the DTO for safe reuse.
      *
-     * @param list<string>         $propNames        specific property names to clear. If empty, all public props are cleared.
+     * @param list<truthy-string>  $propNames        specific property names to clear. If empty, all public props are cleared.
      * @param array<string, mixed> $excludedPropsMap a property-name keyed map. These props will NOT be cleared.
      * @param bool                 $clearErrors      whether to clear DTO's errorList
      *
@@ -412,6 +425,7 @@ abstract class BaseDto implements ProvidesProcessingNodeNameInterface
             $defaultValues = array_diff_key($defaultValues, $excludedPropsMap);
         }
 
+        /** @psalm-var mixed $defaultValue */
         foreach ($defaultValues as $propName => $defaultValue) {
             $this->$propName = $defaultValue;
             unset($this->_filled[$propName]);
@@ -434,12 +448,15 @@ abstract class BaseDto implements ProvidesProcessingNodeNameInterface
      *
      * Note: '_' prefixed properties are ignored
      *
+     * @param array<truthy-string, mixed> $values
+     *
      * @psalm-suppress PossiblyUnusedMethod
      *
      * @api
      */
     public function fill(array $values): static
     {
+        /** @psalm-var mixed $value */
         foreach ($values as $key => $value) {
             $this->$key = $value;
             $this->_filled[$key] = true;
@@ -454,6 +471,8 @@ abstract class BaseDto implements ProvidesProcessingNodeNameInterface
      * This does not modify the current values of the properties,
      * but they will be excluded from further processing such as
      * normalization, export, or entity mapping.
+     *
+     * @param ?list<truthy-string> $props
      *
      * @psalm-suppress PossiblyUnusedMethod
      *
@@ -515,17 +534,19 @@ abstract class BaseDto implements ProvidesProcessingNodeNameInterface
     public static function __callStatic(string $method, array $arguments): static
     {
         $ref = static::getClassRef();
+        /** @var array<string, \ReflectionMethod> $resolvedMethods */
         static $resolvedMethods = [];
         /** @psalm-suppress  UnsupportedReferenceUsage */
+        /** @var ?\ReflectionMethod $resolvedInstanceMethod */
         $resolvedInstanceMethod = &$resolvedMethods[$ref->name.'::'.$method] ?? null;
 
         if (!$resolvedInstanceMethod) {
-            if (str_starts_with($method, $prefix = 'newFrom')
-                || str_starts_with($method, $prefix = 'newWith')) {
+            $prefix = substr($method, 0, 7);
+            if (in_array($prefix, ['newFrom', 'newWith'], true)) {
                 $instanceMethodName = match ($prefix) {
                     'newFrom' => 'load',
                     'newWith' => 'with',
-                }.substr($method, strlen($prefix));
+                }.substr($method, 7);
                 $resolvedInstanceMethod = self::getValidMethodRef($instanceMethodName, $ref);
 
             } else {
@@ -537,6 +558,7 @@ abstract class BaseDto implements ProvidesProcessingNodeNameInterface
         // make a new instance of the class
         $instance = static::new();
         // call the method on the instance
+        /** @var \ReflectionMethod $resolvedInstanceMethod */
         $resolvedInstanceMethod->invoke($instance, ...$arguments);
 
         return $instance;
@@ -566,6 +588,7 @@ abstract class BaseDto implements ProvidesProcessingNodeNameInterface
 
         // make a new instance of the class,
         /** @psalm-suppress UnsafeInstantiation */
+        /** @var static $instance */
         $instance = $shouldUseContainer
             // via container injection if the class is marked with #[Inject],
             ? ContainerBridge::get(static::class)
@@ -592,9 +615,18 @@ abstract class BaseDto implements ProvidesProcessingNodeNameInterface
     /** @internal */
     public static function getClassRef(): \ReflectionClass
     {
-        /** @psalm-suppress PropertyTypeCoercion */
-        return static::$_dtoMetaCache[static::class]['classRef'] ??=
-            new \ReflectionClass(static::class);
+        $ref = static::$_dtoMetaCache[static::class]['classRef'] ?? null;
+        if (null === $ref) {
+            $ref = new \ReflectionClass(static::class);
+            $constructorRef = $ref->getConstructor();
+            if ($constructorRef && $constructorRef->getNumberOfRequiredParameters() > 0) {
+                throw new InvalidConfigException("DTO class {$ref->getName()} has a constructor with required parameters. Please make sure the constructor can be called without arguments.");
+            }
+            /** @psalm-suppress PropertyTypeCoercion */
+            static::$_dtoMetaCache[static::class]['classRef'] = $ref;
+        }
+
+        return $ref;
     }
 
     protected static function getValidMethodRef(string $method, \ReflectionClass $classRef, bool $visible = true): \ReflectionMethod
@@ -629,7 +661,7 @@ abstract class BaseDto implements ProvidesProcessingNodeNameInterface
         if (null === $nodeName) {
             if (ProcessingContext::isDevMode()) {
                 $ref = static::getClassRef();
-                /** @psalm-suppress PropertyTypeCoercion */
+                // /** @psalm-suppress PropertyTypeCoercion */
                 $nodeName = $ref->isAnonymous()
                     ? 'AnonymousDTO('.basename($ref->getFileName()).":{$ref->getStartLine()})"
                     : $ref->getShortName();

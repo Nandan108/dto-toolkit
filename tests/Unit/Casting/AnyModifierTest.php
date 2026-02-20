@@ -102,7 +102,7 @@ final class AnyModifierTest extends TestCase
 
 final class AlwaysTrueCondition
 {
-    /** @psalm-suppress UnusedParam, PossiblyUnusedMethod */
+    /** @psalm-suppress UnusedParam, */
     public static function provide(mixed $value, ?string $prop, BaseDto $dto): bool
     {
         return true;

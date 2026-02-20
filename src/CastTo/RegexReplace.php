@@ -47,6 +47,8 @@ final class RegexReplace extends CastBase
     #[\Override]
     public function cast(mixed $value, array $args): string
     {
+        /** @psalm-suppress UnnecessaryVarAnnotation */
+        /** @var array{0: non-empty-string, 1: string, 2: int} $args */
         [$pattern, $replacement, $limit] = $args;
 
         $value = $this->ensureStringable($value);

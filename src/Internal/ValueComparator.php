@@ -18,6 +18,8 @@ use Nandan108\DtoToolkit\Exception\Process\GuardException;
  */
 final class ValueComparator
 {
+    public const SUPPORTED_OPERATORS = ['==', '===', '!=', '!==', '<', '<=', '>', '>='];
+
     public static function compare(
         mixed $left,
         mixed $right,
@@ -27,7 +29,9 @@ final class ValueComparator
     ): bool {
         self::assertOperator($op);
 
+        /** @psalm-var mixed */
         $leftNorm = self::normalizeOperand($left, $right, $leftIsValue);
+        /** @psalm-var mixed */
         $rightNorm = self::normalizeOperand($right, $left, $rightIsValue);
 
         if (($leftNorm instanceof \UnitEnum) || ($rightNorm instanceof \UnitEnum)) {
@@ -48,10 +52,9 @@ final class ValueComparator
         };
     }
 
-    private static function assertOperator(string $op): void
+    public static function assertOperator(string $op): void
     {
-        $allowed = ['==', '===', '!=', '!==', '<', '<=', '>', '>='];
-        if (!in_array($op, $allowed, true)) {
+        if (!in_array($op, self::SUPPORTED_OPERATORS, true)) {
             throw new InvalidArgumentException("CompareTo validator: invalid operator '{$op}'.");
         }
     }

@@ -11,6 +11,8 @@ use Nandan108\DtoToolkit\Core\ProcessingContext;
 use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
 use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
 use Nandan108\DtoToolkit\Exception\Context\ContextException;
+use Nandan108\DtoToolkit\Internal\ProcessingNodeBase;
+use Nandan108\DtoToolkit\Support\CacheKeySerializer;
 
 /**
  * This trait provides a way to resolve caster parameters for DTOs.
@@ -21,7 +23,7 @@ use Nandan108\DtoToolkit\Exception\Context\ContextException;
  */
 trait UsesParamResolver
 {
-    /** @var \WeakMap<BaseDto, ParamResolverConfig[]> */
+    /** @var \WeakMap<BaseDto, array<array-key, ParamResolverConfig>> */
     protected static ?\WeakMap $paramProvidersMap = null;
 
     protected function getParamResolverConfig(string $paramName): ParamResolverConfig
@@ -33,7 +35,7 @@ trait UsesParamResolver
         if (!isset(static::$paramProvidersMap) || !isset(static::$paramProvidersMap[$dto])) {
             throw new InvalidConfigException('configureParamResolver() must be called before resolveParamProvider()');
         }
-        /** @var array<string, ParamResolverConfig> $resolverConfigs */
+        /** @var array<array-key, ParamResolverConfig> $resolverConfigs */
         $resolverConfigs = static::$paramProvidersMap[$dto];
 
         $config = $resolverConfigs[$paramName] ?? null;
@@ -52,11 +54,14 @@ trait UsesParamResolver
      *
      * @psalm-suppress UndefinedDocblockClass
      */
-    protected function resolveParamProvider(ParamResolverConfig $config, ?string $paramValueOrProviderClass, BaseDto $dto): \Closure
+    protected function resolveParamProvider(ParamResolverConfig $config, string | callable | null $paramValueOrProviderClass, BaseDto $dto): \Closure
     {
+
+        $providerCacheKey = CacheKeySerializer::serialize($paramValueOrProviderClass);
+
         /** @var \Closure|null $provider */
-        /** @psalm-suppress UnsupportedPropertyReferenceUsage,PossiblyNullArrayOffset */
-        $provider = &$config->providers[$paramValueOrProviderClass] ?? null;
+        /** @psalm-suppress UnsupportedPropertyReferenceUsage */
+        $provider = $config->providers[$providerCacheKey] ?? null;
         if ($provider) {
             return $provider;
         }
@@ -64,23 +69,45 @@ trait UsesParamResolver
         $paramName = $config->paramName;
         $defaultParamGetter = 'get'.ucfirst($paramName);
 
-        $attemptJsonDecode = function (?string $value): mixed {
+        $attemptJsonDecode = static function (?string $value): mixed {
             if (null === $value) {
                 return null;
             }
-            $decoded = json_decode($value, true);
-            if (JSON_ERROR_NONE !== json_last_error()) {
+
+            try {
+                return json_decode($value, true, 512, JSON_THROW_ON_ERROR);
+            } catch (\JsonException) {
                 return $value;
             }
-
-            return $decoded;
         };
 
         // A value was provided
         if (null !== $paramValueOrProviderClass) {
+            if (\is_callable($paramValueOrProviderClass)) {
+                $callableProvider = \Closure::fromCallable($paramValueOrProviderClass);
+                $provider = function (mixed $value, ?string $prop, BaseDto $dto) use ($callableProvider, $paramName): mixed {
+                    try {
+                        return $callableProvider($value, $prop, $dto);
+                    } catch (\Throwable $e) {
+                        throw new InvalidConfigException(
+                            message: "Callable provider for '$paramName' failed: ".$e->getMessage(),
+                            debug: [
+                                'paramName' => $paramName,
+                                'prop'      => $prop,
+                                'dtoClass'  => $dto::class,
+                            ],
+                            previous: $e,
+                        );
+                    }
+                };
+
+                return $config->providers[$providerCacheKey] = $provider;
+            }
+
             // 1. Declared DTO source ? Return a provider that calls $dto->get$paramName()
             if (preg_match('/^<dto(:(\w+)(?::(.*))?)?$/', $paramValueOrProviderClass, $matches)) {
                 $paramGetter = $matches[2] ?? $defaultParamGetter;
+                /** @psalm-var mixed */
                 $extraParam = $attemptJsonDecode($matches[3] ?? null);
 
                 if (!method_exists($dto, $paramGetter)) {
@@ -90,9 +117,11 @@ trait UsesParamResolver
                     );
                 }
 
-                return $provider = function (mixed $value, ?string $prop, BaseDto $dto) use ($paramGetter, $extraParam): mixed {
+                $provider = function (mixed $value, ?string $prop, BaseDto $dto) use ($paramGetter, $extraParam): mixed {
                     return [$dto, $paramGetter]($value, $prop, $extraParam);
                 };
+
+                return $config->providers[$providerCacheKey] = $provider;
             }
 
             // 2. Declared context source ? Return a provider that calls $dto->getContext($paramName) and returns the value (context-val) cast as a boolean.
@@ -123,8 +152,9 @@ trait UsesParamResolver
                     throw new InvalidConfigException("Cannot resolve context key '$contextKey' (no context set) for caster ".static::class);
                 }
 
-                return $provider = function (mixed $value, ?string $prop, BaseDto & HasContextInterface $dto) use ($contextKey, $checkClosure, $paramName, $config): mixed {
+                $provider = function (mixed $value, ?string $prop, BaseDto & HasContextInterface $dto) use ($contextKey, $checkClosure, $paramName, $config): mixed {
                     // attempt to get the parameter value from the context
+                    /** @psalm-var mixed */
                     $paramValue = $dto->contextGet($contextKey);
 
                     if (null !== $paramValue && null !== $checkClosure) {
@@ -140,14 +170,19 @@ trait UsesParamResolver
 
                     return $paramValue;
                 };
+
+                return $config->providers[$providerCacheKey] = $provider;
             }
 
             // 3. It's a valid provider class ? Return a provider that static-calls it.
             [$classProvider, $paramGetter] = explode('::', $paramValueOrProviderClass, 2) + [null, $defaultParamGetter];
-            if (class_exists($classProvider)) {
+            /** @var string|null $classProvider */
+            if (null !== $classProvider && class_exists($classProvider)) {
                 if (method_exists($classProvider, $paramGetter)) {
                     // if the class has a method that matches the getter, use it
-                    return $provider = fn (mixed $value, ?string $prop): mixed => [$classProvider, $paramGetter]($value, $prop, $dto);
+                    $provider = fn (mixed $value, ?string $prop): mixed => [$classProvider, $paramGetter]($value, $prop, $dto);
+
+                    return $config->providers[$providerCacheKey] = $provider;
                 }
                 throw new InvalidArgumentException("Class $classProvider does not have a $paramGetter() method.");
             }
@@ -155,7 +190,9 @@ trait UsesParamResolver
             // 4. If we have a validity checker and the value passes
             if ($config->checkValid && ($config->checkValid)($paramValueOrProviderClass, $paramName)) {
                 // if the value directly provided is valid, return a provider that returns this value.
-                return $provider = fn () => $paramValueOrProviderClass;
+                $provider = fn (): mixed => $paramValueOrProviderClass;
+
+                return $config->providers[$providerCacheKey] = $provider;
             }
 
             throw new InvalidConfigException("Cannot resolve $paramName from \"$paramValueOrProviderClass\" for ".static::class);
@@ -164,19 +201,22 @@ trait UsesParamResolver
         // Null value provided or non-null but not early-resolvable?
         // Return a late-binding provider that runs at cast time, and checks in order:
         // 1. $dto->get$paramName(), 2. $dto->getContext($paramName), 3. fallback provider.
-        return $provider = function (mixed $value, ?string $prop, BaseDto $dto) use ($paramName, $defaultParamGetter, $config): mixed {
+        $provider = function (mixed $value, ?string $prop, BaseDto $dto) use ($paramName, $defaultParamGetter, $config): mixed {
             // initializing $paramValue to keep psalm happy
             $paramValue = null;
 
             if ($dto instanceof HasContextInterface && $dto->contextHas($paramName)) {
                 // attempt to get the parameter value from the context
+                /** @psalm-suppress MixedAssignment */
                 $paramValue = $dto->contextGet($paramName);
                 $source = "\$dto->getContext('$paramName')";
             } elseif (method_exists($dto, $defaultParamGetter)) {
                 // attempt resolution via $dto->{"get$paramName"}()
+                /** @psalm-suppress MixedAssignment */
                 $paramValue = [$dto, $defaultParamGetter]($value, $prop);
                 $source = "\$dto->$defaultParamGetter()";
             } elseif (isset($config->fallback)) {
+                /** @psalm-suppress MixedAssignment */
                 $paramValue = ($config->fallback)($value, $dto);
                 $source = 'fallback provider';
             }
@@ -196,54 +236,78 @@ trait UsesParamResolver
 
             return $paramValue;
         };
+
+        return $config->providers[$providerCacheKey] = $provider;
     }
 
-    protected function configureParamResolver(string $paramName, mixed $valueOrProvider, ?\Closure $checkValid = null, ?\Closure $hydrate = null, ?\Closure $fallback = null): void
+    protected function configureParamResolver(string $paramName, string | callable | null $valueOrProvider, ?\Closure $checkValid = null, ?\Closure $hydrate = null, ?\Closure $fallback = null): void
     {
         $dto = ProcessingContext::dto();
 
         // Can't use ??= here, because psalm complains about type coersion
         if (null === static::$paramProvidersMap) {
-            /** @var \WeakMap<BaseDto, ParamResolverConfig[]> */
+            /** @var \WeakMap<BaseDto, array<array-key, ParamResolverConfig>> */
             static::$paramProvidersMap = new \WeakMap();
         }
-        // initialize the map for this DTO if it doesn't exist
-        if (!isset(static::$paramProvidersMap[$dto])) {
-            static::$paramProvidersMap[$dto] = [];
-        }
+        /** @var array<array-key, ParamResolverConfig> $dtoConfigs */
+        $dtoConfigs = static::$paramProvidersMap[$dto] ?? [];
 
         $config = new ParamResolverConfig($paramName, $checkValid, $fallback, $hydrate);
 
-        /** @psalm-suppress InvalidArgument */
-        static::$paramProvidersMap[$dto][$paramName] = $config;
+        $dtoConfigs[$paramName] = $config;
+        static::$paramProvidersMap[$dto] = $dtoConfigs;
 
         $this->resolveParamProvider($config, $valueOrProvider, $dto);
     }
 
     /**
-     * returns the locale for the given value, locale provider, and context (propName, dto).
+     * returns the param value for the given value, provider, and context (propName, dto).
      *
      * @throws InvalidConfigException
      *
      * @psalm-suppress UndefinedDocblockClass
      */
-    protected function resolveParam(string $paramName, mixed $value, ?string $paramValueOrProviderClass = null): mixed
+    protected function resolveParam(string $paramName, mixed $value, string | callable | null $paramValueOrProviderClass = null): mixed
     {
         $config = $this->getParamResolverConfig($paramName);
 
         // if no $paramValueOrProviderClass is passed, check for a constructorArg with the same name as the parameter to resolve
-        $paramValueOrProviderClass ??= $this->constructorArgs[$paramName] ?? null;
+        if (null === $paramValueOrProviderClass) {
+            $constructorArg = $this->getConstructorArg($paramName);
+            if (null !== $constructorArg && !\is_string($constructorArg) && !\is_callable($constructorArg)) {
+                throw new InvalidConfigException(
+                    "Parameter '$paramName' constructorArg must resolve to string|callable|null, got ".get_debug_type($constructorArg),
+                );
+            }
+
+            $paramValueOrProviderClass = $constructorArg;
+        }
 
         $dto = ProcessingContext::dto();
 
         /** @var CastTo|UsesParamResolver $this */
         $provider = $this->resolveParamProvider($config, $paramValueOrProviderClass, $dto);
 
+        /** @psalm-var mixed */
         $paramValue = $provider($value, $this->getCurrentPropName(), $dto);
 
         $hydrate = $config->hydrate;
 
         return $hydrate ? $hydrate($paramValue) : $paramValue;
+    }
+
+    private function getConstructorArg(string $paramName): mixed
+    {
+        /** @psalm-suppress RedundantCondition */
+        if (!$this instanceof ProcessingNodeBase) {
+            // Some users of this trait are chain modifiers that don't extend ProcessingNodeBase,
+            // so we can't guarantee the presence of constructorArgs. In that case, just
+            return null;
+        }
+
+        return (bool) $this->constructorArgs
+            ? $this->constructorArgs[$paramName] ?? null
+            : null;
     }
 
     /**
@@ -270,7 +334,7 @@ trait UsesParamResolver
  */
 final class ParamResolverConfig
 {
-    /** @var \Closure[] */
+    /** @var array<string, \Closure> */
     public array $providers = [];
 
     public function __construct(

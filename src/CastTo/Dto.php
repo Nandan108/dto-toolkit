@@ -7,14 +7,14 @@ namespace Nandan108\DtoToolkit\CastTo;
 use Nandan108\DtoToolkit\Contracts\CreatesFromArrayOrEntityInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Core\CastBase;
-use Nandan108\DtoToolkit\Core\FullDto;
 use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
 use Nandan108\DtoToolkit\Exception\Process\TransformException;
 
 /**
  * Casts nested DTO values from array/object input.
+ *
+ * @api
  */
-/** @api */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class Dto extends CastBase
 {
@@ -47,16 +47,14 @@ final class Dto extends CastBase
             );
         }
 
+        /** @var class-string<BaseDto&CreatesFromArrayOrEntityInterface> $dtoClass */
         $dtoClass = $args[0];
 
-        // Note: $dtoClass should be typed as class-string<CreatesFromArrayOrEntityInterface>,
-        // but docbloc defined magic methods on interfaces don't seem to be supported by Psalm yet,
-        // so we cast to FullDto here.
-        /** @var class-string<FullDto> $dtoClass */
-        $dto = (\is_array($value))
-            ? $dtoClass::newFromArray($value)
-            : $dtoClass::newFromEntity($value);
+        /** @var BaseDto&CreatesFromArrayOrEntityInterface $dto */
+        $dto = $dtoClass::new();
 
-        return $dto;
+        return \is_array($value)
+            ? $dto->loadArray($value)
+            : $dto->loadEntity($value);
     }
 }

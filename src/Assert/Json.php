@@ -44,7 +44,10 @@ final class Json extends ValidatorBase
         $value = $this->ensureStringable($value);
 
         // TODO: Remove this trick when bumping PHP requirement to 8.3+
-        $json_validate = \function_exists('json_validate') ? 'json_validate' : [self::class, 'polyfillJsonValidate'];
+        /** @var callable(string): bool $json_validate */
+        $json_validate = \function_exists('json_validate')
+            ? json_validate(...)
+            : self::polyfillJsonValidate(...);
 
         $valid = $json_validate($value);
         if (!$valid) {
@@ -78,7 +81,7 @@ final class Json extends ValidatorBase
         }
     }
 
-    /** @psalm-suppress UnusedReturnValue */
+    /** @psalm-suppress UnusedReturnValue, UnusedMethod */
     private static function polyfillJsonValidate(string $value): bool
     {
         /** @psalm-suppress UnusedFunctionCall */

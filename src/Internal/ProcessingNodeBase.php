@@ -22,6 +22,7 @@ use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
 use Nandan108\DtoToolkit\Exception\Config\MissingDependencyException;
 use Nandan108\DtoToolkit\Exception\Config\NodeProducerResolutionException;
 use Nandan108\DtoToolkit\Exception\Process\ProcessingException;
+use Nandan108\DtoToolkit\Support\CacheKeySerializer;
 
 /**
  * Shared resolution logic for processing nodes (casters, validators, etc.).
@@ -44,7 +45,7 @@ abstract class ProcessingNodeBase implements PhaseAwareInterface, ProcessingNode
     /** @var nodeCache */
     protected static array $globalMemoized = [];
 
-    /** @var array<class-string, array<int|string, array<string, ProcessingChain>>|null> */
+    /** @var array<class-string, array<non-empty-string, array<non-empty-string, ProcessingChain>>|null> */
     protected static array $processingNodeClosureMapCache = [];
 
     /** @var ?\WeakMap<BaseDto, true>
@@ -60,8 +61,8 @@ abstract class ProcessingNodeBase implements PhaseAwareInterface, ProcessingNode
     public ?array $constructorArgs = null;
 
     /**
-     * @param string|class-string|null $methodOrClass
-     * @param mixed                    $constructorArgs
+     * @param string|class-string|null      $methodOrClass
+     * @param array<int|string, mixed>|null $constructorArgs
      *
      * @throws InvalidConfigException
      */
@@ -88,7 +89,7 @@ abstract class ProcessingNodeBase implements PhaseAwareInterface, ProcessingNode
         /** @psalm-suppress RiskyTruthyFalsyComparison, PossiblyNullArgument */
         $getMemoizeKey = function (string $keyType, BaseDto $dto): string {
             $key = match ($keyType) {
-                'class'      => ($this->methodOrClass ?? '').':'.$this->serializeCacheKey($this->constructorArgs),
+                'class'      => ($this->methodOrClass ?? '').':'.CacheKeySerializer::serialize($this->constructorArgs),
                 'dto-method' => get_class($dto).'::'.static::$methodPrefix.ucfirst($this->methodOrClass),
             };
 
@@ -98,7 +99,7 @@ abstract class ProcessingNodeBase implements PhaseAwareInterface, ProcessingNode
         // Check if we have a memoized callable for the given method
         foreach (['class', 'dto-method'] as $keyType) {
             $memoKey = $getMemoizeKey($keyType, $dto);
-            $meta = $cache[$memoKey]['nodes'][$this->serializeCacheKey($args)] ?? null;
+            $meta = $cache[$memoKey]['nodes'][CacheKeySerializer::serialize($args)] ?? null;
             if ($meta) {
                 return $meta;
             }
@@ -152,7 +153,7 @@ abstract class ProcessingNodeBase implements PhaseAwareInterface, ProcessingNode
                 instance: $instance,
             );
 
-            $cache[$memoKey]['nodes'][$this->serializeCacheKey($args)] = $meta = new ProcessingNodeMeta(
+            $cache[$memoKey]['nodes'][CacheKeySerializer::serialize($args)] = $meta = new ProcessingNodeMeta(
                 callable: $callable,
                 instance: $instance,
                 nodeName: $nodeClass,
@@ -197,11 +198,11 @@ abstract class ProcessingNodeBase implements PhaseAwareInterface, ProcessingNode
             $callable = $this->makeClosureFromInstance($instance, $this->args);
         }
 
-        $memoKey = $this->methodOrClass.':'.$this->serializeCacheKey($this->constructorArgs);
+        $memoKey = $this->methodOrClass.':'.CacheKeySerializer::serialize($this->constructorArgs);
         /** @psalm-suppress UnsupportedPropertyReferenceUsage */
         $cache = &static::$globalMemoized;
         $cache[$memoKey]['instance'] ??= $instance;
-        $cache[$memoKey]['nodes'][$this->serializeCacheKey($this->args)] = $meta = new ProcessingNodeMeta(
+        $cache[$memoKey]['nodes'][CacheKeySerializer::serialize($this->args)] = $meta = new ProcessingNodeMeta(
             callable: $callable,
             instance: $cache[$memoKey]['instance'] ?? $instance,
             nodeName: $this->resolveNodeName(
@@ -248,31 +249,6 @@ abstract class ProcessingNodeBase implements PhaseAwareInterface, ProcessingNode
         return self::getNodeNameFromClass($className);
     }
 
-    protected function serializeCacheKey(mixed $value, bool $recursed = false): mixed
-    {
-        if (\is_array($value)) {
-            $normalized = [];
-            foreach ($value as $key => $item) {
-                $normalized[$key] = $this->serializeCacheKey($item, true);
-            }
-        } else {
-            $normalized = match (true) {
-                $value instanceof \BackedEnum        => ['__enum__' => $value::class, 'value' => $value->value],
-                $value instanceof \UnitEnum          => ['__enum__' => $value::class, 'name' => $value->name],
-                $value instanceof \DateTimeInterface => ['__datetime__' => $value::class, 'value' => $value->format(\DateTimeInterface::ATOM)],
-                \is_object($value)                   => ['__object__' => $value::class, 'id' => spl_object_id($value)],
-                \is_resource($value)                 => ['__resource__' => get_resource_type($value)],
-                default                              => null, // scalar: use as is
-            };
-            if (null === $normalized && $recursed) {
-                return $value;
-            }
-        }
-
-        /** @psalm-suppress RiskyTruthyFalsyComparison */
-        return json_encode($normalized ?? $value) ?: '[]';
-    }
-
     /**
      * Resolve the class name to an instance of the expected interface.
      *
@@ -286,6 +262,7 @@ abstract class ProcessingNodeBase implements PhaseAwareInterface, ProcessingNode
         }
 
         if (null !== $this->constructorArgs) {
+            /** @psalm-suppress MixedMethodCall */
             return new $className(...$this->constructorArgs);
         }
 
@@ -302,13 +279,17 @@ abstract class ProcessingNodeBase implements PhaseAwareInterface, ProcessingNode
      * Get an associative array of [propName => processingClosure] for a DTO.
      *
      * @psalm-suppress PossiblyUnusedMethod
+     *
+     * @return array<non-empty-string, ProcessingChain> The map of property names to their processing chains for the given DTO and phase
      */
     public static function getProcessingNodeClosureMap(BaseDto $dto, bool $outbound = false): array
     {
         $reflection = new \ReflectionClass($dto);
         $dtoClass = $reflection->getName();
         /** @psalm-suppress UnsupportedPropertyReferenceUsage */
-        $processors = &self::$processingNodeClosureMapCache[$dtoClass];
+        $processorsByPhase = &self::$processingNodeClosureMapCache[$dtoClass];
+        /** @var array<non-empty-string, array<non-empty-string, ProcessingChain>> */
+        $processorsByPhase ??= [];
 
         if (null === self::$dtoBootCache) {
             /** @var \WeakMap<BaseDto, true> */
@@ -317,7 +298,8 @@ abstract class ProcessingNodeBase implements PhaseAwareInterface, ProcessingNode
 
         $phase = Phase::fromComponents($outbound, false);
 
-        $phaseKey = (int) $outbound;
+        /** @var non-empty-string */
+        $phaseKey = (string) (int) $outbound;
         if ($dto instanceof HasGroupsInterface) {
             $activeGroups = $dto->getActiveGroups($phase);
             sort($activeGroups);
@@ -326,8 +308,8 @@ abstract class ProcessingNodeBase implements PhaseAwareInterface, ProcessingNode
         }
 
         // Populate the caster cache with per-phase-per-property composed casters
-        if (!isset($processors[$phaseKey])) {
-            $processors = [];
+        if (!isset($processorsByPhase[$phaseKey])) {
+            $processorsByPhase = [];
 
             $attrInstancesByProp = ($dto::class)::getPhaseAwarePropMeta($phase, 'attr', ProcessingNodeProducerInterface::class);
 
@@ -340,47 +322,56 @@ abstract class ProcessingNodeBase implements PhaseAwareInterface, ProcessingNode
             foreach (array_filter($attrInstancesByProp) as $propName => $attrInstances) {
                 /** @psalm-suppress RedundantCondition */
                 if (!\is_array($attrInstances)) {
-                    $msg = 'Attribute class '.get_class($attrInstances).
-                        ' must be declared with #[Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)].';
+                    $msg = '\Attribute class '.get_class($attrInstances).
+                        ' must be declared with #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)].';
                     throw new InvalidConfigException($msg);
                 }
 
                 /** @var array<int, ProcessingNodeProducerInterface> $attrInstances */
                 $iterator = new \ArrayIterator($attrInstances);
                 $chain = new ProcessingChain($iterator, $dto);
-                $processors[$phaseKey][$propName] = $chain;
+                $processorsByPhase[$phaseKey][$propName] = $chain;
             }
         }
 
-        $map = $processors[$phaseKey] ?? [];
-
         // Boot chain elements on DTO (recursively), if needed
-        if (!isset(self::$dtoBootCache[$dto])) {
-            // use a WeakMap for its object de-duplication properties
-            /** @var \WeakMap<BootsOnDtoInterface, BootsOnDtoInterface> */
-            $instances = new \WeakMap();
-            // gather all instances of BootsOnDtoInterface, from all chains (both phases)
-            foreach ($processors as $map) {
-                foreach ($map as $chain) {
-                    // ** @var ProcessingChain $chain */
-                    $chain->recursiveWalk(function (ProcessingNodeInterface $meta) use ($instances): void {
-                        if ($meta instanceof ProcessingNodeMeta && $meta->instance instanceof BootsOnDtoInterface) {
-                            if (!isset($instances[$meta->instance])) {
-                                $instances[$meta->instance] = $meta->instance;
-                            }
-                        }
-                    }, ProcessingNodeMeta::class);
-                }
-            }
-            // on each instance, run $instance->bootOnDto()
-            foreach ($instances as $instance) {
-                $instance->bootOnDto();
-            }
+        if (!(self::$dtoBootCache[$dto] ?? false)) {
+            self::bootProcessingNodes($processorsByPhase);
             self::$dtoBootCache[$dto] = true;
         }
 
-        // return the cast/ers for the requested phase
-        return $map;
+        /** @var array<non-empty-string, ProcessingChain> */
+        return $processorsByPhase[$phaseKey] ??= [];
+    }
+
+    /**
+     * Recursively walk the given chains to find all BootsOnDtoInterface instances and call bootOnDto() on them.
+     *
+     * @param array<non-empty-string, ProcessingChain[]> $processorsByPhase
+     */
+    private static function bootProcessingNodes(array $processorsByPhase): void
+    {
+        // use a WeakMap for its object de-duplication properties
+        /** @var \WeakMap<BootsOnDtoInterface, BootsOnDtoInterface> */
+        $instances = new \WeakMap();
+        // gather all instances of BootsOnDtoInterface, from all chains (both phases)
+        foreach ($processorsByPhase as $chains) {
+            foreach ($chains as $chain) {
+                // recursively walk the chain to find all BootsOnDtoInterface instances, and add them to $instances WeakMap
+                $chain->recursiveWalk(function (ProcessingNodeInterface $meta) use ($instances): void {
+                    if ($meta instanceof ProcessingNodeMeta
+                        && $meta->instance instanceof BootsOnDtoInterface
+                        && !isset($instances[$meta->instance])) {
+                        $instances[$meta->instance] = $meta->instance;
+                    }
+                }, ProcessingNodeMeta::class);
+            }
+        }
+
+        // on each instance, run $instance->bootOnDto()
+        foreach ($instances as $instance) {
+            $instance->bootOnDto();
+        }
     }
 
     /**

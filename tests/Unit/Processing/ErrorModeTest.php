@@ -45,7 +45,6 @@ final class FailsOutboundDto extends BaseDto implements ProcessesInterface
     use Traits\ProcessesFromAttributes; // for casting/transforming properties
     use Traits\ExportsOutbound; // for exporting DTOs to entities
 
-    /** @psalm-suppress PossiblyUnusedProperty */
     #[CastTo\Uppercase]
     #[Outbound]
     #[AlwaysFails]

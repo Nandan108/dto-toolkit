@@ -48,22 +48,16 @@ final class EnumBackedValue extends ValidatorBase
             );
         }
 
-        try {
-            // Use tryFrom to check validity without throwing an exception
-            if ($enumClass::tryFrom($value) instanceof $enumClass) {
-                return;
-            }
-
-        } catch (\TypeError $e) {
-            // If a TypeError is thrown, it means the value is of an incompatible type (e.g., object or array)
+        if (!\is_int($value) && !\is_string($value)) {
             throw GuardException::expected(
                 operand: $value,
-                templateSuffix: 'backing_value.invalid_type',
-                expected: 'type.enum.backing_value',
-                parameters: [
-                    'enumClass' => (new \ReflectionClass($enumClass))->getShortName(),
-                ],
+                expected: ['type.string', 'type.int'],
             );
+        }
+
+        // Use tryFrom to check validity without throwing an exception
+        if ($enumClass::tryFrom($value)) {
+            return;
         }
 
         throw GuardException::expected(

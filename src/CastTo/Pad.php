@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nandan108\DtoToolkit\CastTo;
 
+use Nandan108\DtoToolkit\Contracts\Bootable;
 use Nandan108\DtoToolkit\Core\CastBase;
 use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
 
@@ -18,8 +19,11 @@ use Nandan108\DtoToolkit\Exception\Config\InvalidArgumentException;
  * @api
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
-final class Pad extends CastBase
+final class Pad extends CastBase implements Bootable
 {
+    /** @var \Closure(string, int, string, int, string|null):string */
+    private static \Closure $pad;
+
     /** @api */
     public function __construct(
         int $length,
@@ -36,20 +40,25 @@ final class Pad extends CastBase
         parent::__construct([$length, $char, $padType]);
     }
 
+    /** @internal */
+    #[\Override]
+    public function boot(): void
+    {
+        // TODO: Remove this trick when bumping PHP requirement to 8.3+
+        self::$pad = \function_exists('mb_str_pad') ? \mb_str_pad(...) : \str_pad(...);
+    }
+
     #[\Override]
     /** @internal */
     public function cast(mixed $value, array $args): string
     {
-        /** @var int $length */
-        /** @var string $char */
-        /** @var int $padType */
+        /** @psalm-suppress UnnecessaryVarAnnotation */
+        /** @var array{0: int, 1: string, 2: int} $args */
         [$length, $char, $padType] = $args;
 
         $value = $this->ensureStringable($value);
 
-        // TODO: Remove this trick when bumping PHP requirement to 8.3+
-        $pad = \function_exists('mb_str_pad') ? '\mb_str_pad' : '\str_pad';
-
-        return $pad($value, $length, $char, $padType);
+        /** @var string */
+        return (self::$pad)($value, $length, $char, $padType, null);
     }
 }

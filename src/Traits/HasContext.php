@@ -13,19 +13,21 @@ use Nandan108\DtoToolkit\Core\ProcessingContext;
  */
 trait HasContext
 {
+    /** @var array<non-empty-string, mixed> */
     protected array $_context = [];
 
-    /** @psalm-suppress PossiblyUnusedReturnValue */
     #[\Override]
+    /** @param non-empty-string $key */
     public function contextSet(string $key, mixed $value): static
     {
+        /** @var non-empty-string $key */
         $this->_context[$key] = $value;
 
         return $this;
     }
 
-    /** @psalm-suppress PossiblyUnusedReturnValue */
     #[\Override]
+    /** @param non-empty-string $key */
     public function contextUnset(string $key): static
     {
         unset($this->_context[$key]);
@@ -33,8 +35,10 @@ trait HasContext
         return $this;
     }
 
+    /** @param array<non-empty-string, mixed> $values */
     public function withContext(array $values): static
     {
+        /** @var mixed $val */
         foreach ($values as $key => $val) {
             $this->contextSet($key, $val);
         }
@@ -43,12 +47,14 @@ trait HasContext
     }
 
     #[\Override]
+    /** @param non-empty-string $key */
     public function contextGet(string $key, mixed $default = null): mixed
     {
         return $this->_context[$key] ?? $default;
     }
 
     #[\Override]
+    /** @param non-empty-string $key */
     public function contextHas(string $key, bool $treatNullAsMissing = true): bool
     {
         if (!array_key_exists($key, $this->_context)) {
@@ -62,6 +68,9 @@ trait HasContext
         return true;
     }
 
+    /**
+     * @return array<non-empty-string, mixed>
+     */
     #[\Override]
     public function getContext(): array
     {

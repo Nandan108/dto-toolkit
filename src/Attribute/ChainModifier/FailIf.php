@@ -46,9 +46,8 @@ class FailIf extends ChainModifierBase
                     /** @var bool */
                     $condition = $this->resolveParam('condition', $value, $this->condition);
 
-                    if ($upstreamChain) {
-                        $value = $upstreamChain($value);
-                    }
+                    /** @psalm-var mixed $value */
+                    $value = $upstreamChain ? $upstreamChain($value) : $value;
 
                     if ($condition xor $this->negate) {
                         ProcessingContext::pushPropPathNode('Mod\FailIf');

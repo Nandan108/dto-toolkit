@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nandan108\DtoToolkit\Attribute\ChainModifier;
 
+use Nandan108\DtoToolkit\Contracts\ProcessingNodeProducerInterface;
 use Nandan108\DtoToolkit\Core\BaseDto;
 use Nandan108\DtoToolkit\Core\ProcessingContext;
 use Nandan108\DtoToolkit\Internal\ProcessingChain;
@@ -43,8 +44,8 @@ final class SkipIfMatch extends ChainModifierBase
     }
 
     /**
-     * @param \ArrayIterator $queue The queue of attributes to be processed
-     * @param BaseDto        $dto   The DTO instance
+     * @param ?\ArrayIterator<int, ProcessingNodeProducerInterface> $queue The queue of attributes to be processed
+     * @param BaseDto                                               $dto   The DTO instance
      */
     #[\Override]
     public function getProcessingNode(BaseDto $dto, ?\ArrayIterator $queue): ProcessingChain
@@ -58,7 +59,9 @@ final class SkipIfMatch extends ChainModifierBase
                 $subchain = ProcessingChain::composeFromNodes($chainElements);
 
                 return function (mixed $value) use ($upstreamChain, $subchain): mixed {
+                    /** @psalm-var mixed $value */
                     $value = $upstreamChain ? $upstreamChain($value) : $value;
+
                     $matches = (bool) $this->matchValues
                         && \in_array($value, $this->matchValues, $this->strict);
 

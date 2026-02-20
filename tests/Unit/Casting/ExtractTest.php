@@ -88,17 +88,14 @@ final class ExtractTest extends TestCase
  */
 final class ExtractTestFixture extends FullDto
 {
-    /** @psalm-suppress PossiblyUnusedProperty */
     public mixed $propVal = null;
     private mixed $getterVal = null;
 
-    /** @psalm-suppress PossiblyUnusedMethod */
     public function getGetterVal(): mixed
     {
         return $this->getterVal;
     }
 
-    /** @psalm-suppress PossiblyUnusedMethod */
     public function setGetterVal(mixed $value): void
     {
         $this->getterVal = $value;

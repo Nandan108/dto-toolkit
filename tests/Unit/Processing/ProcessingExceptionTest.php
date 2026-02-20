@@ -628,6 +628,45 @@ final class ProcessingExceptionTest extends TestCase
 
         $this->assertSame('FR-HYPHEN chaine numerique / chaine', $exception->getMessage());
     }
+
+    public function testBaseCatalogNonArrayPhpFileIsIgnored(): void
+    {
+        ProcessingException::setMessageRenderer(null);
+
+        $locale = 'yy_YY';
+        $catalogDir = dirname(__DIR__, 3).'/resources/i18n/'.$locale;
+        $messagesFile = $catalogDir.'/messages.php';
+        $tokensFile = $catalogDir.'/tokens.php';
+
+        if (!is_dir($catalogDir)) {
+            mkdir($catalogDir, 0777, true);
+        }
+
+        file_put_contents($messagesFile, "<?php\n\ndeclare(strict_types=1);\n\nreturn 'not-an-array';\n");
+        file_put_contents($tokensFile, "<?php\n\ndeclare(strict_types=1);\n\nreturn 'not-an-array';\n");
+
+        try {
+            DefaultErrorMessageRenderer::clearCatalogCache(true);
+            DefaultErrorMessageRenderer::setLocale($locale);
+
+            $dto = new class extends BaseDto {
+            };
+            $frame = new ProcessingFrame($dto, $dto->getErrorList(), $dto->getErrorMode());
+            ProcessingContext::pushFrame($frame);
+            try {
+                $message = ProcessingException::failed('custom.reason')->getMessage();
+            } finally {
+                ProcessingContext::popFrame();
+            }
+
+            $this->assertSame('processing.custom.reason', $message);
+        } finally {
+            @unlink($messagesFile);
+            @unlink($tokensFile);
+            @rmdir($catalogDir);
+            DefaultErrorMessageRenderer::clearCatalogCache(true);
+        }
+    }
 }
 
 final class NodeNameOverrideCaster extends CastBaseNoArgs

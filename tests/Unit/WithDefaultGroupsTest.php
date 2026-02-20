@@ -63,7 +63,6 @@ final class WithGroupsDto extends FullDto
 {
     use ProcessesFromAttributes;
 
-    /** @psalm-suppress PossiblyUnusedProperty */
     #[Groups('foo'), CastTo\PascalCase]
     #[Groups('bar'), CastTo\SnakeCase]
     #[Outbound]

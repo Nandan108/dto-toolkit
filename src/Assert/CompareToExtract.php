@@ -53,6 +53,8 @@ final class CompareToExtract extends ValidatorBase
      */
     public function __construct(string $op, string $rightPath, ?string $leftPath = null)
     {
+        ValueComparator::assertOperator($op);
+
         try {
             $this->rightExtractor = PropPath::compile($rightPath);
             $this->leftExtractor = null !== $leftPath ? PropPath::compile($leftPath) : null;
@@ -101,9 +103,13 @@ final class CompareToExtract extends ValidatorBase
     /** @internal */
     public function validate(mixed $value, array $args = []): void
     {
-        [$op, $rightPath, $leftPath] = $this->constructorArgs ?? [];
+        /** @var array{0: non-empty-string, 1: non-empty-string, 2: ?non-empty-string} $args */
+        $args = $this->constructorArgs;
+        [$op, $rightPath, $leftPath] = $args;
 
+        /** @psalm-var mixed */
         $rightValue = $this->extract($this->rightExtractor);
+        /** @psalm-var mixed */
         $leftValue = (null === $this->leftExtractor)
             ? $value
             : $this->extract($this->leftExtractor, ['value' => $value]);
@@ -119,17 +125,17 @@ final class CompareToExtract extends ValidatorBase
         if (!$matches) {
             throw GuardException::invalidValue(
                 value: $value,
-                template_suffix: 'compare_to',
+                template_suffix: 'compare_to_extract',
                 parameters: [
                     'operator'  => $op,
-                    'leftPath'  => $leftPath,
+                    'leftPath'  => $leftPath ?? '$value',
                     'rightPath' => $rightPath,
                 ],
                 debug: [
                     'leftPath'  => $leftValue,
                     'rightPath' => $rightValue,
                 ],
-                errorCode: 'guard.compare_to',
+                errorCode: 'guard.compare_to_extract',
             );
         }
     }

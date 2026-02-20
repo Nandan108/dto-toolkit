@@ -26,6 +26,7 @@ final class FromJson extends CastBase
         try {
             $asAssocFlag = $args[0] ? JSON_OBJECT_AS_ARRAY : 0;
 
+            /** @var array|object */
             return json_decode($value, true, 512, JSON_THROW_ON_ERROR | $asAssocFlag);
         } catch (\JsonException $e) {
             throw TransformException::reason(

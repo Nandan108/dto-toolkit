@@ -83,7 +83,8 @@ class ErrorTemplate extends ChainModifierBase
 
                 // wrap its execution with override context push/pop
                 return function (mixed $value) use ($subchain, $upstreamChain): mixed {
-                    $upstreamChain && $value = $upstreamChain($value);
+                    /** @psalm-var mixed $value */
+                    $value = $upstreamChain ? $upstreamChain($value) : $value;
 
                     $frame = ProcessingContext::current();
                     array_unshift($frame->errorTemplateOverrides, $this->override);

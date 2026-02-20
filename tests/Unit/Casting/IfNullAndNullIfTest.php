@@ -13,6 +13,7 @@ use PHPUnit\Framework\TestCase;
 
 final class IfNullAndNullIfTest extends TestCase
 {
+    /** @param truthy-string $prop  */
     // use valueProvider()
     #[DataProvider('valueProvider')]
     public function testAppliesIfnullAndNullifCasters(string $prop, mixed $value, mixed $expected): void

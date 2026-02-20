@@ -85,7 +85,6 @@ final class UnresolvedValidatorDto extends BaseDto implements ProcessesInterface
     use CreatesFromArrayOrEntity;
     use ProcessesFromAttributes;
 
-    /** @psalm-suppress PossiblyUnusedProperty */
     #[Assert('missing')]
     public string $name = '';
 }
@@ -95,14 +94,12 @@ final class NonImplementingValidatorDto extends BaseDto implements ProcessesInte
     use CreatesFromArrayOrEntity;
     use ProcessesFromAttributes;
 
-    /** @psalm-suppress PossiblyUnusedProperty */
     #[Assert(\stdClass::class)]
     public string $name = '';
 }
 
 final class NeedsArgsValidator implements ValidatorInterface
 {
-    /** @psalm-suppress PossiblyUnusedMethod */
     public function __construct(private string $required)
     {
     }
@@ -120,7 +117,6 @@ final class NeedsContainerValidatorDto extends BaseDto implements ProcessesInter
     use CreatesFromArrayOrEntity;
     use ProcessesFromAttributes;
 
-    /** @psalm-suppress PossiblyUnusedProperty */
     #[Assert(NeedsArgsValidator::class)]
     public string $name = '';
 }

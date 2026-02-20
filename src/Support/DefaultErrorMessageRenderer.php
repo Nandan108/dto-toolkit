@@ -56,8 +56,7 @@ final class DefaultErrorMessageRenderer implements ErrorMessageRendererInterface
         $replacements = $this->renderPlaceholders($params, $catalog['tokens']);
 
         $rendered = strtr($localTemplate, $replacements);
-
-        if (!empty($params['propertyPath'])) {
+        if (isset($params['propertyPath']) && is_string($params['propertyPath']) && '' !== $params['propertyPath']) {
             $rendered = $params['propertyPath'].': '.$rendered;
         }
 
@@ -160,11 +159,17 @@ final class DefaultErrorMessageRenderer implements ErrorMessageRendererInterface
         self::clearLanguageDefaultLocales();
     }
 
-    /** @param array<string, mixed> $params */
+    /**
+     * @param array<string, mixed>            $params
+     * @param array<non-empty-string, string> $tokens translated token templates for the current locale
+     *
+     * @return array<string, string> map of placeholder to rendered value for strtr replacement
+     */
     private function renderPlaceholders(array $params, array $tokens): array
     {
         $replacements = [];
 
+        /** @var mixed $value */
         foreach ($params as $key => $value) {
             $replacements[':'.$key] = $this->renderParameter($key, $value, $params, $tokens);
         }
@@ -172,19 +177,25 @@ final class DefaultErrorMessageRenderer implements ErrorMessageRendererInterface
         return $replacements;
     }
 
-    /** @param array<string, mixed> $allParams */
-    private function renderParameter(string $key, mixed $value, array $allParams, array $tokens): string
+    /**
+     * Renders a single parameter value based on its type and key, applying token templates as needed.
+     *
+     * @param array<string, mixed>            $allParams
+     * @param array<non-empty-string, string> $tokensDic
+     */
+    private function renderParameter(string $key, mixed $value, array $allParams, array $tokensDic): string
     {
-        if (('expected' === $key || 'type' === $key) && (is_string($value) || is_array($value))) {
-            $list = is_array($value) ? $value : [$value];
+        if (('expected' === $key || 'type' === $key) && (\is_string($value) || \is_array($value))) {
+            $list = \is_array($value) ? $value : [$value];
             $items = [];
+            /** @var mixed $token */
             foreach ($list as $token) {
                 $items[] = $this->renderToken(
                     is_string($token)
-                        ? $this->normalizeTypeToken($token, $tokens)
+                        ? $this->normalizeTypeToken($token, $tokensDic)
                         : $this->stringify($token),
                     $allParams,
-                    $tokens,
+                    $tokensDic,
                 );
             }
 
@@ -192,7 +203,7 @@ final class DefaultErrorMessageRenderer implements ErrorMessageRendererInterface
         }
 
         if (is_string($value)) {
-            return $this->renderToken($value, $allParams, $tokens);
+            return $this->renderToken($value, $allParams, $tokensDic);
         }
 
         if (is_array($value)) {
@@ -206,14 +217,15 @@ final class DefaultErrorMessageRenderer implements ErrorMessageRendererInterface
     }
 
     /** @param array<string, mixed> $allParams */
-    private function renderToken(string $value, array $allParams, array $tokens): string
+    private function renderToken(string $value, array $allParams, array $tokensDic): string
     {
-        $tokenTemplate = $tokens[$value] ?? null;
+        $tokenTemplate = $tokensDic[$value] ?? null;
         if (!is_string($tokenTemplate)) {
             return $value;
         }
 
         $map = [];
+        /** @var mixed $paramValue */
         foreach ($allParams as $key => $paramValue) {
             $map[':'.$key] = $this->stringify($paramValue);
         }
@@ -283,6 +295,7 @@ final class DefaultErrorMessageRenderer implements ErrorMessageRendererInterface
         $resolved = self::$locale;
 
         if (!is_string($resolved) && null !== self::$localeResolver) {
+            /** @psalm-var mixed */
             $candidate = (self::$localeResolver)();
             $resolved = is_string($candidate) ? $candidate : null;
         }
@@ -451,8 +464,14 @@ final class DefaultErrorMessageRenderer implements ErrorMessageRendererInterface
         if (!is_file($path)) {
             $catalog = [];
         } else {
+            /** @psalm-var mixed */
             $data = require $path;
-            $catalog = is_array($data) ? self::sanitizeCatalog($data) : [];
+            if (is_array($data)) {
+                /** @var array<array-key, scalar|array<array-key, mixed>|object|resource|null> $data */
+                $catalog = self::sanitizeCatalog($data);
+            } else {
+                $catalog = [];
+            }
         }
 
         if ('messages.php' === $file) {
@@ -467,18 +486,22 @@ final class DefaultErrorMessageRenderer implements ErrorMessageRendererInterface
     /**
      * Sanitizes a catalog by filtering out entries with non-string or empty keys, and non-string values.
      *
-     * @param array<mixed, mixed> $data
+     * @param array<array-key, mixed> $data
      *
      * @return array<non-empty-string, string>
      */
     private static function sanitizeCatalog(array $data): array
     {
+        $catalog = [];
+        /** @var mixed $v */
+        foreach ($data as $k => $v) {
+            if (is_string($k) && '' !== trim($k) && is_string($v)) {
+                $catalog[$k] = $v;
+            }
+        }
+
         /** @var array<non-empty-string, string> $catalog */
-        return array_filter(
-            $data,
-            static fn (mixed $v, mixed $k): bool => is_string($k) && '' !== trim($k) && is_string($v),
-            ARRAY_FILTER_USE_BOTH,
-        );
+        return $catalog;
     }
 
     /**

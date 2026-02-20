@@ -24,7 +24,6 @@ use PHPUnit\Framework\TestCase;
 
 final class DtoCastTest extends TestCase
 {
-    /** @psalm-suppress PossiblyUnusedMethod */
     public function testConstructorRejectsMissingClass(): void
     {
         $this->expectException(InvalidArgumentException::class);
@@ -33,7 +32,6 @@ final class DtoCastTest extends TestCase
         new CastTo\Dto('MissingDto');
     }
 
-    /** @psalm-suppress PossiblyUnusedMethod */
     public function testConstructorRejectsNonCreatesFromArray(): void
     {
         $this->expectException(InvalidArgumentException::class);
@@ -43,7 +41,6 @@ final class DtoCastTest extends TestCase
         new CastTo\Dto(NonCreatesFromArrayDto::class);
     }
 
-    /** @psalm-suppress PossiblyUnusedMethod */
     public function testConstructorRejectsNonBaseDto(): void
     {
         $this->expectException(InvalidArgumentException::class);
@@ -53,7 +50,6 @@ final class DtoCastTest extends TestCase
         new CastTo\Dto(NonBaseDto::class);
     }
 
-    /** @psalm-suppress PossiblyUnusedMethod */
     public function testCastRejectsNonArrayObjectInput(): void
     {
         $dto = new class extends BaseDto {
@@ -71,7 +67,6 @@ final class DtoCastTest extends TestCase
         }
     }
 
-    /** @psalm-suppress PossiblyUnusedMethod */
     public function testCastReturnsDtoFromArrayAndObject(): void
     {
         PropAccess::bootDefaultResolvers();
@@ -98,7 +93,6 @@ final class DtoCastTest extends TestCase
         }
     }
 
-    /** @psalm-suppress PossiblyUnusedMethod */
     public function testDtoHasNoErrorsAcceptsCleanDto(): void
     {
         $validator = new Assert\DtoHasNoErrors();
@@ -109,7 +103,6 @@ final class DtoCastTest extends TestCase
         $this->assertTrue($dto->getErrorList()->isEmpty());
     }
 
-    /** @psalm-suppress PossiblyUnusedMethod */
     public function testDtoHasNoErrorsRejectsNonDto(): void
     {
         $validator = new Assert\DtoHasNoErrors();
@@ -151,7 +144,6 @@ final class DtoCastTest extends TestCase
         ];
     }
 
-    /** @psalm-suppress PossiblyUnusedMethod */
     public function testNestedDtoCastingWithGuardPassesOnValidInput(): void
     {
         $input = self::getStandardInput();
@@ -189,7 +181,6 @@ final class DtoCastTest extends TestCase
 
     }
 
-    /** @psalm-suppress PossiblyUnusedMethod */
     public function testNestedDtoCastingWithGuardThrowsOnInnerErrors(): void
     {
         $input = self::getStandardInput();
@@ -209,7 +200,6 @@ final class DtoCastTest extends TestCase
         }
     }
 
-    /** @psalm-suppress PossiblyUnusedMethod */
     public function testNestedDtoCastingWithoutGuardKeepsInnerErrors(): void
     {
         $input = self::getStandardInput();
@@ -252,7 +242,6 @@ final class SimpleDto extends FullDto
     public string $name = '';
 }
 
-/** @psalm-suppress PossiblyUnusedProperty */
 final class InterestsDto extends FullDto
 {
     #[CastTo\Split]
@@ -264,7 +253,6 @@ final class InterestsDto extends FullDto
     public string | array $book = [];
 }
 
-/** @psalm-suppress PossiblyUnusedProperty */
 final class PublicProfileDto extends FullDto
 {
     protected static ErrorMode $_defaultErrorMode = ErrorMode::CollectFailToNull;
@@ -280,7 +268,6 @@ final class PublicProfileDto extends FullDto
     public InterestsDto | array | null $interests = null;
 }
 
-/** @psalm-suppress PossiblyUnusedProperty */
 final class AddressDto extends FullDto
 {
     public string $street = '';
@@ -290,7 +277,6 @@ final class AddressDto extends FullDto
     public string $ctry_code = '';
 }
 
-/** @psalm-suppress PossiblyUnusedProperty */
 final class UserDto extends FullDto
 {
     public int $id = 0;
@@ -305,15 +291,12 @@ final class UserDto extends FullDto
 
 final class UserDtoNoGuard extends FullDto
 {
-    /** @psalm-suppress PossiblyUnusedProperty */
     public int $id = 0;
-    /** @psalm-suppress PossiblyUnusedProperty */
     public string $username = '';
 
     #[CastTo\Dto(PublicProfileDto::class)]
     public PublicProfileDto | array | null $public_profile = null;
 
-    /** @psalm-suppress PossiblyUnusedProperty */
     #[CastTo\Dto(AddressDto::class)]
     public AddressDto | array | null $address = null;
 }

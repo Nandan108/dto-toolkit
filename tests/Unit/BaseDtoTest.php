@@ -138,6 +138,13 @@ final class BaseDtoTest extends TestCase
         // Reset dev mode for other tests
         ProcessingContext::setDevMode(true);
     }
+
+    public function testDtoWithRequiredConstructorArgsThrowsOnClassRefLoad(): void
+    {
+        $this->expectException(InvalidConfigException::class);
+        $this->expectExceptionMessage('constructor with required parameters');
+        BaseDtoWithRequiredConstructorArg::new();
+    }
 }
 
 /**
@@ -151,15 +158,17 @@ final class BaseDtoTestDtoWithUnaccessibleStaticFuncs extends BaseDto
         /** @psalm-suppress UnsafeInstantiation */
         $dto ??= new static();
 
+        /** @var array<truthy-string, mixed> $vars */
         $vars = get_object_vars($specialObj);
         $dto->fill($vars);
 
         return $dto;
     }
 
-    /** @psalm-suppress UnusedParam */
     private static function somePrivateFunc(): void
     {
+        // This function is intentionally left blank.
+        // It's only here to test that private static methods are not accessible.
     }
 
     // accessible directly
@@ -169,7 +178,6 @@ final class BaseDtoTestDtoWithUnaccessibleStaticFuncs extends BaseDto
     }
 
     // accessible via __callStatic()
-    /** @psalm-suppress PossiblyUnusedMethod */
     public function loadSpecialObject(object $specialObj): static
     {
         return static::protectedMakeSpecialObject($this, $specialObj);
@@ -178,13 +186,10 @@ final class BaseDtoTestDtoWithUnaccessibleStaticFuncs extends BaseDto
 
 final class BaseDtoClearDto extends BaseDto
 {
-    /** @psalm-suppress PossiblyUnusedProperty */
     public static string $someStaticProp = 'staticValue';
 
-    /** @psalm-suppress PossiblyUnusedProperty */
     public ?string $required = null;
 
-    /** @psalm-suppress PossiblyUnusedProperty */
     public string $hasDefault = 'foo';
 
     public ?int $optional = null;
@@ -195,12 +200,20 @@ final class BaseDtoClearDto extends BaseDto
 
 final class InvalidBaseDtoWithPropMissingDefaultValue extends BaseDto
 {
-    /** @psalm-suppress PossiblyUnusedProperty */
     public string $propWithoutDefaultValue;
 
-    /** @psalm-suppress PossiblyUnusedMethod */
     public function __construct()
     {
         $this->propWithoutDefaultValue = 'value';
+    }
+}
+
+final class BaseDtoWithRequiredConstructorArg extends BaseDto
+{
+    public string $name = '';
+
+    public function __construct(string $name)
+    {
+        $this->name = $name;
     }
 }

@@ -11,6 +11,10 @@ use Nandan108\DtoToolkit\Exception\Process\GuardException;
 /**
  * Validator that checks if a value matches one of the specified types.
  *
+ * @template TType = 'bool'|'boolean'|'int'|'integer'|'long'|'float'|'double'
+ *                   |'real'|'numeric'|'string'|'class-string'|'scalar'|'array'|'iterable'
+ *                   |'countable'|'callable'|'object'|'resource'|'null'
+ * *
  * @property array{types: list<string>} $constructorArgs
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
@@ -18,10 +22,6 @@ final class IsType extends ValidatorBase
 {
     /**
      * @psalm-suppress PossiblyUnusedMethod
-     *
-     * @template TType = 'bool'|'boolean'|'int'|'integer'|'long'|'float'|'double'
-     *                   |'real'|'numeric'|'string'|'class-string'|'scalar'|'array'|'iterable'
-     *                   |'countable'|'callable'|'object'|'resource'|'null'
      *
      * @param TType|non-empty-list<TType> $type
      *
@@ -35,6 +35,7 @@ final class IsType extends ValidatorBase
         }
 
         /** @psalm-suppress DocblockTypeContradiction, InvalidCast */
+        /** @var mixed $type */
         foreach ($types as $type) {
             if (!\is_string($type)) {
                 throw new InvalidArgumentException('IsType validator expects type names as strings.');
@@ -68,9 +69,12 @@ final class IsType extends ValidatorBase
     }
 
     #[\Override]
-    /** @internal */
+    /**
+     * @internal
+     **/
     public function validate(mixed $value, array $args = []): void
     {
+        /** @var list<string> $types */
         $types = $args[0];
 
         foreach ($types as $type) {

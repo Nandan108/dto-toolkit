@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nandan108\DtoToolkit\Traits;
 
 use Nandan108\DtoToolkit\CastTo;
+use Nandan108\DtoToolkit\Exception\Config\InvalidConfigException;
 
 /** @api */
 trait UsesTimeZoneResolver
@@ -16,13 +17,25 @@ trait UsesTimeZoneResolver
 
     public function configureTimezoneResolver(?string $timezoneOrProvider = null, string $paramName = 'timezone'): void
     {
+        /** @var string|callable|null $valueOrProvider */
+        $valueOrProvider = $timezoneOrProvider;
+        if (null === $valueOrProvider) {
+            /** @psalm-suppress MixedAssignment */
+            $valueOrProvider = $this->getConstructorArg($paramName);
+            if (null !== $valueOrProvider && !\is_string($valueOrProvider) && !\is_callable($valueOrProvider)) {
+                throw new InvalidConfigException(
+                    "Parameter '$paramName' constructorArg must resolve to string|callable|null, got ".get_debug_type($valueOrProvider),
+                );
+            }
+        }
+
         // checking with new DateTimeZone() + throwing exception is expensive, so we cache the result.
 
         /** @psalm-suppress UndefinedDocblockClass */
         /** @var CastTo|UsesParamResolver $this */
         $this->configureParamResolver(
             paramName: $paramName,
-            valueOrProvider: $timezoneOrProvider ?? $this->constructorArgs[$paramName] ?? null,
+            valueOrProvider: $valueOrProvider,
             checkValid: function (?string $tz): bool {
                 if (null === $tz || '' === $tz) {
                     return true;

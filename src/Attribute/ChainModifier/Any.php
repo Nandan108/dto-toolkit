@@ -58,7 +58,8 @@ class Any extends ChainModifierBase
                 $node->getBuiltClosure(null), $chainElements);
 
             return function (mixed $value) use ($closures, $upstreamChain): mixed {
-                $upstreamChain && $value = $upstreamChain($value);
+                /** @psalm-var mixed $value */
+                $value = $upstreamChain ? $upstreamChain($value) : $value;
 
                 try {
                     ProcessingContext::pushPropPathNode('Mod\Any');

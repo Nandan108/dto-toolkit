@@ -32,11 +32,11 @@ interface ProcessesInterface
     /**
      * Apply outbound transformations to DTO values before mapping to array/entity.
      *
-     * @param array                    $props     The properties to process
-     * @param ProcessingErrorList|null $errorList An optional list to collect processing errors
-     * @param ErrorMode|null           $errorMode The error mode to use during processing
+     * @param array<non-empty-string, mixed> $props     The properties to process
+     * @param ProcessingErrorList|null       $errorList An optional list to collect processing errors
+     * @param ErrorMode|null                 $errorMode The error mode to use during processing
      *
-     * @return array The processed key-value pairs
+     * @return array<non-empty-string, mixed> The processed key-value pairs
      */
     public function processOutbound(
         array $props,

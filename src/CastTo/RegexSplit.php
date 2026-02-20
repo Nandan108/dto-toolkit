@@ -17,7 +17,7 @@ final class RegexSplit extends CastBase
      * @param non-empty-string $pattern the regex pattern to split by
      * @param int<-1, max>     $limit   the maximum number of splits (0 or -1 for no limit)
      */
-    public function __construct(public readonly string $pattern, public readonly int $limit = -1)
+    public function __construct(string $pattern, int $limit = -1)
     {
         // Validate pattern and limit at construction time to fail fast on invalid config
         try {
@@ -44,6 +44,8 @@ final class RegexSplit extends CastBase
     #[\Override]
     public function cast(mixed $value, array $args): array
     {
+        /** @psalm-suppress UnnecessaryVarAnnotation  */
+        /** @var array{0: non-empty-string, 1: int<-1, max>} $args */
         [$pattern, $limit] = $args;
 
         $value = $this->ensureStringable($value);

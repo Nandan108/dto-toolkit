@@ -8,7 +8,13 @@ use Nandan108\DtoToolkit\Core\CastBase;
 use Nandan108\DtoToolkit\Exception\Process\TransformException;
 
 /**
- * Returns the first value not in the ignore list.
+ * Returns the first element from an array or \Traversable $value that is not
+ * found in $ignore.
+ * If all elements are found in $ignore, returns $fallback if provided, otherwise
+ * throws a TransformException.
+ *
+ * By default, $ignore is [null] (inspired by SQL COALESCE), so this caster can
+ * be used to coalesce null values in an array or \Traversable into a single value.
  *
  * @api
  */
@@ -48,6 +54,7 @@ final class Coalesce extends CastBase
             );
         }
 
+        /** @var mixed $item */
         foreach ($iterable as $item) {
             if (!\in_array($item, $ignore, true)) {
                 return $item;

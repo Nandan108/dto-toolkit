@@ -17,5 +17,6 @@ interface HasContextInterface
 
     public function contextHas(string $key, bool $treatNullAsMissing = true): bool;
 
+    /** @return array<non-empty-string, mixed> */
     public function getContext(): array;
 }

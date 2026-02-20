@@ -104,7 +104,7 @@ public ProfileDto | array | null $profile = null;
 
 **Arguments:** `?int $min = null, ?int $max = null`
 
-Checks string length or array size is within bounds. Throws config error if both bounds are missing.
+Checks string length or countable size is within bounds. Throws config error if both bounds are missing.
 
 **Example:**
 
@@ -309,9 +309,11 @@ public ?\DateTimeInterface $endsAt;
 
 ### Assert\EnumCase
 
-**Arguments:** `class-string<\BackedEnum> $enumClass`
+**Arguments:** `class-string<\BackedEnum|\UnitEnum> $enumClass`
 
-Allows either an enum case instance of the given enum, or a value that maps to one via `tryFrom`.
+Allows either an enum case instance of the given enum, or:
+- for backed enums: a backing value (`string|int`) that maps via `tryFrom`
+- for unit enums: a case name (`string`)
 
 **Example:**
 
