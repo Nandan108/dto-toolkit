@@ -22,7 +22,7 @@ class FailIf extends ChainModifierBase
     use UsesParamResolver;
 
     public function __construct(
-        public readonly string $condition,
+        public readonly string | \Closure $condition,
         public readonly bool $negate = false,
     ) {
     }
@@ -56,7 +56,7 @@ class FailIf extends ChainModifierBase
                             value: $value,
                             template_suffix: 'modifier.fail_if.condition_failed',
                             parameters: [
-                                'condition' => json_encode($this->condition),
+                                'condition' => is_callable($this->condition) ? 'callable' : json_encode($this->condition),
                                 'negated'   => $this->negate,
                             ],
                         );

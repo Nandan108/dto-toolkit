@@ -57,7 +57,9 @@ For casters that take arguments and more particularely multiple ones, it advised
    public ?string $myProp;
 ```
 
-Note that that PHP Attribute parameters may only contain scalars, arrays, constants, and constant expressions. Anything else is considered invalid by the PHP parser.
+PHP 8.1-8.4: Attribute parameters may only contain scalars, arrays, constants, and constant expressions.
+PHP 8.5+: closures are also supported in attribute arguments, and first-class callables can be used as closure suppliers.
+Use classic closures (`static function (...) { ... }`) for attribute arguments; arrow functions are not supported in this context.
 
 ---
 

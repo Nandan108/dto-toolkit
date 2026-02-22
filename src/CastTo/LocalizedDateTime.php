@@ -27,11 +27,11 @@ final class LocalizedDateTime extends CastBase implements CasterInterface, Boots
 
     /** @api */
     public function __construct(
-        ?string $locale = null,
+        string | callable | null $locale = null,
         int $dateStyle = \IntlDateFormatter::SHORT,
         int $timeStyle = \IntlDateFormatter::SHORT,
         ?string $pattern = null,
-        ?string $timezone = null,
+        string | callable | null $timezone = null,
     ) {
         $this->ensureExtensionLoaded('intl');
 

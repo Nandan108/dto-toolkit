@@ -3,6 +3,41 @@
 All notable changes to this project will be documented in this file.
 
 ---
+## [1.4.4] - 2026-02-22
+
+### Changed
+
+- Runtime dependencies were updated:
+  - `nandan108/prop-path` `^0.4.0` -> `^0.4.1`
+  - `nandan108/prop-access` `^0.6.0` -> `^0.7.0`
+- Locale/timezone-aware casters that resolve parameters via `UsesParamResolver` now accept callable providers in constructor arguments (array callables and other callables).
+  - Updated caster constructor signatures accordingly (`DateTime`, `DateTimeFromLocalized`, `LocalizedDateTime`, `LocalizedNumber`, `LocalizedCurrency`).
+- Condition modifiers now accept closures for dynamic condition providers:
+  - `Mod\ApplyNextIf`, `Mod\FailIf`, `Mod\SkipNextIf` now take `string|\Closure` conditions.
+  - This keeps promoted-property typing compatible with PHP while still enabling callable condition providers on PHP 8.5+ attribute arguments.
+- `README.md` quality note now reflects Psalm level 1 strictness.
+- `BaseDto::new()` now accepts an optional prebuilt DTO instance (`?BaseDto $instance = null`) and prepares that instance (inject/boot lifecycle) instead of always creating a new one internally.
+
+### Fixed
+
+- `Mod\FailIf` error metadata now reports callable conditions as `'callable'` instead of attempting JSON-encoding closure values.
+- Removed an unused trait import from `Mod\NoOp`.
+
+### Docs
+
+- Updated casting/modifier documentation to explicitly describe dynamic provider support and syntax:
+  - array callables for resolver params
+  - closure and first-class callable attribute arguments on PHP 8.5+
+  - classic closure syntax requirement in attribute arguments (`static function (...) { ... }`)
+- Clarified that no built-in validator currently uses `UsesParamResolver`.
+
+### Tests
+
+- Added coverage for resolver callables in locale-aware casters (including array callable providers).
+- Added PHP 8.5-specific coverage for closure/first-class callable condition providers in `Mod\ApplyNextIf`.
+- Added runtime capability probes so closure-in-attribute tests are skipped on runtimes that do not support that syntax.
+
+---
 ## [1.4.3] - 2026-02-20
 
 ### Added

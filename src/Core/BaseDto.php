@@ -572,9 +572,13 @@ abstract class BaseDto implements ProvidesProcessingNodeNameInterface
      * This method will also call the `inject()` method if the class implements Injectable,
      * and the `boot()` method if the class implements Bootable.
      *
+     * @param ?BaseDto $instance an optional instance to prepare and return. This supports DI lifecycle,
+     *                           where a container creates the instance then calls this method to prepare
+     *                           it for use.
+     *
      * @api
      */
-    public static function new(): static
+    public static function new(?BaseDto $instance = null): static
     {
         /** @var bool[] $isInjectable */
         static $isInjectable = [];
@@ -586,14 +590,16 @@ abstract class BaseDto implements ProvidesProcessingNodeNameInterface
         $shouldUseContainer = $isInjectable[static::class] ??=
             (bool) $classRef->getAttributes(Inject::class);
 
-        // make a new instance of the class,
-        /** @psalm-suppress UnsafeInstantiation */
-        /** @var static $instance */
-        $instance = $shouldUseContainer
-            // via container injection if the class is marked with #[Inject],
-            ? ContainerBridge::get(static::class)
-            // otherwise with a simple new static()
-            : new static();
+        if (!$instance) {
+            // make a new instance of the class, either via the container or with new static()
+            /** @psalm-suppress UnsafeInstantiation */
+            /** @var static $instance */
+            $instance = $shouldUseContainer
+                // via container injection if the class is marked with #[Inject],
+                ? ContainerBridge::get(static::class)
+                // otherwise with a simple new static()
+                : new static();
+        }
 
         // prepare the instance for use
         if ($instance instanceof Injectable) {

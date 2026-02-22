@@ -31,7 +31,12 @@ trait CreatesFromArrayOrEntity
     /**
      * Create a new instance of the DTO from an array.
      *
-     * @param bool $ignoreUnknownProps If true, unknown properties will be ignored
+     * @param array                    $input              The input array to load into the DTO
+     * @param bool                     $ignoreUnknownProps If false, unknown properties will cause an exception, otherwise they will be ignored
+     * @param ProcessingErrorList|null $errorList          Optional error list to collect processing errors
+     * @param ErrorMode|null           $errorMode          Optional policy that determines whether to fail fast or collect, and
+     *                                                     if collecting, which values to set for properties that fail processing (null, input value, or omit entirely)
+     * @param bool                     $clear              If true, unfilled properties will be reset to their default values
      *
      * @throws InvalidConfigException
      *

@@ -37,7 +37,7 @@ final class LocalizedCurrency extends CastBase implements CasterInterface, Boots
     /** @api */
     public function __construct(
         string $currency,
-        ?string $locale = null,
+        string | callable | null $locale = null,
     ) {
         $this->ensureExtensionLoaded('intl');
 

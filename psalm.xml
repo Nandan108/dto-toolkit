@@ -66,5 +66,10 @@
                 <directory name="tests" />
             </errorLevel>
         </PossiblyUnusedProperty>
+        <UnusedParam>
+            <errorLevel type="suppress">
+                <directory name="tests" />
+            </errorLevel>
+        </UnusedParam>
     </issueHandlers>
 </psalm>

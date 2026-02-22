@@ -26,8 +26,8 @@ class DateTime extends CastBase implements CasterInterface, BootsOnDtoInterface
 
     /** @api */
     public function __construct(
-        public readonly string | \BackedEnum $format = DateTimeFormat::ISO_8601,
-        public readonly ?string $timezone = null,
+        string | \BackedEnum $format = DateTimeFormat::ISO_8601,
+        string | callable | null $timezone = null,
     ) {
         $this->ensureExtensionLoaded('intl');
 

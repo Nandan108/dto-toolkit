@@ -26,9 +26,12 @@ Modifiers allow building powerful, fine-grained, and safe transformation chains.
 
 ### Mod\ApplyNextIf
 
-**Arguments:** `mixed $condition, int $count = 1, bool $negate = false`
+**Arguments:** `string|\Closure $condition, int $count = 1, bool $negate = false`
 
-Conditionally applies the next `$count` casters if the given `$condition` is true (or false if `negate` is true). The condition can be a value, a context key, or a method reference.
+Conditionally applies the next `$count` casters if the given `$condition` is true (or false if `negate` is true). The condition can be a string expression (context key, dto method reference, provider class reference, or direct string value).
+Because `$condition` is a promoted property, general `callable` is not accepted here.
+- Use strings (`'<context:...>'`, `'<dto:...>'`, provider-class string, or direct value string)
+- Use closures in attribute arguments on PHP 8.5+ (including first-class callable syntax)
 
 **Example:**
 
@@ -63,7 +66,7 @@ public ?array $identifier;
 
 ### Mod\FailIf
 
-**Arguments:** `mixed $condition, bool $negate = false`
+**Arguments:** `string|\Closure $condition, bool $negate = false`
 
 Throws a casting exception if the `$condition` is true (or false if `negate` is true). Can be used as a simple validator.
 
@@ -227,7 +230,7 @@ public mixed $value;
 
 ### Mod\SkipNextIf
 
-**Arguments:** `mixed $condition, int $count = 1`
+**Arguments:** `string|\Closure $condition, int $count = 1`
 
 Skips the next `$count` casters if the given `$condition` is true. Syntactic sugar for `ApplyNextIf(..., negate: true)`.
 

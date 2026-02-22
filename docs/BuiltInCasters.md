@@ -25,7 +25,7 @@ These attributes can be freely combined and chained to compose complex transform
 
 ## 🏷️ Available CastTo Attributes
 
-> 💡 Parameters like `?string $locale = null` or `?string $timezone = null` support flexible resolution.
+> 💡 Parameters like `string|callable|null $locale = null` or `string|callable|null $timezone = null` support flexible resolution.
 > See [Parameter Resolution](#parameter-resolution) below for details.
 
 ### Case converters
@@ -88,7 +88,7 @@ Throws a `TransformException` if the input is not stringable.
 
 **Arguments:**
 - `string $format = 'Y-m-d H:i:s'`
-- `?string $timezone = null` ([see resolution](#parameter-resolution))
+- `string|callable|null $timezone = null` ([see resolution](#parameter-resolution))
 
 Parses a datetime string into a `\DateTimeImmutable` instance.
 Optionally coerces the result to a given timezone.
@@ -99,11 +99,11 @@ Throws a `TransformException` if parsing fails.
 ### CastTo\DateTimeFromLocalized
 
 **Arguments:**
-- `?string $locale = null,` ([see resolution](#parameter-resolution))
+- `string|callable|null $locale = null,` ([see resolution](#parameter-resolution))
 - `int $dateStyle = \IntlDateFormatter::SHORT,`
 - `int $timeStyle = \IntlDateFormatter::SHORT,`
 - `?string $pattern = null,`
-- `?string $timezone = null,` ([see resolution](#parameter-resolution))
+- `string|callable|null $timezone = null,` ([see resolution](#parameter-resolution))
 
 
 
@@ -294,7 +294,7 @@ Throws a `TransformException` if the input is not an array or a valid JSON strin
 **Arguments:**
 - `int $style = \NumberFormatter::CURRENCY`
 - `int $precision = 2`
-- `?string $locale = null` ([see resolution](#parameter-resolution))
+- `string|callable|null $locale = null` ([see resolution](#parameter-resolution))
 - `?string $currency = null`
 
 Formats a number as a locale-aware currency string using `NumberFormatter`.
@@ -307,8 +307,8 @@ Throws if the input is not numeric.
 **Arguments:**
 - `int $dateStyle = \IntlDateFormatter::MEDIUM`
 - `int $timeStyle = \IntlDateFormatter::SHORT`
-- `?string $locale = null` ([see resolution](#parameter-resolution))
-- `?string $timezone = null` ([see resolution](#parameter-resolution))
+- `string|callable|null $locale = null` ([see resolution](#parameter-resolution))
+- `string|callable|null $timezone = null` ([see resolution](#parameter-resolution))
 
 Formats a `DateTimeInterface` using a locale-aware format.
 Throws if input is not a valid date/time object.
@@ -320,7 +320,7 @@ Throws if input is not a valid date/time object.
 **Arguments:**
 - `int $style = \NumberFormatter::DECIMAL`
 - `int $precision = 2`
-- `?string $locale = null` ([see resolution](#parameter-resolution))
+- `string|callable|null $locale = null` ([see resolution](#parameter-resolution))
 
 Formats a float as a locale-aware number string.
 Throws a `TransformException` if the input is not numeric.
@@ -456,17 +456,25 @@ Throws a `TransformException` if the input is not stringable.
 ## <a id="parameter-resolution"></a>📘 Parameter Resolution
 
 For specific parameters, casters may use the trait `UsesParamResolver` or derived traits* to allow flexible, cast-time resolution. This is the case for `locale` and `timezone` parameters in core casters.
+For custom casters that declare resolver params, direct callable suppliers are supported too.
+At this time no built-in validator uses `UsesParamResolver`.
+
+Callable suppliers can be passed as:
+- an array callable (works on supported PHP versions)
+- a closure in attribute arguments (PHP 8.5+)
+- a first-class callable in attribute arguments (PHP 8.5+), e.g. `ProviderClassFoo::staticMethodBar(...)`
 
 ### 🔍 Resolution Priority
 
 Examples given for parameter `"locale"`
-| | Case                     | Resolved from                                                  |
+| | Case                     | Resolved from                                                   |
 |-|--------------------------|-----------------------------------------------------------------|
 |1| `'fr_CH'` (string)       | Used directly                                                   |
-|2| `Provider::class`        | Calls `Provider::getLocale($value, $prop, $dto)`                   |
-|3| `'<context'` string      | Calls `$dto->getContext('locale')`                                 |
-|4| `'<dto'` string         | Calls `$dto->getLocale()`                                          |
-|5| `null`                   | Fallback order:<br>1. context → 2. dto getter → 3. fallback()   |
+|2| `[Provider::class, 'resolveLocale']`, `static function (...) { ... }` (PHP 8.5+), or `ProviderClass::resolveLocale(...)` (PHP 8.5+) | Calls callable with `($value, $prop, $dto)` and uses return value |
+|3| `Provider::class`        | Calls `Provider::getLocale($value, $prop, $dto)`                |
+|4| `'<context'` string      | Calls `$dto->getContext('locale')`                              |
+|5| `'<dto'` string          | Calls `$dto->getLocale()`                                       |
+|6| `null`                   | Fallback order:<br>1. context → 2. dto getter → 3. fallback()   |
 
 Visit [Crafting Casters](CraftingAttributeCasters.md) for more info on how to support flexible parameter resolution in your own casters.
 

@@ -84,4 +84,74 @@ final class ConditionalModifiersTest extends TestCase
             $this->assertSame('value{Mod\SkipNextIf->CastTo\PascalCase->Mod\FailIf}', $propPath); // PascalCase skipped
         }
     }
+
+    public function testApplyNextIfAcceptsClosureConditionProviderOnPhp85AndUp(): void
+    {
+        if (!self::supportsClosureInAttributeArguments()) {
+            $this->markTestSkipped('This runtime does not support closures in attribute arguments.');
+        }
+
+        $fqcn = __NAMESPACE__.'\\ConditionalModifiersTest_ClosureAttributeDto';
+        if (!class_exists($fqcn, false)) {
+            eval(<<<'PHP'
+namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
+
+use Nandan108\DtoToolkit\Attribute\ChainModifier as Mod;
+use Nandan108\DtoToolkit\CastTo;
+use Nandan108\DtoToolkit\Core\FullDto;
+
+final class ProvideTrue
+{
+    public static function returnTrue(): bool { return true; }
+}
+
+final class ConditionalModifiersTest_ClosureAttributeDto extends FullDto
+{
+    #[Mod\ApplyNextIf(condition: static function (mixed $value): bool { return 'apply' === $value; })]
+    #[Mod\ApplyNextIf(condition: ProvideTrue::returnTrue(...))]
+    #[CastTo\Uppercase]
+    public ?string $value = null;
+}
+PHP
+            );
+        }
+
+        /** @var class-string<FullDto> $fqcn */
+        $dto = $fqcn::newFromArray(['value' => 'apply']);
+        /** @psalm-suppress UndefinedPropertyFetch */
+        $this->assertSame('APPLY', $dto->value);
+
+        $dto->unfill()->loadArray(['value' => 'skip']);
+        /** @psalm-suppress DocblockTypeContradiction */
+        $this->assertSame('skip', $dto->value);
+    }
+
+    private static function supportsClosureInAttributeArguments(): bool
+    {
+        static $supported = null;
+        if (null !== $supported) {
+            return $supported;
+        }
+        if (!function_exists('exec')) {
+            return $supported = false;
+        }
+
+        $probe = <<<'PHP'
+#[\Attribute]
+final class AttrProbe
+{
+    public function __construct(public \Closure $provider) {}
+}
+#[AttrProbe(static function (): bool { return true; })]
+final class AttrProbeSubject {}
+PHP;
+
+        $cmd = escapeshellarg(\PHP_BINARY).' -r '.escapeshellarg($probe).' 2>/dev/null';
+        $exitCode = 1;
+        /** @var list<string> $output */
+        $output = [];
+        exec($cmd, $output, $exitCode);
+
+        return $supported = 0 === $exitCode;
+    }
 }

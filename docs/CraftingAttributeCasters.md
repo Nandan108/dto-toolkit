@@ -87,6 +87,9 @@ class MyCaster extends CastBaseNoArgs implements CasterInterface, BootsOnDtoInte
 Some casters need params like `locale`, `unit`, or `timezone` that should come from different sources:
 
 - Attribute value (`#[CastTo\Foo(locale: 'fr_CH')]`)
+- Direct callable supplier (`#[CastTo\Foo(locale: [LocaleProvider::class, 'resolve'])]`)
+- Inline closure supplier (PHP 8.5+: `#[CastTo\Foo(locale: static function (...) { return 'fr_CH'; })]`)
+- First-class callable supplier (PHP 8.5+: `#[CastTo\Foo(locale: LocaleProvider::resolve(...))]`)
 - DTO method (`$dto->getLocale()`)
 - DTO context (`$dto->getContext('locale')`)
 - Static provider class (`LocaleProvider::getLocale(...)`)
@@ -106,7 +109,6 @@ public function __construct(?string $locale = null)
 public function bootOnDto(): void
 {
     $this->configureParamResolver(
-        dto: static::$currentDto,
         paramName: 'locale',
         valueOrProvider: $this->constructorArgs['locale'],
         checkValid: fn ($v) => is_string($v) && strlen($v) >= 2,
@@ -119,6 +121,34 @@ public function bootOnDto(): void
 
 ```php
 $locale = $this->resolveParam('locale', $value);
+```
+
+### 🧰 Callable Suppliers (including closures in PHP 8.5+)
+
+If your caster constructor accepts `string|callable|null`, you can pass a callable directly and `UsesParamResolver` will invoke it as:
+`callable(mixed $value, ?string $prop, BaseDto $dto): mixed`
+The same resolver behavior applies to custom modifiers that use `UsesParamResolver`.
+At this time, no built-in validator uses `UsesParamResolver`.
+
+```php
+#[Cast\ToLocalizedLabel(locale: [LocaleProvider::class, 'resolve'])]
+public string $label;
+```
+
+```php
+// PHP 8.5+ (closure in attribute args)
+#[Cast\ToLocalizedLabel(
+    locale: static function (mixed $value, ?string $prop, BaseDto $dto): string {
+        return $dto->getLocale();
+    }
+)]
+public string $label;
+```
+
+```php
+// PHP 8.5+ (first-class callable in attribute args)
+#[Cast\ToLocalizedLabel(locale: LocaleProvider::resolve(...))]
+public string $label;
 ```
 
 ---
@@ -158,6 +188,7 @@ class MyCaster extends CastBase implements CasterInterface, BootsOnDtoInterface
 
 | Example for `$xyz` argument               | Resolved from                                                  |
 |--------------------|-----------------------------------------------------------------|
+| `[Provider::class, 'resolveXyz']`, `static function (...) { ... }` (PHP 8.5+), or `Provider::resolveXyz(...)` (PHP 8.5+) | Calls callable with `($value, $prop, $dto)` and uses its return value |
 | `Provider::class`  | `Provider::getXyz($value, $prop, $dto)`                   |
 | `'<dto'`           | `$dto->getXyz($value, $prop)`                                          |
 | `'<dto:aMethod'`   | `$dto->aMethod($value, $prop)`                                         |

@@ -129,7 +129,7 @@ Adapters will provide support for:
 ## 🧪 Testing & Quality
 
 - 100% test coverage using PHPUnit
-- Psalm level 3
+- Psalm level 1 (maximum strictness)
 - Code style enforced with [PHP-CS-Fixer](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer):
   - Based on the `@Symfony` rule set
   - Aligned `=>` for better readability

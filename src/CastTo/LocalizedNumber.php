@@ -38,7 +38,7 @@ final class LocalizedNumber extends CastBase implements CasterInterface, BootsOn
     public function __construct(
         int $style = \NumberFormatter::DECIMAL,
         int $precision = 2,
-        ?string $locale = null,
+        string | callable | null $locale = null,
     ) {
         $this->ensureExtensionLoaded('intl');
         if ($precision < 0) {

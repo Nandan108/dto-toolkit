@@ -21,7 +21,7 @@ class SkipNextIf extends ApplyNextIf
     protected static string $name = 'Mod\SkipNextIf';
 
     public function __construct(
-        public string $condition,
+        public string | \Closure $condition,
         public int $count = 1,
     ) {
         parent::__construct(

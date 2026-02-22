@@ -27,7 +27,7 @@ class ApplyNextIf extends ChainModifierBase
     protected static string $name = 'Mod\ApplyNextIf';
 
     public function __construct(
-        public string $condition,
+        public string | \Closure $condition,
         public int $count = 1,
         public bool $negate = false,
     ) {

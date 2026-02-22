@@ -167,6 +167,87 @@ final class LocaleAwareTest extends TestCase
         $this->assertSame('1.234,56', $dto->number_de);
     }
 
+    public function testLocaleAwareCastersAcceptArrayCallableProvider(): void
+    {
+        $dtoClass = new class extends FullDto {
+            #[LocalizedNumber(locale: [LocaleAwareTest_ArrayCallableLocaleProvider::class, 'getLocale'], style: \NumberFormatter::DECIMAL)]
+            public int | float | string | null $number = null;
+
+            #[CastTo\LocalizedCurrency(currency: 'CHF', locale: [LocaleAwareTest_ArrayCallableLocaleProvider::class, 'getLocale'])]
+            public int | float | string | null $amount = null;
+        };
+
+        $dto = $dtoClass::newFromArray([
+            'number' => 1234.56,
+            'amount' => 1234.56,
+        ]);
+
+        $numberFormatter = new \NumberFormatter('de_DE', \NumberFormatter::DECIMAL);
+        $currencyFormatter = new \NumberFormatter('de_DE', \NumberFormatter::CURRENCY);
+
+        $this->assertSame($numberFormatter->format(1234.56), $dto->number);
+        $this->assertSame($currencyFormatter->formatCurrency(1234.56, 'CHF'), $dto->amount);
+    }
+
+    public function testLocaleAwareCasterAcceptsClosureInAttributeOnPhp85AndUp(): void
+    {
+        if (!self::supportsClosureInAttributeArguments()) {
+            $this->markTestSkipped('This runtime does not support closures in attribute arguments.');
+        }
+
+        $fqcn = __NAMESPACE__.'\\LocaleAwareTest_ClosureAttributeDto';
+        if (!class_exists($fqcn, false)) {
+            eval(<<<'PHP'
+namespace Nandan108\DtoToolkit\Tests\Unit\Casting;
+
+use Nandan108\DtoToolkit\CastTo\LocalizedNumber;
+use Nandan108\DtoToolkit\Core\FullDto;
+
+final class LocaleAwareTest_ClosureAttributeDto extends FullDto
+{
+    #[LocalizedNumber(locale: static function (): string { return 'de_DE'; }, style: \NumberFormatter::DECIMAL)]
+    public int|float|string|null $number = null;
+}
+PHP
+            );
+        }
+
+        /** @var class-string<FullDto> $fqcn */
+        $dto = $fqcn::newFromArray(['number' => 1234.56]);
+        $formatter = new \NumberFormatter('de_DE', \NumberFormatter::DECIMAL);
+        /** @psalm-suppress UndefinedPropertyFetch */
+        $this->assertSame($formatter->format(1234.56), $dto->number);
+    }
+
+    private static function supportsClosureInAttributeArguments(): bool
+    {
+        static $supported = null;
+        if (null !== $supported) {
+            return $supported;
+        }
+        if (!function_exists('exec')) {
+            return $supported = false;
+        }
+
+        $probe = <<<'PHP'
+#[\Attribute]
+final class AttrProbe
+{
+    public function __construct(public \Closure $provider) {}
+}
+#[AttrProbe(static function (): bool { return true; })]
+final class AttrProbeSubject {}
+PHP;
+
+        $cmd = escapeshellarg(\PHP_BINARY).' -r '.escapeshellarg($probe).' 2>/dev/null';
+        $exitCode = 1;
+        /** @var list<string> $output */
+        $output = [];
+        exec($cmd, $output, $exitCode);
+
+        return $supported = 0 === $exitCode;
+    }
+
     public function testUsesLocaleProviderInvalidLocaleThrows(): void
     {
         $dtoClass = new class extends FullDto {
@@ -343,5 +424,14 @@ final class LocalAwareTestLocaleProvider_PropNameDependent
         }
 
         return 'en_US';
+    }
+}
+
+final class LocaleAwareTest_ArrayCallableLocaleProvider
+{
+    /** @psalm-suppress PossiblyUnusedMethod, PossiblyUnusedReturnValue, UnusedParam */
+    public static function getLocale(mixed $value, ?string $prop = null, ?FullDto $dto = null): string
+    {
+        return 'de_DE';
     }
 }
