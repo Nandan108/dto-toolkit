@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 
 ---
+## [1.4.1] - 2026-02-14
+
+### Changed
+
+- Composer setup now supports local composer overrides via `composer.local.json` using `wikimedia/composer-merge-plugin`.
+- Added `wikimedia/composer-merge-plugin` to `require-dev`.
+- Added merge-plugin configuration in `extra.merge-plugin` (include `composer.local.json`, recurse enabled, replacement disabled, duplicates not ignored).
+- Added Composer `config.allow-plugins` entry to explicitly allow `wikimedia/composer-merge-plugin`.
+- Added top-level `merge-plugin` configuration block matching the merge settings for compatibility with tooling expecting that key.
+
+---
 ## [1.4.0] - 2026-02-10
 
 ### Added
